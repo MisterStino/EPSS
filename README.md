@@ -30,8 +30,7 @@ pip install -r requirements.txt
 - Ensure you have an active internet connection to fetch the data.
 - Modify the scripts as needed to fit your specific use case.
 
-### Contact
-For any issues or questions, please contact [your email].
+
 
 ### Additional Information
 - **Data Storage**: The fetched data will be stored in the `data` directory. Ensure this directory exists or modify the script to create it if it doesn't.
