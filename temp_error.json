@@ -102,9 +102,6 @@
   {
     "date": "2024-12-01",
     "error": "404 Client Error: Not Found for url: https://epss.cyentia.com/epss_scores-2024-12-01.csv.gz"
-  },
-  {
-    "date": "2025-03-13",
-    "error": "404 Client Error: Not Found for url: https://epss.cyentia.com/epss_scores-2025-03-13.csv.gz"
   }
+
 ]

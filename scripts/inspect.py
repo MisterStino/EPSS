@@ -1,7 +1,7 @@
 import gzip
 import pandas as pd
 
-file_path = "data/raw/epss_scores-2021-04-15.csv.gz"
+file_path = "data/raw/epss_scores-2024-10-26.csv.gz"
 
 # Open the .gz file and read the first few lines
 with gzip.open(file_path, 'rt', encoding='utf-8') as f:
