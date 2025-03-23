@@ -1,5 +1,9 @@
-epss-data-env/
+epss-env/
 __pycache__/
 *.pyc
+*.csv
 
 data/epss/raw/
+
+data/epss/cve-time-series/
+data/epss/processed/
