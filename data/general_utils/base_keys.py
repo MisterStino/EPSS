@@ -131,7 +131,7 @@ def load_base_keys(return_format="dataframe", small=False):
     """
     # Determine the file path based on the 'small' flag.
     if small:
-        base_keys_path = os.path.join('data', 'general_utils', 'small_data', 'small_base_keys.csv')
+        base_keys_path = os.path.join('data', 'general_utils', 'files', 'base_keys.csv')
     else:
         base_keys_path = os.path.join('data', 'full_db', 'processed', 'base_keys.csv')
     
