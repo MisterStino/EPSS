@@ -28,7 +28,7 @@ def log_error(date_str, error_msg, error_file="temp_error.json"):
     with open(error_file, 'w') as ef:
         json.dump(errors, ef, indent=2)
 
-def download_epss_for_day(date_str, raw_folder="data/raw", error_file="temp_error.json"):
+def download_epss_for_day(date_str, raw_folder="data/epss/raw", error_file="temp_error.json"):
     """
     Downloads the EPSS csv.gz file for a single day (YYYY-MM-DD) into 'raw_folder'.
     If the file already exists, it skips downloading. 
