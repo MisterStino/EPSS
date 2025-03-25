@@ -5,6 +5,7 @@ __pycache__/
 !data/general_utils/small_data/**
 *.pyc
 *.csv
+*.gz
 
 data/epss/raw/
 

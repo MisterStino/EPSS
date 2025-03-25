@@ -9,7 +9,7 @@
 # also check if for cve time series is continuous.: missing dates?
 
 
-# features rich link: https://chatgpt.com/share/67e09601-4434-800d-897c-ef82f57fb187
+
 
 
 import os
