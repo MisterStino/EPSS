@@ -1,8 +1,7 @@
 epss-env/
 __pycache__/
 
-!data/general_utils/small_data/
-!data/general_utils/small_data/**
+
 *.pyc
 *.csv
 *.gz
@@ -12,5 +11,6 @@ data/epss/raw/
 data/epss/cve-time-series/
 data/epss/processed/
 
-
+!data/general_utils/files/
+!data/general_utils/files/**
 

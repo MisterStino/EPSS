@@ -5,7 +5,7 @@ import logging
 from data.epss.scripts.src.gen_epss_ts import create_single_time_series_csv
 from data.epss.scripts.src.get_epss_data import get_all_epss_data
 from data.full_db.scripts.src.gen_db import generate_full_database
-
+from data.general_utils.base_keys import generate_base_keys
 def run_db_pipeline():
     """
     Orchestrates the entire database pipeline:
@@ -45,6 +45,10 @@ def run_db_pipeline():
     generate_full_database()
     logging.info("Final full dataset generated successfully.")
 
+    # Step 4: Generate base keys for the full database.
+    logging.info("Generating base keys for the full database...")
+    generate_base_keys()
+    logging.info("Base keys generated successfully.")
     logging.info("DB pipeline completed.")
 
 if __name__ == '__main__':
