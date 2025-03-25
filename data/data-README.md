@@ -25,3 +25,19 @@ The data is sorted by cve and then by date so that each CVE’s time-series is i
 ## Primary Key (Conceptually):
 
 A composite key of (cve, date) uniquely identifies each row.
+
+
+## Note on data storage design and file type. 
+The current set up is for dataset development purposes in the initial phase. Depending on when we run into issues we can convert to more efficient approaches. .csv is chosen here because it is easy to interpret, view and commonly used. We can easily check manually if we are getting expected results. 
+
+A long table is chosen because it allows for relatively easily addition of features and do inspection and cleaning. 
+
+If we run into memory or performance issues I want to move to using .parquet files.
+
+## for training the models and testing:
+- we create a preprocessing step or datapipeline:
+- here we either create a set of preprocessed files on disk, where each chunk contains data for subset of cve. Or we do it just in time with a streaming approach. 
+- we might store in parquet. 
+- add padding to time series sequences.
+- oflload computations to gpu(s).
+- Main idea: find a way to handle the big amount of data and have fast and efficient computations. 

@@ -290,6 +290,22 @@ def plot_cve_timelines(raw_folder="data/epss/raw", sample_size=30, analysis_resu
     plt.show()
 
 
+## checking vectorized long table result: all_cve_tiome_series.csv
+import pandas as pd
+
+def manual_check_sample_rows():
+    # Define the path to the consolidated CSV file
+    csv_file = 'data/epss/cve-time-series/all_cves_time_series.csv'
+
+    # Load the CSV into a DataFrame
+    df = pd.read_csv(csv_file)
+
+    # Randomly sample 50 rows from the DataFrame (using a fixed random state for reproducibility)
+    sample_df = df.sample(n=50, random_state=42)
+
+    # Print the sample rows
+    print(sample_df)
+
 
 
 
@@ -308,5 +324,6 @@ if __name__ == "__main__":
 
     # Inspect the Parquet file.
     # inspect_parquet(parquet_file_path, n_lines=5)
-    analysis_result = analyze_cve_lifetimes(raw_folder="data/epss/raw")
-    plot_cve_timelines(raw_folder="data/epss/raw", sample_size=30, analysis_result=analysis_result)
+    # analysis_result = analyze_cve_lifetimes(raw_folder="data/epss/raw")
+    # plot_cve_timelines(raw_folder="data/epss/raw", sample_size=30, analysis_result=analysis_result)
+    manual_check_sample_rows()

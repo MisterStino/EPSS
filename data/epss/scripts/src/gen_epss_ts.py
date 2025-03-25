@@ -10,8 +10,8 @@ import pandas as pd
 
 def create_single_time_series_csv(
     raw_folder='data/epss/raw',
-    output_folder='data/epss/cve-time-series',
-    output_filename='all_cves_time_series.csv'
+    output_folder='data/epss/processed',
+    output_filename='epss_processed.csv'
 ):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder, exist_ok=True)
