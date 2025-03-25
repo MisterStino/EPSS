@@ -1,4 +1,3 @@
-# See: https://chatgpt.com/share/67e09513-ed00-800f-b000-268e80798ff1
 # create script that gets the full y data
 # merges features
 # create mock data
