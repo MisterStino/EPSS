@@ -3,34 +3,47 @@ import pandas as pd
 import os
 import pandas as pd
 
-def generate_base_keys():
+import os
+import pandas as pd
+
+def generate_base_keys(source_file=None, output_dir=None):
     """
     Generates the base keys for merging final data by extracting the composite primary key 
     (cve and date) from the processed EPSS data.
+    
+    By default, if no arguments are provided:
+      - The EPSS processed data is loaded from:
+            data/epss/processed/epss_processed.csv
+      - The base keys are saved to:
+            data/full_db/processed/base_keys.csv
 
-    It assumes the EPSS processed data is stored at:
-        data/epss/processed/epss_processed.csv
-
-    The function then:
-      1. Loads the EPSS processed CSV.
+    The function:
+      1. Loads the EPSS processed CSV from the given source_file.
       2. Verifies that the required columns 'cve' and 'date' exist.
-      3. Converts the 'date' column to datetime format for consistency.
-      4. Extracts the columns 'cve' and 'date' (without dropping duplicates).
-      5. Checks that no duplicate (cve, date) pairs exist and, if any are found, raises an error
-         with a clear message and sample duplicates.
-      6. Sorts the resulting DataFrame by 'cve' and 'date'.
-      7. Saves the final base keys CSV to:
-         data/full_db/processed/base_keys.csv
+      3. Converts the 'date' column to datetime format.
+      4. Extracts the 'cve' and 'date' columns.
+      5. Checks for duplicate (cve, date) pairs and raises an error with a sample if any are found.
+      6. Sorts the DataFrame by 'cve' and 'date'.
+      7. Saves the resulting DataFrame to the output_dir with the file name 'base_keys.csv'.
+    
+    Parameters:
+      source_file (str): Path to the input CSV file. Default is 'data/epss/processed/epss_processed.csv'.
+      output_dir (str): Directory where the output CSV will be saved. Default is 'data/full_db/processed'.
     """
-    # Define the source file path for the processed EPSS data.
-    source_file = os.path.join('data', 'epss', 'processed', 'epss_processed.csv')
+    # Set default file paths if not provided.
+    if source_file is None:
+        source_file = os.path.join('data', 'epss', 'processed', 'epss_processed.csv')
+    if output_dir is None:
+        output_dir = os.path.join('data', 'full_db', 'processed')
+    
+    # Check if the source file exists.
     if not os.path.exists(source_file):
         raise FileNotFoundError(f"Error: Source file not found: {source_file}")
-
+    
     # Load the processed EPSS data.
     df = pd.read_csv(source_file)
     
-    # Check that the required columns are present.
+    # Verify that the required columns are present.
     required_columns = ['cve', 'date']
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
@@ -52,20 +65,16 @@ def generate_base_keys():
             f"Sample duplicate keys:\n{sample_duplicates}"
         )
     
-    # At this point, keys_df is an exact mirror of the original keys.
-    base_keys_df = keys_df.copy()
+    # Copy and sort the keys DataFrame by 'cve' and 'date'.
+    base_keys_df = keys_df.copy().sort_values(by=['cve', 'date'])
     
-    # Sort by cve and date to have a consistent order.
-    base_keys_df = base_keys_df.sort_values(by=['cve', 'date'])
-    
-    # Final check: Assert that the number of rows in base_keys_df equals the original df.
+    # Final check: Ensure the number of rows in base_keys_df equals the original DataFrame.
     if len(base_keys_df) != len(df):
         raise ValueError(
             f"Base keys length mismatch: expected {len(df)} rows, got {len(base_keys_df)} rows."
         )
-
-    # Define the output directory and file path.
-    output_dir = os.path.join('data', 'full_db', 'processed')
+    
+    # Ensure the output directory exists.
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, 'base_keys.csv')
     
@@ -73,8 +82,9 @@ def generate_base_keys():
     base_keys_df.to_csv(output_file, index=False)
     print(f"Base keys file has been generated and saved to: {output_file}")
 
-import os
-import pandas as pd
+
+
+
 
 def load_base_keys(return_format="dataframe", small=False):
     """
