@@ -106,57 +106,11 @@ def analyze_final_dataset():
     print(f"\nFull data summary has been saved to: {summary_file}")
 
 
-import os
-import pandas as pd
 
-def generate_base_keys():
-    """
-    Generates the base keys for merging final data by extracting the composite primary key 
-    (cve and date) from the processed EPSS data.
-
-    It assumes the EPSS processed data is stored at:
-        data/epss/processed/epss_processed.csv
-
-    The function then:
-      1. Loads the EPSS processed CSV.
-      2. Converts the 'date' column to datetime format (for consistency).
-      3. Extracts the columns 'cve' and 'date' (dropping any duplicates).
-      4. Sorts the resulting DataFrame by 'cve' and 'date'.
-      5. Saves the final base keys CSV to:
-         data/full_db/processed/base_keys.csv
-    """
-    # Define the source file path for the processed EPSS data.
-    source_file = os.path.join('data', 'epss', 'processed', 'epss_processed.csv')
-    if not os.path.exists(source_file):
-        print(f"Error: Source file not found: {source_file}")
-        return
-
-    # Load the processed EPSS data.
-    df = pd.read_csv(source_file)
     
-    # Ensure that the 'date' column is in datetime format.
-    if 'date' in df.columns:
-        df['date'] = pd.to_datetime(df['date'])
-    
-    # Extract the composite primary key columns: 'cve' and 'date'.
-    # Dropping duplicates ensures each (cve, date) pair is unique.
-    base_keys_df = df[['cve', 'date']].drop_duplicates()
-    
-    # Sort by cve and date to have a consistent order.
-    base_keys_df = base_keys_df.sort_values(by=['cve', 'date'])
-    
-    # Define the output directory and file path.
-    output_dir = os.path.join('data', 'full_db', 'processed')
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, 'base_keys.csv')
-    
-    # Save the resulting DataFrame to CSV.
-    base_keys_df.to_csv(output_file, index=False)
-    print(f"Base keys file has been generated and saved to: {output_file}")
 
 if __name__ == '__main__':
-    generate_base_keys()
-    #analyze_final_dataset()
+    analyze_final_dataset()
 
 
 
