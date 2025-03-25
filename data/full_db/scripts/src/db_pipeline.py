@@ -2,7 +2,8 @@ import os
 import logging
 
 
-from data.epss.scripts.src.gen_epss_ts import get_all_epss_data, create_single_time_series_csv
+from data.epss.scripts.src.gen_epss_ts import create_single_time_series_csv
+from data.epss.scripts.src.get_epss_data import get_all_epss_data
 from data.full_db.scripts.src.gen_db import generate_full_database
 
 def run_db_pipeline():
