@@ -67,7 +67,7 @@ def download_epss_for_day(date_str, raw_folder="data/epss/raw", error_file="temp
         log_error(date_str, str(e), error_file=error_file)
         return None
 
-def get_all_epss_data(raw_folder="data/raw", error_file="temp_error.json"):
+def get_all_epss_data(raw_folder="data/epss/raw", error_file="temp_error.json"):
     """
     Downloads EPSS csv.gz files from the earliest available date (2021-04-14)
     up to today's date. Skips any days already downloaded. Logs errors in error_file.
@@ -134,5 +134,5 @@ def delete_old_epss_data(raw_folder="data/epss/raw", cutoff_date=datetime.date(2
 if __name__ == "__main__":
     # Example usage:
     # This function ensures all daily CSVs from 2021-04-14 to "today" exist.
-    get_all_epss_data(raw_folder="data/raw", error_file="temp_error.json")
+    get_all_epss_data(raw_folder="data/epss/raw", error_file="temp_error.json")
     # delete_old_epss_data(cutoff_date=datetime.date(2022, 2, 4))
