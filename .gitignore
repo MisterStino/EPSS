@@ -11,6 +11,4 @@ data/epss/raw/
 data/epss/cve-time-series/
 data/epss/processed/
 
-!data/general_utils/files/
-!data/general_utils/files/**
-
+!data/general_utils/files/*small*
