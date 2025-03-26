@@ -102,11 +102,13 @@ def delete_old_epss_data(raw_folder="data/epss/raw", cutoff_date=datetime.date(2
     :param raw_folder: Directory containing the raw EPSS data files.
     :param cutoff_date: A datetime.date object representing the earliest date to keep.
     """
+    # a dfsdfsd
     # Compile regex to extract the date from filenames
     pattern = re.compile(r"epss_scores-(\d{4}-\d{2}-\d{2})\.csv\.gz")
     deleted_files = []
 
     # List all files in the specified folder
+    #megrge concli
     for filename in os.listdir(raw_folder):
         file_path = os.path.join(raw_folder, filename)
         # Check if it's a file and if it matches the expected filename pattern

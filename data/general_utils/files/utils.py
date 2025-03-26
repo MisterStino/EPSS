@@ -177,6 +177,6 @@ def save_cves_by_epss_range(df, epss_lower, epss_upper, output_dir='data/general
 
 
 if __name__ == '__main__':
-    # final_full_data_path = os.path.join('data', 'full_db', 'processed', 'final_full_data.csv')
-    # save_cves_by_epss_range(pd.read_csv(final_full_data_path), 0.85, 0.92)
-    sample_from_pre_filtered_files(num_cves=5, num_timesteps=5, epss_lower=0.85, epss_upper=0.92)
+    final_full_data_path = os.path.join('data', 'full_db', 'processed', 'final_full_data.csv')
+    save_cves_by_epss_range(pd.read_csv(final_full_data_path), 0.85, 0.92)
+    #sample_from_pre_filtered_files(num_cves=5, num_timesteps=5, epss_lower=0.85, epss_upper=0.92)
