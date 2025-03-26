@@ -26,7 +26,7 @@ def run_db_pipeline():
     error_file = "temp_error.json"
     logging.info("Fetching raw EPS data...")
     # This function should download/fetch EPS data and store it in raw_eps_folder.
-    get_all_epss_data(raw_folder=raw_eps_folder, error_file=error_file)
+    #get_all_epss_data(raw_folder=raw_eps_folder, error_file=error_file)
     logging.info("Raw EPS data fetched successfully.")
 
     # Step 2: Process raw EPS data to create a time series.
