@@ -1,11 +1,14 @@
 import os
 import logging
-
+import pandas as pd
 
 from data.epss.scripts.src.gen_epss_ts import create_single_time_series_csv
 from data.epss.scripts.src.get_epss_data import get_all_epss_data
 from data.full_db.scripts.src.gen_db import generate_full_database
 from data.general_utils.base_keys import generate_base_keys
+from data.general_utils.utils import save_cves_by_epss_range, sample_and_merge_cves
+
+
 def run_db_pipeline():
     """
     Orchestrates the entire database pipeline:
@@ -26,7 +29,7 @@ def run_db_pipeline():
     error_file = "temp_error.json"
     logging.info("Fetching raw EPS data...")
     # This function should download/fetch EPS data and store it in raw_eps_folder.
-    #get_all_epss_data(raw_folder=raw_eps_folder, error_file=error_file)
+    get_all_epss_data(raw_folder=raw_eps_folder, error_file=error_file)
     logging.info("Raw EPS data fetched successfully.")
 
     # Step 2: Process raw EPS data to create a time series.
@@ -49,6 +52,15 @@ def run_db_pipeline():
     logging.info("Generating base keys for the full database...")
     generate_base_keys()
     logging.info("Base keys generated successfully.")
+
+    logging.info("Starting creation of small dataset...")
+    final_full_data_path = os.path.join('data', 'full_db', 'processed', 'final_full_data.csv')
+    in_range_df, out_range_df = save_cves_by_epss_range(pd.read_csv(final_full_data_path), 0.7, 1.0)
+    merged_df = sample_and_merge_cves(in_range_df, out_range_df, sample_size=5, output_dir='data/general_utils/files')
+
+    logging.info("generating small base keys...")
+    generate_base_keys('data\general_utils/files/small_sampled.csv', 'data/general_utils/files', small=True)
+
     logging.info("DB pipeline completed.")
 
 if __name__ == '__main__':
