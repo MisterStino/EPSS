@@ -59,7 +59,7 @@ def run_db_pipeline():
     merged_df = sample_and_merge_cves(in_range_df, out_range_df, sample_size=5, output_dir='data/general_utils/files')
 
     logging.info("generating small base keys...")
-    generate_base_keys('data\general_utils/files/small_sampled.csv', 'data/general_utils/files', small=True)
+    generate_base_keys(final_full_data_path, 'data/general_utils/files', small=True)
 
     logging.info("DB pipeline completed.")
 
