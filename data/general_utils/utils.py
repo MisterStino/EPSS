@@ -117,17 +117,86 @@ def sample_from_pre_filtered_files(num_cves=5, num_timesteps=5, epss_lower=0.7, 
 
 
 
+import pandas as pd
+import os
+import logging
+
+def sample_and_merge_cves(in_range_df, out_range_df, sample_size=5, output_dir='data/general_utils/files'):
+    """
+    Randomly samples `sample_size` unique CVEs from both in_range_df and out_range_df, 
+    retrieves the full time series for these CVEs, merges them into a single DataFrame,
+    prints the DataFrame, and saves it as a CSV file in the specified output directory.
+    
+    Parameters:
+      - in_range_df: pandas.DataFrame
+            DataFrame containing in-range CVE time series data.
+      - out_range_df: pandas.DataFrame
+            DataFrame containing out-of-range CVE time series data.
+      - sample_size: int (default=5)
+            Number of unique CVEs to sample from each DataFrame.
+      - output_dir: str
+            Directory where the final CSV file will be saved.
+            
+    Returns:
+      - merged_df: pandas.DataFrame
+            The merged DataFrame containing the sampled CVEs.
+    """
+    # Set up logging with a basic configuration
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
+    
+    logger.info("Starting sampling of CVEs from in-range and out-of-range DataFrames.")
+    
+    # Sample unique CVEs from in_range_df
+    unique_in_cves = in_range_df['cve'].unique()
+    if len(unique_in_cves) < sample_size:
+        logger.warning(f"Only {len(unique_in_cves)} unique in-range CVEs available; expected {sample_size}. Sampling all available CVEs.")
+        sampled_in_cves = unique_in_cves
+    else:
+        sampled_in_cves = pd.Series(unique_in_cves).sample(n=sample_size, random_state=42).tolist()
+    logger.info(f"Sampled in-range CVEs: {sampled_in_cves}")
+    
+    # Sample unique CVEs from out_range_df
+    unique_out_cves = out_range_df['cve'].unique()
+    if len(unique_out_cves) < sample_size:
+        logger.warning(f"Only {len(unique_out_cves)} unique out-of-range CVEs available; expected {sample_size}. Sampling all available CVEs.")
+        sampled_out_cves = unique_out_cves
+    else:
+        sampled_out_cves = pd.Series(unique_out_cves).sample(n=sample_size, random_state=42).tolist()
+    logger.info(f"Sampled out-of-range CVEs: {sampled_out_cves}")
+    
+    # Filter original DataFrames to include only the full time series for the sampled CVEs
+    sample_in_df = in_range_df[in_range_df['cve'].isin(sampled_in_cves)]
+    sample_out_df = out_range_df[out_range_df['cve'].isin(sampled_out_cves)]
+    
+    # Merge the two samples into one DataFrame
+    merged_df = pd.concat([sample_in_df, sample_out_df], ignore_index=True)
+    logger.info("Merged in-range and out-of-range samples into a single DataFrame.")
+    
+    # Ensure the output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Save the merged DataFrame to CSV
+    output_path = os.path.join(output_dir, 'small_sampled.csv')
+    merged_df.to_csv(output_path, index=False)
+    logger.info(f"Sampled CVEs saved to CSV at {output_path}")
+    
+    # Print the final merged DataFrame for immediate user feedback
+    print("Final merged DataFrame:")
+    print(merged_df)
+    
+    return merged_df
 
 
 
 def save_cves_by_epss_range(df, epss_lower, epss_upper, output_dir='data/general_utils/files'):
     """
-    Separates and saves CVEs based on whether they have at least one epss score 
-    within the specified range [epss_lower, epss_upper]. The entire time series
-    for each CVE is saved. CVEs with at least one epss score in range are saved 
-    to one file and the rest to another file.
-    
-    Parameters:
+      Separates and saves CVEs based on whether they have at least one epss score 
+      within the specified range [epss_lower, epss_upper]. The entire time series
+      for each CVE is saved. CVEs with at least one epss score in range are saved 
+      to one file and the rest to another file.
+
+      Parameters:
       - df: pandas.DataFrame
             Input DataFrame with at least 'cve' and 'epss' columns.
       - epss_lower: float
@@ -137,36 +206,42 @@ def save_cves_by_epss_range(df, epss_lower, epss_upper, output_dir='data/general
       - output_dir: str
             Directory where the CSV files will be saved.
             
-    The files will be named:
+      The files will be named:
       - in_range_cves.csv
       - out_range_cves.csv
-    """
+      """
+      # Set up logging with a basic configuration
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
+    logging.info("Starting separation of CVEs based on EPSS range.")
     # Ensure the necessary columns exist
     required_cols = {'cve', 'epss'}
     if not required_cols.issubset(df.columns):
         raise ValueError(f"Input DataFrame must contain columns: {required_cols}")
-    
+
     # Create the output directory if it does not exist
     os.makedirs(output_dir, exist_ok=True)
-    
+
     # Efficiently filter using groupby.filter for in-range CVEs
+    logging.info(f"Filtering CVEs with at least one EPSS score in range [{epss_lower}, {epss_upper}].")
     in_range_df = df.groupby('cve', group_keys=False).filter(
         lambda group: group['epss'].between(epss_lower, epss_upper, inclusive='both').any()
     )
-    
+    logging.info(f"Found {len(in_range_df['cve'].unique())} unique CVEs with at least one EPSS score in range.")
     # Get the unique CVEs that are in-range
     in_range_cves = set(in_range_df['cve'].unique())
-    
+
     # Filter the remaining (out-of-range) CVEs
     out_range_df = df[~df['cve'].isin(in_range_cves)]
-    
+
     # Save the results to CSV files
     in_range_path = os.path.join(output_dir, 'in_range_cves.csv')
     out_range_path = os.path.join(output_dir, 'out_range_cves.csv')
-    
+    logger.info(f"Saving in-range CVEs to: {in_range_path}")
+    logger.info(f"Saving out-of-range CVEs to: {out_range_path}")
     in_range_df.to_csv(in_range_path, index=False)
     out_range_df.to_csv(out_range_path, index=False)
-    
+
     print(f"In-range CVEs saved to: {in_range_path}")
     print(f"Out-of-range CVEs saved to: {out_range_path}")
     return in_range_df, out_range_df
@@ -178,5 +253,6 @@ def save_cves_by_epss_range(df, epss_lower, epss_upper, output_dir='data/general
 
 if __name__ == '__main__':
     final_full_data_path = os.path.join('data', 'full_db', 'processed', 'final_full_data.csv')
-    save_cves_by_epss_range(pd.read_csv(final_full_data_path), 0.85, 0.92)
-    #sample_from_pre_filtered_files(num_cves=5, num_timesteps=5, epss_lower=0.85, epss_upper=0.92)
+    in_range_df, out_range_df = save_cves_by_epss_range(pd.read_csv(final_full_data_path), 0.7, 1.0)
+    merged_df = sample_and_merge_cves(in_range_df, out_range_df, sample_size=5, output_dir='data/general_utils/files')
+

@@ -3,6 +3,7 @@ import requests
 import datetime
 import time
 import json
+import re
 
 def log_error(date_str, error_msg, error_file="temp_error.json"):
     """
@@ -74,7 +75,7 @@ def get_all_epss_data(raw_folder="data/epss/raw", error_file="temp_error.json"):
 
     You can run this any time to ensure you have the latest daily EPSS data up to now.
     """
-    start_dt = datetime.date(2024, 12, 25)#datetime.date(2022, 2, 4)     # earliest available voor v2 datetime.date(2024, 12, 25)
+    start_dt = datetime.date(2022, 2, 4)#datetime.date(2024, 12, 25) for smaller dataset, or:   # earliest available voor v2 
     end_dt = datetime.date.today()            # dynamic current day
 
     current_dt = start_dt
@@ -90,9 +91,7 @@ def get_all_epss_data(raw_folder="data/epss/raw", error_file="temp_error.json"):
     print("\n[INFO] Completed downloads from 2021-04-14 through today.")
     print(f"[INFO] Any download errors were logged to: {error_file}")
 
-import os
-import datetime
-import re
+
 
 def delete_old_epss_data(raw_folder="data/epss/raw", cutoff_date=datetime.date(2022, 2, 4)):
     """
@@ -102,13 +101,11 @@ def delete_old_epss_data(raw_folder="data/epss/raw", cutoff_date=datetime.date(2
     :param raw_folder: Directory containing the raw EPSS data files.
     :param cutoff_date: A datetime.date object representing the earliest date to keep.
     """
-    # a dfsdfsd
     # Compile regex to extract the date from filenames
     pattern = re.compile(r"epss_scores-(\d{4}-\d{2}-\d{2})\.csv\.gz")
     deleted_files = []
 
     # List all files in the specified folder
-    #megrge conclisdsdsdassad 
     for filename in os.listdir(raw_folder):
         file_path = os.path.join(raw_folder, filename)
         # Check if it's a file and if it matches the expected filename pattern
@@ -136,5 +133,5 @@ def delete_old_epss_data(raw_folder="data/epss/raw", cutoff_date=datetime.date(2
 if __name__ == "__main__":
     # Example usage:
     # This function ensures all daily CSVs from 2021-04-14 to "today" exist.
-    # get_all_epss_data(raw_folder="data/epss/raw", error_file="temp_error.json")
-    delete_old_epss_data(cutoff_date=datetime.date(2024, 12, 25))
+    get_all_epss_data(raw_folder="data/epss/raw", error_file="temp_error.json")
+    #delete_old_epss_data(cutoff_date=datetime.date(2024, 12, 25))
