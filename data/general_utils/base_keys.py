@@ -6,7 +6,7 @@ import pandas as pd
 import os
 import pandas as pd
 
-def generate_base_keys(source_file=None, output_dir=None):
+def generate_base_keys(source_file=None, output_dir=None, small=False):
     """
     Generates the base keys for merging final data by extracting the composite primary key 
     (cve and date) from the processed EPSS data.
@@ -76,7 +76,10 @@ def generate_base_keys(source_file=None, output_dir=None):
     
     # Ensure the output directory exists.
     os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, 'base_keys.csv')
+    if small:
+        output_file = os.path.join(output_dir, 'small_base_keys.csv')
+    else:
+        output_file = os.path.join(output_dir, 'base_keys.csv')
     
     # Save the resulting DataFrame to CSV.
     base_keys_df.to_csv(output_file, index=False)
@@ -131,7 +134,7 @@ def load_base_keys(return_format="dataframe", small=False):
     """
     # Determine the file path based on the 'small' flag.
     if small:
-        base_keys_path = os.path.join('data', 'general_utils', 'files', 'base_keys.csv')
+        base_keys_path = os.path.join('data', 'general_utils', 'files', 'small_base_keys.csv')
     else:
         base_keys_path = os.path.join('data', 'full_db', 'processed', 'base_keys.csv')
     
@@ -160,4 +163,4 @@ def load_base_keys(return_format="dataframe", small=False):
 
 
 if __name__ == '__main__':
-    generate_base_keys()
+    generate_base_keys('data\general_utils/files/small_sampled.csv', 'data/general_utils/files', small=True)
