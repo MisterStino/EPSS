@@ -34,8 +34,8 @@ def get_spark_session(app_name="MyApp", master="local[*]", extra_configs=None):
         builder
             .appName("MyApp")
             .master("local[*]")
-            .config("spark.driver.memory", "14g")
-            .config("spark.executor.memory", "14g")
+            .config("spark.driver.memory", "24g")
+            .config("spark.executor.memory", "24g")
             .getOrCreate()
         )
     return spark
