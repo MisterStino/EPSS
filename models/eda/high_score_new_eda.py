@@ -95,5 +95,5 @@ def plot_random_cve_time_series(n=3):
     spark.stop()
 
 if __name__ == "__main__":
-    plot_random_cve_time_series(n=3)
+    plot_random_cve_time_series(n=10)
     #explore_high_score_cves()
