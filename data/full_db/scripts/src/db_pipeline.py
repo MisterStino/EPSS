@@ -3,8 +3,12 @@ import logging
 import pandas as pd
 
 from data.epss.scripts.src.gen_epss_ts import create_single_time_series_csv
+from data.epss.scripts.src.gen_epss_ts_parq import create_big_parquet
+from data.epss.scripts.utils import decompress_all_files_concurrently
 from data.epss.scripts.src.get_epss_data import get_all_epss_data
 from data.full_db.scripts.src.gen_db import generate_full_database
+from data.full_db.scripts.src.gen_db_parquet import generate_full_database_parquet
+
 from data.general_utils.base_keys import generate_base_keys
 from data.general_utils.utils import save_cves_by_epss_range, sample_and_merge_cves
 
@@ -33,35 +37,42 @@ def run_db_pipeline():
     logging.info("Raw EPS data fetched successfully.")
 
     # Step 2: Process raw EPS data to create a time series.
-    epss_processed_folder = os.path.join('data', 'epss', 'processed')
-    epss_output_filename = 'epss_processed.csv'
-    logging.info("Creating EPS time series from raw data...")
-    create_single_time_series_csv(
-        raw_folder=raw_eps_folder,
-        output_folder=epss_processed_folder,
-        output_filename=epss_output_filename
-    )
-    logging.info("EPS time series created successfully.")
 
+    # epss_processed_folder = os.path.join('data', 'epss', 'processed')
+    # epss_output_filename = 'epss_processed.csv'
+    # logging.info("Creating EPS time series from raw data...")
+    # create_single_time_series_csv(
+    #     raw_folder=raw_eps_folder,
+    #     output_folder=epss_processed_folder,
+    #     output_filename=epss_output_filename
+    # )
+    logging.info("decompressing all files...")
+    decompress_all_files_concurrently()
+    
+    logging.info("EPS time series created successfully.")
+    
+    logging.info("Creating big parquet epss file...")
+    # this is for epss specifically, sorry bad naming
+    create_big_parquet()
     # Step 3: Generate the final full database by merging features.
     logging.info("Generating the final full dataset by merging features...")
-    generate_full_database()
+    generate_full_database_parquet()
     logging.info("Final full dataset generated successfully.")
 
-    # Step 4: Generate base keys for the full database.
-    logging.info("Generating base keys for the full database...")
-    generate_base_keys()
-    logging.info("Base keys generated successfully.")
+    # # Step 4: Generate base keys for the full database.
+    # logging.info("Generating base keys for the full database...")
+    # generate_base_keys()
+    # logging.info("Base keys generated successfully.")
 
-    logging.info("Starting creation of small dataset...")
-    final_full_data_path = os.path.join('data', 'full_db', 'processed', 'final_full_data.csv')
-    in_range_df, out_range_df = save_cves_by_epss_range(pd.read_csv(final_full_data_path), 0.7, 1.0)
-    merged_df = sample_and_merge_cves(in_range_df, out_range_df, sample_size=5, output_dir='data/general_utils/files')
+    # logging.info("Starting creation of small dataset...")
+    # final_full_data_path = os.path.join('data', 'full_db', 'processed', 'final_full_data.csv')
+    # in_range_df, out_range_df = save_cves_by_epss_range(pd.read_csv(final_full_data_path), 0.7, 1.0)
+    # merged_df = sample_and_merge_cves(in_range_df, out_range_df, sample_size=5, output_dir='data/general_utils/files')
 
-    logging.info("generating small base keys...")
-    generate_base_keys(final_full_data_path, 'data/general_utils/files', small=True)
+    # logging.info("generating small base keys...")
+    # generate_base_keys(final_full_data_path, 'data/general_utils/files', small=True)
 
-    logging.info("DB pipeline completed.")
+    # logging.info("DB pipeline completed.")
 
 if __name__ == '__main__':
     run_db_pipeline()
