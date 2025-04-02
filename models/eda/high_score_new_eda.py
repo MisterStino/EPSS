@@ -128,5 +128,5 @@ def plot_random_cve_time_series(n=3, input_path='data/general_utils/files/high_s
 
 
 if __name__ == "__main__":
-    plot_random_cve_time_series(n=10,input_path='data/general_utils/files/high_score_above_0.9_with_initial_below_0.4.parquet')
+    plot_random_cve_time_series(n=10,input_path="data/general_utils/files/high_score_above_0.9_with_initial_below_0.4.parquet")
     #explore_high_score_cves()

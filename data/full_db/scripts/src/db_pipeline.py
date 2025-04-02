@@ -38,14 +38,6 @@ def run_db_pipeline():
 
     # Step 2: Process raw EPS data to create a time series.
 
-    # epss_processed_folder = os.path.join('data', 'epss', 'processed')
-    # epss_output_filename = 'epss_processed.csv'
-    # logging.info("Creating EPS time series from raw data...")
-    # create_single_time_series_csv(
-    #     raw_folder=raw_eps_folder,
-    #     output_folder=epss_processed_folder,
-    #     output_filename=epss_output_filename
-    # )
     logging.info("decompressing all files...")
     decompress_all_files_concurrently()
     
@@ -59,7 +51,7 @@ def run_db_pipeline():
     generate_full_database_parquet()
     logging.info("Final full dataset generated successfully.")
 
-    # # Step 4: Generate base keys for the full database.
+    # # Step 4: initial cve subset
     # logging.info("Generating base keys for the full database...")
     # generate_base_keys()
     # logging.info("Base keys generated successfully.")
