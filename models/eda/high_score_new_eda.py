@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 from t3_spark.session import get_spark_session
 from pyspark.sql import functions as F
+import matplotlib.dates as mdates
 
 def explore_high_score_cves():
     # Initialize the Spark session using your helper function.
@@ -37,63 +38,95 @@ def explore_high_score_cves():
 
 
 
-def plot_random_cve_time_series(n=3):
+import os
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from t3_spark.session import get_spark_session
+from pyspark.sql import functions as F
+
+def plot_random_cve_time_series(n=3, input_path='data/general_utils/files/high_score_above_98.parquet'):
     """
     Plots the entire time series of EPS scores for n random unique CVE IDs.
     
-    The data is assumed to be in a Parquet file at:
-        data/general_utils/files/high_score_newer_cves.parquet
-    
-    For each selected CVE:
-      - We filter the data by the CVE.
-      - Sort by the date column (composite key: cve, date).
-      - Convert the filtered Spark DataFrame to a Pandas DataFrame.
-      - Plot the time series using matplotlib.
+    The x-axis is scaled to span from the earliest date to the latest date among the
+    selected CVEs. The axis has a tick (minor tick) for every day, but text labels
+    (major ticks) only appear every 10 days. Additionally, vertical gridlines are added
+    at the minor tick positions to help trace data points to the axis.
     """
     # Initialize Spark session using your helper.
     spark = get_spark_session()
     
-    # Define the path to the Parquet file.
-    parquet_path = os.path.join('data', 'general_utils', 'files', 'high_score_newer_cves.parquet')
-    
     # Read the Parquet file into a Spark DataFrame.
-    df = spark.read.parquet(parquet_path)
+    df = spark.read.parquet(input_path)
     
-    # Get n random unique CVE IDs.
-    # We select the "cve" column, remove duplicates, order by a random value, and limit to n rows.
+    # Count and print the total number of distinct CVE IDs.
+    distinct_cve_count = df.select("cve").distinct().count()
+    print("Total distinct CVE IDs in the dataset:", distinct_cve_count)
+    
+    # Randomly select n distinct CVE IDs.
     distinct_cves = df.select("cve").distinct().orderBy(F.rand()).limit(n).collect()
     cve_list = [row["cve"] for row in distinct_cves]
     print("Selected CVE IDs:", cve_list)
     
-    # Create a new matplotlib figure.
-    plt.figure(figsize=(12, 8))
+    # List to store the Pandas DataFrames for each CVE.
+    cve_pd_list = []
     
-    # For each selected CVE, filter its time series, convert to pandas, and plot.
+    # For each selected CVE, filter, sort by date, and convert to Pandas.
     for cve in cve_list:
-        # Filter rows for the current CVE and order by date.
         cve_df = df.filter(F.col("cve") == cve).orderBy("date")
-        # Convert the Spark DataFrame to a Pandas DataFrame.
         pandas_df = cve_df.toPandas()
-        # (Optional) Sort the pandas DataFrame by date.
         pandas_df.sort_values("date", inplace=True)
-        
-        # Plot the time series: dates on the x-axis, epss on the y-axis.
-        plt.plot(pandas_df["date"], pandas_df["epss"], marker='o', label=cve)
+        cve_pd_list.append(pandas_df)
+    
+    # Determine global minimum and maximum dates across all selected CVEs.
+    global_min_date = min(pd_df["date"].min() for pd_df in cve_pd_list)
+    global_max_date = max(pd_df["date"].max() for pd_df in cve_pd_list)
+    print("Global date range:", global_min_date, "to", global_max_date)
+    
+    # Create a matplotlib figure.
+    fig, ax = plt.subplots(figsize=(16, 8))
+    
+    # Plot each CVE's time series.
+    for cve, pd_df in zip(cve_list, cve_pd_list):
+        ax.plot(pd_df["date"], pd_df["epss"], marker='o', label=cve)
+    
+    # Set the x-axis limits.
+    ax.set_xlim(global_min_date, global_max_date)
+    
+    # Major ticks: show label every 10 days.
+    major_locator = mdates.DayLocator(interval=10)
+    major_formatter = mdates.DateFormatter('%Y-%m-%d')
+    ax.xaxis.set_major_locator(major_locator)
+    ax.xaxis.set_major_formatter(major_formatter)
+    
+    # Minor ticks: one tick for every day (without labels).
+    minor_locator = mdates.DayLocator(interval=1)
+    ax.xaxis.set_minor_locator(minor_locator)
+    
+    # Add vertical gridlines for minor ticks to help trace exact days.
+    ax.grid(which='minor', axis='x', linestyle='--', color='gray', alpha=0.5)
     
     # Customize the plot.
-    plt.xlabel("Date")
-    plt.ylabel("EPS Score")
-    plt.title("Time Series of EPS Score for Random CVEs")
-    plt.legend(title="CVE ID")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
+    ax.set_xlabel("Date")
+    ax.set_ylabel("EPS Score")
+    ax.set_title("Time Series of EPS Score for Random CVEs")
+    ax.legend(title="CVE ID")
     
-    # Show the plot.
+    # Rotate the major tick labels for readability.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+    
+    # Adjust layout so labels are not cut off.
+    plt.tight_layout()
     plt.show()
     
     # Stop the Spark session.
     spark.stop()
 
+
+
+
+
+
 if __name__ == "__main__":
-    plot_random_cve_time_series(n=10)
+    plot_random_cve_time_series(n=10,input_path='data/general_utils/files/high_score_above_0.9_with_initial_below_0.4.parquet')
     #explore_high_score_cves()
