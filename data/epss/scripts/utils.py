@@ -33,7 +33,8 @@ def decompress_all_files_concurrently(raw_folder='data/epss/raw', output_folder=
     """
     if not os.path.exists(output_folder):
         os.makedirs(output_folder, exist_ok=True)
-    
+    else:
+        return f"Output folder {output_folder} already exists. skipping decompression."
     gz_files = glob.glob(os.path.join(raw_folder, '*.csv.gz'))
     
     # Using ProcessPoolExecutor for parallel decompression.
