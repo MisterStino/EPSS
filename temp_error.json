@@ -102,6 +102,13 @@
   {
     "date": "2024-12-01",
     "error": "404 Client Error: Not Found for url: https://epss.cyentia.com/epss_scores-2024-12-01.csv.gz"
+  },
+  {
+    "date": "2022-07-14",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2022-07-14.csv.gz"
+  },
+  {
+    "date": "2024-12-01",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2024-12-01.csv.gz"
   }
-
 ]

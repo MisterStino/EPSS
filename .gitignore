@@ -12,3 +12,9 @@ data/epss/cve-time-series/
 data/epss/processed/
 
 !data/general_utils/files/*small*
+
+# Ignore all files with the .parquet extension
+*.parquet
+
+# Ignore any directory ending with _parquet
+*_parquet/
