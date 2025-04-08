@@ -75,7 +75,7 @@ def get_all_epss_data(raw_folder="data/epss/raw", error_file="temp_error.json"):
 
     You can run this any time to ensure you have the latest daily EPSS data up to now.
     """
-    start_dt = datetime.date(2022, 2, 4)#datetime.date(2024, 12, 25) for smaller dataset, or:   # earliest available voor v2 
+    start_dt = datetime.date(2021, 1, 7) #datetime.date(2024, 12, 25) for smaller dataset, or:   # earliest available voor v2 
     end_dt = datetime.date.today()            # dynamic current day
 
     current_dt = start_dt

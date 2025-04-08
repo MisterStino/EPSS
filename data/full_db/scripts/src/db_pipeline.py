@@ -9,8 +9,7 @@ from data.epss.scripts.src.get_epss_data import get_all_epss_data
 from data.full_db.scripts.src.gen_db import generate_full_database
 from data.full_db.scripts.src.gen_db_parquet import generate_full_database_parquet
 
-from data.general_utils.base_keys import generate_base_keys
-from data.general_utils.utils import save_cves_by_epss_range, sample_and_merge_cves
+
 
 
 def run_db_pipeline():
@@ -51,7 +50,7 @@ def run_db_pipeline():
     generate_full_database_parquet()
     logging.info("Final full dataset generated successfully.")
 
-    # # Step 4: initial cve subset
+    # # Step 4: Generate base keys for the full database.
     # logging.info("Generating base keys for the full database...")
     # generate_base_keys()
     # logging.info("Base keys generated successfully.")
