@@ -23,17 +23,25 @@ def print_dataset_summary(spark, final_path, base_path):
     # Load the final merged dataset
     print(f"Loading final dataset from {final_path} ...")
     final_df = spark.read.parquet(final_path)
-    final_count = final_df.count()
-    final_cols = len(final_df.columns)
-    print(f"Final dataset: {final_count} rows, {final_cols} columns.")
-
     # Load the base dataset (for epss)
     print(f"Loading base (EPS) dataset from {base_path} ...")
     base_df = spark.read.parquet(base_path)
+
+    # sort by composite key (cve, date) to ensure they are in the same order
+    final_df = final_df.orderBy(['cve', 'date'])
+    base_df = base_df.orderBy(['cve', 'date'])
+
+    final_count = final_df.count()
+    final_cols = len(final_df.columns)
+    print(f"Final dataset: {final_count} rows, {final_cols} columns.")
+    print('final_d head')
+    final_df.show(5)
+
     base_count = base_df.count()
     base_cols = len(base_df.columns)
     print(f"Base dataset: {base_count} rows, {base_cols} columns.")
-
+    print('base_d head')
+    base_df.show(5)
     # Check that the number of rows in the final dataset and the base dataset are equal.
     if final_count != base_count:
         print("WARNING: The final dataset row count does not match the base dataset row count!")
@@ -90,6 +98,7 @@ def check_time_series_integrity(spark, sample_cves, final_df, base_df, modules):
         final_pd['date'] = pd.to_datetime(final_pd['date'])
         base_pd['date'] = pd.to_datetime(base_pd['date'])
         
+
         # Check that the lengths are the same
         if len(final_pd) != len(base_pd):
             integrity_ok = False
@@ -174,6 +183,8 @@ def main(modules, numeric_modules):
     final_path = os.path.join('data', 'full_db', 'processed', 'final_full_data.parquet')
     base_path = os.path.join('data', 'epss', 'processed', 'epss_processed.parquet')
     
+
+
     # Print basic information about the datasets
     final_df, base_df = print_dataset_summary(spark, final_path, base_path)
     
