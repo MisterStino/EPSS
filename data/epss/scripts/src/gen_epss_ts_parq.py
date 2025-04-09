@@ -11,8 +11,8 @@ from t3_spark.session import get_spark_session
 
 def create_big_parquet(
     input_folder='data/epss/uncompressed',
-    output_folder='data/epss/processed',
-    output_parquet='epss_processed.parquet'
+    output_folder='data/epss/epss_parquet',
+    output_parquet='epss_all.parquet'
 ):
     spark = get_spark_session()
 

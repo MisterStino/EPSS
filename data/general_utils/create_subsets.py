@@ -192,6 +192,6 @@ def create_subset_cve_initial_not_above_and_reaches_x(x, date_range=None):
 
 
 if __name__ == '__main__':
-    create_subset_cve_initial_not_above_and_reaches_x(0.9, date_range=("2023-03-07", "2025-03-11"))
-
+    # create_subset_cve_initial_not_above_and_reaches_x(0.9, date_range=("2023-03-07", "2025-03-11"))
+    create_subset_cve_initial_not_above_and_reaches_x(0.4)
     #create_high_score_newer_cves_subset()

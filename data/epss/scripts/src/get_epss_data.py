@@ -40,6 +40,7 @@ def download_epss_for_day(date_str, raw_folder="data/epss/raw", error_file="temp
     :param error_file: Where to log download errors if any occur.
     :return: The local file path if successful (or already exists), otherwise None.
     """
+
     url = f"https://epss.cyentia.com/epss_scores-{date_str}.csv.gz"
     local_filename = f"epss_scores-{date_str}.csv.gz"
     local_path = os.path.join(raw_folder, local_filename)
@@ -75,7 +76,7 @@ def get_all_epss_data(raw_folder="data/epss/raw", error_file="temp_error.json"):
 
     You can run this any time to ensure you have the latest daily EPSS data up to now.
     """
-    start_dt = datetime.date(2021, 1, 7) #datetime.date(2024, 12, 25) for smaller dataset, or:   # earliest available voor v2 
+    start_dt = datetime.date(2021, 4, 14) #datetime.date(2024, 12, 25) for smaller dataset, or:   # earliest available voor v2 
     end_dt = datetime.date.today()            # dynamic current day
 
     current_dt = start_dt

@@ -4,7 +4,7 @@ import matplotlib.dates as mdates
 from t3_spark.session import get_spark_session
 from pyspark.sql import functions as F
 
-def plot_single_cve_time_series(cve_id, input_path='data/full_db/processed/final_full_data_parquet'):
+def plot_single_cve_time_series(cve_id, input_path='data/full_db/processed/final_full_data.parquet'):
     """
     Plots the full time series of EPSS scores for a specific CVE ID.
     
@@ -71,4 +71,15 @@ def plot_single_cve_time_series(cve_id, input_path='data/full_db/processed/final
 
 # Example usage
 if __name__ == "__main__":
-    plot_single_cve_time_series("CVE-2009-3672")
+    cve_list = [
+        "CVE-2019-8451",
+        "CVE-2007-3958",
+        "CVE-2008-0108",
+        "CVE-2008-2952",
+        "CVE-2021-27164"
+    ]
+    
+    # Call the plot function for each of the CVEs in the list.
+    for cve in cve_list:
+        print(f"Plotting time series for CVE: {cve}")
+        plot_single_cve_time_series(cve)

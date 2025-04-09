@@ -20,7 +20,7 @@ def cast_common_columns(df):
         df = df.withColumn('epss', F.col('epss').cast(T.DoubleType()))
     return df
 
-def generate_full_database_parquet():
+def generate_full_database_parquet(modules=['epss']):
     """
     Generates the final full dataset for training using Spark and Parquet.
     
@@ -35,7 +35,7 @@ def generate_full_database_parquet():
     spark = get_spark_session()
     
     # List all modules here; 'epss' is the base module
-    modules = ['epss']  # Add more modules like 'reddit', 'twitter', etc. as needed
+    modules = ['epss', 'mock']  # Add more modules like 'reddit', 'twitter', etc. as needed
     base_module = 'epss'
     
     # Build the path to the base module's Parquet file
@@ -72,7 +72,7 @@ def generate_full_database_parquet():
         print(f"Loaded {module} data from {module_parquet_path} with {module_row_count} rows.")
         
         # Left join on (cve, date)
-        base_df = base_df.join(module_df, on=['cve', 'date'], how='left')
+        base_df = base_df.join(module_df, on=['cve', 'date', 'epss'], how='left')
         
         # Check the shape after merge
         row_count = base_df.count()
@@ -85,7 +85,7 @@ def generate_full_database_parquet():
     # Define the output directory for the final Parquet dataset
     output_dir = os.path.join('data', 'full_db', 'processed')
     os.makedirs(output_dir, exist_ok=True)
-    final_parquet_dir = os.path.join(output_dir, 'final_full_data_parquet')
+    final_parquet_dir = os.path.join(output_dir, 'final_full_data.parquet')
     
     # Write the final dataset as Parquet (overwriting any existing data)
     base_df.write.mode('overwrite').parquet(final_parquet_dir)

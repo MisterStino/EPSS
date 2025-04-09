@@ -590,5 +590,61 @@
   {
     "date": "2021-01-13",
     "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2021-01-13.csv.gz"
+  },
+  {
+    "date": "2021-01-07",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2021-01-07.csv.gz"
+  },
+  {
+    "date": "2021-01-08",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2021-01-08.csv.gz"
+  },
+  {
+    "date": "2021-01-09",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2021-01-09.csv.gz"
+  },
+  {
+    "date": "2021-01-10",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2021-01-10.csv.gz"
+  },
+  {
+    "date": "2021-01-07",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2021-01-07.csv.gz"
+  },
+  {
+    "date": "2021-04-22",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2021-04-22.csv.gz"
+  },
+  {
+    "date": "2021-04-23",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2021-04-23.csv.gz"
+  },
+  {
+    "date": "2021-04-24",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2021-04-24.csv.gz"
+  },
+  {
+    "date": "2021-04-25",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2021-04-25.csv.gz"
+  },
+  {
+    "date": "2021-04-26",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2021-04-26.csv.gz"
+  },
+  {
+    "date": "2021-06-07",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2021-06-07.csv.gz"
+  },
+  {
+    "date": "2021-06-18",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2021-06-18.csv.gz"
+  },
+  {
+    "date": "2022-07-14",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2022-07-14.csv.gz"
+  },
+  {
+    "date": "2024-12-01",
+    "error": "403 Client Error: Forbidden for url: https://epss.empiricalsecurity.com/epss_scores-2024-12-01.csv.gz"
   }
 ]
