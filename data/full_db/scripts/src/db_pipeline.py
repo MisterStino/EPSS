@@ -8,7 +8,7 @@ from data.epss.scripts.utils import decompress_all_files_concurrently
 from data.epss.scripts.src.get_epss_data import get_all_epss_data
 from data.full_db.scripts.src.gen_db import generate_full_database
 from data.full_db.scripts.src.gen_db_parquet import generate_full_database_parquet
-
+from data.epss.scripts.src.handle_missing import fill_missing_dates_and_interpolate
 
 
 
@@ -23,28 +23,31 @@ def run_db_pipeline():
         data/full_db/processed/final_full_data.csv
     """
     # Setup logging with INFO level.
-    logging.basicConfig(level=logging.INFO, 
-                        format='%(asctime)s %(levelname)s: %(message)s')
-    logging.info("Starting the full DB pipeline...")
+    # logging.basicConfig(level=logging.INFO, 
+    #                     format='%(asctime)s %(levelname)s: %(message)s')
+    # logging.info("Starting the full DB pipeline...")
 
-    # Step 1: Download/fetch raw EPS data.
-    raw_eps_folder = os.path.join('data', 'epss', 'raw')
-    error_file = "temp_error.json"
-    logging.info("Fetching raw EPS data...")
-    # This function should download/fetch EPS data and store it in raw_eps_folder.
-    get_all_epss_data(raw_folder=raw_eps_folder, error_file=error_file)
-    logging.info("Raw EPS data fetched successfully.")
+    # # Step 1: Download/fetch raw EPS data.
+    # raw_eps_folder = os.path.join('data', 'epss', 'raw')
+    # error_file = "temp_error.json"
+    # logging.info("Fetching raw EPS data...")
+    # # This function should download/fetch EPS data and store it in raw_eps_folder.
+    # get_all_epss_data(raw_folder=raw_eps_folder, error_file=error_file)
+    # logging.info("Raw EPS data fetched successfully.")
 
-    # Step 2: Process raw EPS data to create a time series.
+    # # Step 2: Process raw EPS data to create a time series.
 
-    logging.info("decompressing all files...")
-    decompress_all_files_concurrently()
+    # logging.info("decompressing all files...")
+    # decompress_all_files_concurrently()
     
-    logging.info("EPS time series created successfully.")
+    # logging.info("EPS time series created successfully.")
     
-    logging.info("Creating big parquet epss file...")
-    # this is for epss specifically, sorry bad naming
-    create_big_parquet()
+    # logging.info("Creating big parquet epss file...")
+    # # this is for epss specifically, sorry bad naming
+    # create_big_parquet()
+
+    # logging.info("handling missing epss dates...")
+    # fill_missing_dates_and_interpolate()
     # Step 3: Generate the final full database by merging features.
     logging.info("Generating the final full dataset by merging features...")
     generate_full_database_parquet()
