@@ -17,7 +17,7 @@ def cast_common_columns(df):
         df = df.withColumn('epss', F.col('epss').cast(T.DoubleType()))
     return df
 
-def fill_missing_dates_and_interpolate(input_parquet, output_parquet):
+def fill_missing_dates_and_interpolate(input_parquet = "data/epss/epss_parquet/epss_all.parquet", output_parquet = "data/epss/processed/epss_processed.parquet"):
     """
     Reads the Parquet file with EPS data (with composite key: cve and date),
     generates missing dates for each CVE from its min(date) to max(date), and
