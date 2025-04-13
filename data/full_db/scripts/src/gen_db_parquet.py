@@ -3,7 +3,14 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
 from t3_spark.session import get_spark_session
-
+from data.epss.scripts.src.gen_epss_ts_parq import create_big_parquet
+from data.epss.scripts.utils import decompress_all_files_concurrently
+from data.epss.scripts.src.get_epss_data import get_all_epss_data
+# from data.full_db.scripts.src.gen_db import generate_full_database
+from data.full_db.scripts.src.gen_db_parquet import generate_full_database_parquet
+from data.epss.scripts.src.handle_missing import fill_missing_dates_and_interpolate
+import os
+import logging
 def cast_common_columns(df):
     """
     Ensures that cve is a string, date is a Spark DateType,
@@ -20,7 +27,7 @@ def cast_common_columns(df):
         df = df.withColumn('epss', F.col('epss').cast(T.DoubleType()))
     return df
 
-def generate_full_database_parquet(modules=['epss']):
+def generate_full_database_parquet(modules=['epss'], download_epss=True):
     """
     Generates the final full dataset for training using Spark and Parquet.
     
@@ -31,9 +38,41 @@ def generate_full_database_parquet(modules=['epss']):
     - Writes out the final dataset as a Parquet dataset to:
           data/full_db/processed/final_full_data_parquet
     """
+
+    # Setup logging with INFO level.
+    logging.basicConfig(level=logging.INFO, 
+                        format='%(asctime)s %(levelname)s: %(message)s')
+    logging.info("Starting the full DB pipeline...")
     # Initialize Spark using your helper
     spark = get_spark_session()
+
+    if not download_epss:
+        # Step 1: Download/fetch raw EPS data.
+        raw_eps_folder = os.path.join('data', 'epss', 'raw')
+        error_file = "temp_error.json"
+        logging.info("Fetching raw EPS data...")
+        # This function should download/fetch EPS data and store it in raw_eps_folder.
+        get_all_epss_data(raw_folder=raw_eps_folder, error_file=error_file)
+        logging.info("Raw EPS data fetched successfully.")
+
+    # Step 2: Process raw EPS data to create a time series.
+
+    logging.info("decompressing all files...")
+    decompress_all_files_concurrently()
     
+    logging.info("EPS time series created successfully.")
+    
+    logging.info("Creating big parquet epss file...")
+    # this is for epss specifically, sorry bad naming
+    create_big_parquet()
+
+    # logging.info("handling missing epss dates...")
+
+    fill_missing_dates_and_interpolate()
+    # Step 3: Generate the final full database by merging features.
+    logging.info("Generating the final full dataset by merging features...")
+
+
     # List all modules here; 'epss' is the base module
     modules = ['epss', 'mock']  # Add more modules like 'reddit', 'twitter', etc. as needed
     base_module = 'epss'

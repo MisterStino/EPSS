@@ -205,5 +205,5 @@ if __name__ == '__main__':
     # modules used in the pipeline (base module included)
     modules = ['epss', 'mock']
     # Columns (from the additional modules) which are numeric and should be normalized & plotted.
-    numeric_modules = ['mock']  # You can add more column names if needed.
+    numeric_modules = ['days_since_epss_pub', 'reddit_mentions']  # You can add more column names if needed.
     main(modules, numeric_modules)
