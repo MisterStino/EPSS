@@ -9,7 +9,7 @@ from pyspark.sql import DataFrame
 # We'll assume you have a helper that returns a SparkSession:
 from t3_spark.session import get_spark_session
 
-def create_big_parquet(
+def create_epss_long_table(
     input_folder='data/epss/uncompressed',
     output_folder='data/epss/epss_parquet',
     output_parquet='epss_all.parquet'
@@ -69,4 +69,4 @@ def create_big_parquet(
     print(f"Done. Consolidated Parquet written to {output_path}")
 
 if __name__ == "__main__":
-    create_big_parquet()
+    create_epss_long_table()
