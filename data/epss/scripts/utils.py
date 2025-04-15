@@ -27,12 +27,13 @@ def decompress_file(gz_file, output_folder):
     except Exception as e:
         return f"Error decompressing {filename}: {e}"
 
-def process_csv_file(csv_file):
+def standardize_csv_file(csv_file, output_folder):
     """
     Process a CSV file by either removing the first line (for newer versions, date >= 2022-02-04)
-    or adding column headers if the file is from version 1 (date < 2022-02-04).
+    or leaving the file unchanged if the file is from version 1 (date < 2022-02-04). The output file
+    is written to the specified output_folder.
     """
-    # Extract date from filename using regex (expecting format YYYY-MM-DD)
+    # Extract date from the filename using regex (expecting format YYYY-MM-DD)
     match = re.search(r'\d{4}-\d{2}-\d{2}', csv_file)
     if match:
         file_date_str = match.group()
@@ -56,24 +57,31 @@ def process_csv_file(csv_file):
         logger.error(f"Error reading {os.path.basename(csv_file)}: {e}")
         return f"Error reading {os.path.basename(csv_file)}: {e}"
     
-    # Process according to file version
+    # Process according to file version:
+    # For version 1 files (date < 2022-02-04), leave the file unchanged.
+    # For newer files (date >= 2022-02-04), remove the first line (assumed to be metadata).
     if file_date < version1_cutoff:
-        # Version 1: Missing header, so add header "cve,epss"
-        new_lines = ["cve,epss\n"] + lines
-        action = "Added header"
+        new_lines = lines
+        action = "Left unchanged"
     else:
-        # Newer version: remove the first line (assumed to be metadata)
         new_lines = lines[1:]
         action = "Removed first line"
 
-    # Write to a temporary file and then replace the original for safety
+    # Ensure the output folder exists
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder, exist_ok=True)
+    
+    # Prepare the output filepath in the output_folder
+    output_filename = os.path.basename(csv_file)
+    final_output_filepath = os.path.join(output_folder, output_filename)
+    
+    # Write to a temporary file in the output folder and then move it to the final destination
     temp_file_path = None
     try:
-        dir_name = os.path.dirname(csv_file)
-        with tempfile.NamedTemporaryFile('w', delete=False, dir=dir_name, encoding='utf-8') as tmp:
+        with tempfile.NamedTemporaryFile('w', delete=False, dir=output_folder, encoding='utf-8') as tmp:
             temp_file_path = tmp.name
             tmp.writelines(new_lines)
-        shutil.move(temp_file_path, csv_file)
+        shutil.move(temp_file_path, final_output_filepath)
         logger.info(f"{action} for file: {os.path.basename(csv_file)}")
         return f"{action} for file: {os.path.basename(csv_file)}"
     except Exception as e:
@@ -83,17 +91,20 @@ def process_csv_file(csv_file):
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
-def process_all_csvs_concurrently(folder):
+def standardize_epss_files_concurrently(input_folder, output_folder):
     """
-    Process all CSV files in a folder concurrently, applying either header addition 
-    or metadata removal based on the file's date.
+    Process all CSV files in the input_folder concurrently, applying either header addition 
+    or metadata removal based on the file's date. The standardized files are written to the output_folder.
     """
-    csv_files = glob.glob(os.path.join(folder, "*.csv"))
-    logger.info(f"Found {len(csv_files)} CSV files to process in {folder}. Starting processing...")
-    
+    csv_files = glob.glob(os.path.join(input_folder, "*.csv"))
+    logger.info(f"Found {len(csv_files)} CSV files to process in {input_folder}. Starting processing...")
+
     results = []
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        future_to_file = {executor.submit(process_csv_file, csv_file): csv_file for csv_file in csv_files}
+        future_to_file = {
+            executor.submit(standardize_csv_file, csv_file, output_folder): csv_file
+            for csv_file in csv_files
+        }
         for future in concurrent.futures.as_completed(future_to_file):
             result = future.result()
             print(result)
@@ -118,8 +129,6 @@ def decompress_all_files_concurrently(raw_folder='data/epss/raw', output_folder=
             result = future.result()
             print(result)
             
-    # Process CSV files concurrently (adding header or removing metadata)
-    process_all_csvs_concurrently(output_folder)
 
 if __name__ == "__main__":
     decompress_all_files_concurrently()

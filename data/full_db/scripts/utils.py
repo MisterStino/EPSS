@@ -64,7 +64,7 @@ def clean_directory_concurrent(dir_path):
         logging.info(f"Directory '{dir_path}' is already empty. Nothing to delete.")
         return
 
-    # Prepare lists for files and non-file items.
+    # Prepare lists for files and non-file items. 
     files_to_delete = []
     for item in items:
         item_path = os.path.join(dir_path, item)
@@ -122,11 +122,11 @@ def filter_epss_dates(input_parquet: str, output_parquet: str, cutoff_date: str 
     logging.info(f"Output directory {output_dir} is ready.")
 
     # Save the filtered DataFrame as a Parquet file in overwrite mode
-    df_filtered.write.mode("overwrite").parquet(output_parquet)
+    df_filtered.coalesce(1).write.mode("overwrite").parquet(output_parquet)
     logging.info(f"Cleaned data saved to {output_parquet}")
 
-    # Stop the Spark session
-    spark.stop()
+
+
 
 if __name__ == '__main__':
     filter_epss_dates(
@@ -136,6 +136,4 @@ if __name__ == '__main__':
     )
 
 # Example usage:
-if __name__ == "__main__":
-    directory_path = "path/to/your/directory"
-    clean_directory_concurrent(directory_path)
+
