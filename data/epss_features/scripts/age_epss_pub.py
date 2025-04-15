@@ -58,8 +58,8 @@ def create_epss_pub(input_parquet: str, output_parquet: str):
     df.write.mode("overwrite").parquet(output_parquet)
     logging.info(f"Output data with the 'age_epss_pub' feature saved to {output_parquet}")
 
-    # Stop the Spark session
-    spark.stop()
+
+
 
 if __name__ == '__main__':
     create_epss_pub(

@@ -4,13 +4,14 @@ from pyspark.sql import functions as F
 from pyspark.sql import types as T
 from t3_spark.session import get_spark_session
 from data.epss.scripts.src.gen_epss_ts_parq import create_epss_long_table
-from data.epss.scripts.utils import decompress_all_files_concurrently
+from data.epss.scripts.utils import decompress_all_files_concurrently, standardize_epss_files_concurrently
 from data.epss.scripts.src.get_epss_data import get_all_epss_data
 from data.epss.scripts.src.handle_missing import fill_missing_dates_and_interpolate
 import os
 import logging
 from data.full_db.scripts.utils import clean_directory_concurrent, filter_epss_dates
 from data.epss_features.scripts.age_epss_pub import create_epss_pub 
+
 def cast_common_columns(df):
     """
     Ensures that cve is a string, date is a Spark DateType,
@@ -44,54 +45,69 @@ def generate_full_database_parquet(modules=['epss'], download_epss=False):
                         format='%(asctime)s %(levelname)s: %(message)s')
     logging.info("Starting the full DB pipeline...")
     # Initialize Spark using your helper
-    spark = get_spark_session()
+    # spark = get_spark_session()
 
-    if download_epss:
-        # Step 1: Download/fetch raw EPS data.
-        raw_eps_folder = os.path.join('data', 'epss', 'raw')
-        error_file = "temp_error.json"
-        logging.info("Fetching raw EPS data...")
-        # This function should download/fetch EPS data and store it in raw_eps_folder.
-        get_all_epss_data(raw_folder=raw_eps_folder, error_file=error_file)
-        logging.info("Raw EPS data fetched successfully.")
+    # if download_epss:
+    #     # Step 1: Download/fetch raw EPS data.
+    #     raw_eps_folder = os.path.join('data', 'epss', 'raw')
+    #     error_file = "temp_error.json"
+    #     logging.info("Fetching raw EPS data...")
+    #     # This function should download/fetch EPS data and store it in raw_eps_folder.
+    #     get_all_epss_data(raw_folder=raw_eps_folder, error_file=error_file)
+    #     logging.info("Raw EPS data fetched successfully.")
 
-    # Step 2: Process raw EPS data to create a time series.
+    # # Step 2: Process raw EPS data to create a time series.
 
-    logging.info("decompressing all files...")
-    # make sure the directory is cleaned before decompressing
-    clean_directory_concurrent('data/epss/uncompressed')
-    # actually decompress the files
-    decompress_all_files_concurrently(raw_folder = 'data/epss/raw', output_folder = 'data/epss/uncompressed')
+    # logging.info("decompressing all files...")
+    # # make sure the directory is cleaned before decompressing
+    # clean_directory_concurrent('data/epss/uncompressed')
+    # # actually decompress the files
+    # decompress_all_files_concurrently(raw_folder = 'data/epss/raw', output_folder = 'data/epss/uncompressed')
+
+    # # standardize the csv files in the uncompressed folder
+    # clean_directory_concurrent('data/epss/standardized')
+    # standardize_epss_files_concurrently('data/epss/uncompressed', 'data/epss/standardized')
         
-    logging.info("Creating from csv files a long format parquet epss file...")
-    # remove all files from data/epss/epss_parquet before creating the new parquet file
-    clean_directory_concurrent('data/epss/epss_parquet')
-    # convert all daily csvs to a single parquet file in long format
-    create_epss_long_table(input_folder = 'data/epss/uncompressed', output_folder = 'data/epss/epss_parquet', output_parquet = 'epss_all.parquet')
+    # logging.info("Creating from csv files a long format parquet epss file...")
+    # # remove all files from data/epss/epss_parquet before creating the new parquet file
+    # clean_directory_concurrent('data/epss/epss_parquet')
+    # # convert all daily csvs to a single parquet file in long format
+    # create_epss_long_table(input_folder = 'data/epss/standardized', output_folder = 'data/epss/epss_parquet', output_parquet = 'epss_all.parquet')
 
-    logging.info("handling missing epss dates...")
-    #delelte all files in data/epss/processed before creating the new parquet file
-    clean_directory_concurrent('data/epss/processed')
-    # fill in missing dates and interpolate epss values
-    fill_missing_dates_and_interpolate(input_parquet  = "data/epss/epss_parquet/epss_all", output_parquet = "data/epss/epss_parquet/epss_interpolated.parquet")
+    # logging.info("handling missing epss dates...")
+    # #delelte all files in data/epss/processed before creating the new parquet file
+    # clean_directory_concurrent('data/epss/epss_parquet/epss_interpolated.parquet')
+    # # fill in missing dates and interpolate epss values
+    # fill_missing_dates_and_interpolate(input_parquet  = "data/epss/epss_parquet/epss_all.parquet", output_parquet = "data/epss/epss_parquet/epss_interpolated.parquet")
 
-    # Step 3: create epss age since epss pub release features
-    logging.info("Creating epss age features...")
-    create_epss_pub(input_parquet = "data/epss/epss_parquet/epss_interpolated.parquet", output_parquet = "data/epss_features/epss_processed.parquet")
+    # # Step 3: create epss age since epss pub release features
+    # logging.info("Creating age since epss publication feature...")
+    # create_epss_pub(input_parquet = "data/epss/epss_parquet/epss_interpolated.parquet", output_parquet = "data/epss_features/raw/epss_pub_features.parquet")
 
     
-    # step 4: Delete epss information before release of epss v2
-    filter_epss_dates(
-        input_parquet="data/epss/epss_parquet/epss_pub_features.parquet",
-        output_parquet="data/epss/processed/epss_processed.parquet",
-        cutoff_date="2022-02-04"
-    )
+    # # step 4: Delete epss information before release of epss v2 for both the epss and the features parquet files
+    # logging.info("Deleting epss information before release of epss v2...")
+
+    # filter_epss_dates(
+    #     input_parquet="data/epss/epss_parquet/epss_interpolated.parquet",
+    #     output_parquet="data/epss/processed/epss_processed.parquet",
+    #     cutoff_date="2022-02-04"
+    # )
+    # filter_epss_dates(
+    #     input_parquet="data/epss_features/raw/epss_pub_features.parquet",
+    #     output_parquet="data/epss_features/processed/epss_features_processed.parquet",
+    #     cutoff_date="2022-02-04"
+    # )
     # Step 5: Generate the final full database by merging features.
     logging.info("Generating the final full dataset by merging features...")
 
-
+    #### Here we start merging all the features together. ####
+    logging.warning("Starting to merge features...")
+    
+    # just making sure we have spark session after long run..
+    spark = get_spark_session()
     # List all modules here; 'epss' is the base module
-    modules = ['epss', 'epss_features']  # Add more modules like 'reddit', 'twitter', etc. as needed
+    modules = ['epss', 'epss_features']  # Add more modules like 'reddit', 'github', etc. 
     base_module = 'epss'
     
     # Build the path to the base module's Parquet file
@@ -102,18 +118,20 @@ def generate_full_database_parquet(modules=['epss'], download_epss=False):
         return
     
     # Read the base DataFrame and cast important columns
+    logging.info(f"Loading base data from {base_parquet_path}...")
     base_df = spark.read.parquet(base_parquet_path)
     base_df = cast_common_columns(base_df)
-    
+    logging.info(f"Base data loaded with {base_df.count()} rows. And head:")
+    logging.info(base_df.show(10))
+
     row_count = base_df.count()
-    print(f"Loaded base data from {base_parquet_path} with {row_count} rows.")
-    
+
     # Merge additional modules onto the base DataFrame
     for module in modules:
         # Skip the base module since it's already loaded
         if module == base_module:
             continue
-        
+        logging.info(f"Merging module: {module}...")
         # Build the path to the module's Parquet file
         module_parquet_path = os.path.join('data', module, 'processed', f'{module}_processed.parquet')
         if not os.path.exists(module_parquet_path):

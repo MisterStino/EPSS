@@ -88,7 +88,6 @@ def fill_missing_dates_and_interpolate(input_parquet = "data/epss/epss_parquet/e
     df_final.write.mode("overwrite").parquet(output_parquet)
     
     print(f"Finished interpolation. Output written to {output_parquet}")
-    spark.stop()
     
 if __name__ == "__main__":
     input_parquet = "data/epss/epss_parquet/epss_all.parquet"
