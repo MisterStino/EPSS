@@ -4,11 +4,12 @@ import gzip
 import shutil
 import concurrent.futures
 import tempfile
-from logging import getLogger
-import logging      
+import re
+import logging
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 def decompress_file(gz_file, output_folder):
     """
@@ -26,59 +27,99 @@ def decompress_file(gz_file, output_folder):
     except Exception as e:
         return f"Error decompressing {filename}: {e}"
 
+def process_csv_file(csv_file):
+    """
+    Process a CSV file by either removing the first line (for newer versions, date >= 2022-02-04)
+    or adding column headers if the file is from version 1 (date < 2022-02-04).
+    """
+    # Extract date from filename using regex (expecting format YYYY-MM-DD)
+    match = re.search(r'\d{4}-\d{2}-\d{2}', csv_file)
+    if match:
+        file_date_str = match.group()
+        try:
+            file_date = datetime.strptime(file_date_str, "%Y-%m-%d")
+        except ValueError:
+            logger.error(f"Invalid date format in file {csv_file}.")
+            return f"Error processing {os.path.basename(csv_file)}: invalid date format"
+    else:
+        logger.error(f"No valid date found in filename: {csv_file}.")
+        return f"Error processing {os.path.basename(csv_file)}: no date found"
+
+    # Define the cutoff for version 1 files
+    version1_cutoff = datetime.strptime("2022-02-04", "%Y-%m-%d")
+    
+    # Read all lines from the original CSV file
+    try:
+        with open(csv_file, 'r', encoding='utf-8') as original:
+            lines = original.readlines()
+    except Exception as e:
+        logger.error(f"Error reading {os.path.basename(csv_file)}: {e}")
+        return f"Error reading {os.path.basename(csv_file)}: {e}"
+    
+    # Process according to file version
+    if file_date < version1_cutoff:
+        # Version 1: Missing header, so add header "cve,epss"
+        new_lines = ["cve,epss\n"] + lines
+        action = "Added header"
+    else:
+        # Newer version: remove the first line (assumed to be metadata)
+        new_lines = lines[1:]
+        action = "Removed first line"
+
+    # Write to a temporary file and then replace the original for safety
+    temp_file_path = None
+    try:
+        dir_name = os.path.dirname(csv_file)
+        with tempfile.NamedTemporaryFile('w', delete=False, dir=dir_name, encoding='utf-8') as tmp:
+            temp_file_path = tmp.name
+            tmp.writelines(new_lines)
+        shutil.move(temp_file_path, csv_file)
+        logger.info(f"{action} for file: {os.path.basename(csv_file)}")
+        return f"{action} for file: {os.path.basename(csv_file)}"
+    except Exception as e:
+        logger.error(f"Error processing {os.path.basename(csv_file)}: {e}")
+        return f"Error processing {os.path.basename(csv_file)}: {e}"
+    finally:
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
+def process_all_csvs_concurrently(folder):
+    """
+    Process all CSV files in a folder concurrently, applying either header addition 
+    or metadata removal based on the file's date.
+    """
+    csv_files = glob.glob(os.path.join(folder, "*.csv"))
+    logger.info(f"Found {len(csv_files)} CSV files to process in {folder}. Starting processing...")
+    
+    results = []
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_to_file = {executor.submit(process_csv_file, csv_file): csv_file for csv_file in csv_files}
+        for future in concurrent.futures.as_completed(future_to_file):
+            result = future.result()
+            print(result)
+            results.append(result)
+    return results
+
 def decompress_all_files_concurrently(raw_folder='data/epss/raw', output_folder='data/epss/uncompressed'):
     """
     Decompress all .csv.gz files in the raw_folder concurrently,
     saving the decompressed files in output_folder.
+    After decompression, we for version 1 add column headers and vor version 2 remove the first line.
     """
+    logger.info('Starting decompression process...')
     if not os.path.exists(output_folder):
         os.makedirs(output_folder, exist_ok=True)
-    else:
-        return f"Output folder {output_folder} already exists. skipping decompression."
+
     gz_files = glob.glob(os.path.join(raw_folder, '*.csv.gz'))
     
-    # Using ProcessPoolExecutor for parallel decompression.
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        # Submit all decompression tasks concurrently.
         futures = {executor.submit(decompress_file, gz_file, output_folder): gz_file for gz_file in gz_files}
-        
-        # As tasks complete, print their results.
         for future in concurrent.futures.as_completed(futures):
             result = future.result()
             print(result)
-
-    #also remove the metadata line from the csvs
-    remove_first_line_from_csvs(output_folder)
-
-
-def remove_first_line_from_csvs(folder):
-    """
-    Removes the first line from each CSV file in the given folder.
-    Overwrites the existing file so that the rest of the rows remain.
-    """
-    csv_files = glob.glob(os.path.join(folder, "*.csv"))
-    logging.info(f"Found {len(csv_files)} CSV files to process. starting removing metadata lines...")
-    for csv_file in csv_files:
-        logging.info(f"Processing file: {csv_file}")
-        # Read and skip the first line
-        with open(csv_file, 'r', encoding='utf-8') as original:
-            # Use a temp file so we don't corrupt the original if something goes wrong
-            with tempfile.NamedTemporaryFile('w', delete=False, dir=folder) as tmp:
-                tmp_filename = tmp.name
-
-                # skip the first line
-                first_line = original.readline()
-
-                # now copy the rest
-                for line in original:
-                    tmp.write(line)
-
-        # Move temp file to overwrite the original
-        # (On Windows, you must close the file before replacing it)
-        shutil.move(tmp_filename, csv_file)
-
-        print(f"Removed first line (metadata) from: {os.path.basename(csv_file)}")
-
+            
+    # Process CSV files concurrently (adding header or removing metadata)
+    process_all_csvs_concurrently(output_folder)
 
 if __name__ == "__main__":
     decompress_all_files_concurrently()
