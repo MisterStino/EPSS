@@ -6,7 +6,6 @@ from t3_spark.session import get_spark_session
 from data.epss.scripts.src.gen_epss_ts_parq import create_epss_long_table
 from data.epss.scripts.utils import decompress_all_files_concurrently
 from data.epss.scripts.src.get_epss_data import get_all_epss_data
-from data.full_db.scripts.src.gen_db_parquet import generate_full_database_parquet
 from data.epss.scripts.src.handle_missing import fill_missing_dates_and_interpolate
 import os
 import logging
@@ -28,7 +27,7 @@ def cast_common_columns(df):
         df = df.withColumn('epss', F.col('epss').cast(T.DoubleType()))
     return df
 
-def generate_full_database_parquet(modules=['epss'], download_epss=True):
+def generate_full_database_parquet(modules=['epss'], download_epss=False):
     """
     Generates the final full dataset for training using Spark and Parquet.
     
@@ -47,7 +46,7 @@ def generate_full_database_parquet(modules=['epss'], download_epss=True):
     # Initialize Spark using your helper
     spark = get_spark_session()
 
-    if not download_epss:
+    if download_epss:
         # Step 1: Download/fetch raw EPS data.
         raw_eps_folder = os.path.join('data', 'epss', 'raw')
         error_file = "temp_error.json"
@@ -74,11 +73,11 @@ def generate_full_database_parquet(modules=['epss'], download_epss=True):
     #delelte all files in data/epss/processed before creating the new parquet file
     clean_directory_concurrent('data/epss/processed')
     # fill in missing dates and interpolate epss values
-    fill_missing_dates_and_interpolate(input_parquet  = "data/epss/epss_parquet/epss_all.", output_parquet = "data/epss/epss_parquet/epss_interpolated.parquet")
+    fill_missing_dates_and_interpolate(input_parquet  = "data/epss/epss_parquet/epss_all", output_parquet = "data/epss/epss_parquet/epss_interpolated.parquet")
 
     # Step 3: create epss age since epss pub release features
     logging.info("Creating epss age features...")
-    create_epss_pub(input_parquet = "data/epss/epss_parquet/epss_interpolated.parquet", output_parquet = "data/epss/epss_parquet/epss_pub_features.parquet")
+    create_epss_pub(input_parquet = "data/epss/epss_parquet/epss_interpolated.parquet", output_parquet = "data/epss_features/epss_processed.parquet")
 
     
     # step 4: Delete epss information before release of epss v2
@@ -92,7 +91,7 @@ def generate_full_database_parquet(modules=['epss'], download_epss=True):
 
 
     # List all modules here; 'epss' is the base module
-    modules = ['epss', 'mock']  # Add more modules like 'reddit', 'twitter', etc. as needed
+    modules = ['epss', 'epss_features']  # Add more modules like 'reddit', 'twitter', etc. as needed
     base_module = 'epss'
     
     # Build the path to the base module's Parquet file
