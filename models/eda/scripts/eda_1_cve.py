@@ -72,11 +72,11 @@ def plot_single_cve_time_series(cve_id, input_path='data/full_db/processed/final
 # Example usage
 if __name__ == "__main__":
     cve_list = [
-        "CVE-2019-8451",
-        "CVE-2007-3958",
-        "CVE-2008-0108",
-        "CVE-2008-2952",
-        "CVE-2021-27164"
+        "CVE-2022-2888",
+        "CVE-2022-32149",
+        "CVE-2021-44576",
+        "CVE-2017-2157",
+        "CVE-2021-36185"
     ]
     
     # Call the plot function for each of the CVEs in the list.

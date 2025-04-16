@@ -4,7 +4,8 @@ import shutil
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
 from t3_spark.session import get_spark_session
-
+from pyspark.sql import functions as F
+from pyspark.sql.types import DoubleType, FloatType
 def cast_common_columns(df):
     if 'cve' in df.columns:
         df = df.withColumn('cve', F.col('cve').cast(T.StringType()))
@@ -198,6 +199,57 @@ def store_all_unique_cves_in_csv(
     spark.stop()
 
 
+from pyspark.sql import functions as F
+from pyspark.sql.types import DoubleType, FloatType
+
+def show_random_rows_with_missing(df, num_rows=10):
+    """
+    Filter the input DataFrame for rows that have at least one missing value.
+    
+    For numeric columns (Double/Float), a missing value is identified by either null or NaN.
+    For non-numeric columns, a missing value is identified by null.
+    
+    Parameters:
+    -----------
+    df : pyspark.sql.DataFrame
+        The input DataFrame from which to extract rows with missing values.
+    num_rows : int, default=10
+        The number of random rows with missing values to display.
+        
+    Returns:
+    --------
+    pyspark.sql.DataFrame
+        A DataFrame containing num_rows rows that have at least one missing value.
+    """
+    # Build a condition that is True if at least one column has a missing value.
+    missing_condition = None
+    for field in df.schema.fields:
+        col_name = field.name
+        if isinstance(field.dataType, (DoubleType, FloatType)):
+            # For numeric types, missing is either null or NaN.
+            cond = F.col(col_name).isNull() | F.isnan(F.col(col_name))
+        else:
+            # For non-numeric types, missing is just null.
+            cond = F.col(col_name).isNull()
+        # Combine conditions using logical OR (|) so that if any column is missing, the row qualifies.
+        if missing_condition is None:
+            missing_condition = cond
+        else:
+            missing_condition = missing_condition | cond
+
+    # Filter the DataFrame to include only rows with at least one missing value.
+    missing_df = df.filter(missing_condition)
+    
+    # Randomly order these rows and limit to the requested number for inspection.
+    missing_df = missing_df.orderBy(F.rand()).limit(num_rows)
+    missing_df.show()
+    
+    return missing_df
+
+
+
+
+
 
 
 # Example usage:
@@ -207,6 +259,31 @@ if __name__ == "__main__":
     # parquet_to_csv(input_parquet, output_csv)
     # summarize_cve_time_ranges(interesting_cves_path=input_parquet,output_file=f"{output_csv}_time_ranges.csv")
 
-    store_all_unique_cves_in_csv()
+    # store_all_unique_cves_in_csv()
+     # Assuming that the main pipeline has already run and generated the output files,
+    # we re-initialize (or get) a Spark session.
+    from t3_spark.session import get_spark_session
+    spark = get_spark_session()
 
+
+    # List of output parquet file paths.
+    output_files = {
+        "EPS All (long format)": os.path.join('data', 'epss', 'epss_parquet', 'epss_all.parquet'),
+        "EPS Interpolated": os.path.join('data', 'epss', 'epss_parquet', 'epss_interpolated.parquet'),
+        "EPS Pub Features (Raw)": os.path.join('data', 'epss_features', 'raw', 'epss_pub_features.parquet'),
+        "EPS Processed": os.path.join('data', 'epss', 'processed', 'epss_processed.parquet'),
+        "EPS Features Processed": os.path.join('data', 'epss_features', 'processed', 'epss_features_processed.parquet'),
+        "Final Full Dataset": os.path.join('data', 'full_db', 'processed', 'final_full_data.parquet')
+    }
+
+    # For each output file, load it and check for missing values.
+    for name, path in output_files.items():
+        print(f"\nSanity check: Missing values in {name}:")
+        if os.path.exists(path):
+            df = spark.read.parquet(path)
+            show_random_rows_with_missing(df)
+        else:
+            print(f"WARNING: File not found at path {path}")
+
+    spark.stop()
 

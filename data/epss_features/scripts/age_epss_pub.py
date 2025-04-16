@@ -5,6 +5,7 @@ from pyspark.sql import types as T
 from pyspark.sql import SparkSession
 from pyspark.sql.window import Window
 from t3_spark.session import get_spark_session
+from data.general_utils.utils import show_random_rows_with_missing
 
 def cast_common_columns(df):
     """
@@ -54,6 +55,8 @@ def create_epss_pub(input_parquet: str, output_parquet: str):
     # Optionally, drop the temporary 'first_date' column as it is no longer needed
     df = df.drop("first_date")
     
+    # check missing
+    show_random_rows_with_missing(df)
     # Write the resulting DataFrame to the output Parquet directory in overwrite mode
     df.write.mode("overwrite").parquet(output_parquet)
     logging.info(f"Output data with the 'age_epss_pub' feature saved to {output_parquet}")

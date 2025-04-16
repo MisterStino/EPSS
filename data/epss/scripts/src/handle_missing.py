@@ -12,84 +12,86 @@ def cast_common_columns(df):
     if 'cve' in df.columns:
         df = df.withColumn('cve', F.col('cve').cast(T.StringType()))
     if 'date' in df.columns:
+        # Use DateType() if you only have YYYY-MM-DD.
         df = df.withColumn('date', F.col('date').cast(T.DateType()))
     if 'epss' in df.columns:
         df = df.withColumn('epss', F.col('epss').cast(T.DoubleType()))
     return df
 
-def fill_missing_dates_and_interpolate(input_parquet = "data/epss/epss_parquet/epss_all.parquet", output_parquet = "data/epss/processed/epss_processed.parquet"):
+def fill_missing_dates_and_forward_fill(
+    input_parquet="data/epss/epss_parquet/epss_all.parquet",
+    output_parquet="data/epss/processed/epss_processed.parquet"
+):
     """
     Reads the Parquet file with EPS data (with composite key: cve and date),
     generates missing dates for each CVE from its min(date) to max(date), and
-    fills in the missing 'epss' values using linear interpolation.
+    fills in the missing 'epss' values using forward fill (last observation carried forward).
     
-    The final DataFrame is sorted by cve and date and written to output_parquet.
+    **Before the forward fill,** for each CVE's time series, this function checks if more than 20%
+    of the epss values are missing (where missing is defined as either null or NaN in the original
+    epss column). If so, it collects that CVE's id into a Python list.
+    
+    Finally, the function:
+      - Prints the number of CVEs with >20% missing epss,
+      - Prints the first 30 such CVE ids,
+      - Produces a final DataFrame with continuous dates where missing epss values are forward filled,
+      - Writes the final DataFrame to output_parquet.
     """
     spark = get_spark_session()   
-
-    # 1. Read the dataset.
+    
+    # 1. Read the dataset and cast columns.
     df = spark.read.parquet(input_parquet)
     df = cast_common_columns(df)
     
     # 2. Get the date range for each CVE.
-    df_range = df.groupBy("cve").agg(F.min("date").alias("min_date"), F.max("date").alias("max_date"))
+    df_range = df.groupBy("cve").agg(
+        F.min("date").alias("min_date"),
+        F.max("date").alias("max_date")
+    )
     
     # 3. Generate a complete sequence of dates per CVE.
-    # Use the sequence function to generate a list of dates from min_date to max_date with a 1 day step.
     df_range = df_range.withColumn("date_seq", F.expr("sequence(min_date, max_date, interval 1 day)"))
-    
-    # Explode the date sequence to get one row per date per CVE.
     df_full = df_range.withColumn("date", F.explode("date_seq")).select("cve", "date")
     
     # 4. Join the full date set with the original dataset to include missing dates.
     df_joined = df_full.join(df.select("cve", "date", "epss"), on=["cve", "date"], how="left")
     
-    # 5. Interpolate missing EPS values.
-    # Define a window partitioned by cve ordered by date.
+    # 5. BEFORE forward fill: Check for missing epss ratios per CVE.
+    #    Count total rows and missing epss (where epss is null or NaN).
+    missing_summary = df_joined.groupBy("cve").agg(
+        F.count("*").alias("total_rows"),
+        F.sum(F.when(F.col("epss").isNull() | F.isnan(F.col("epss")), 1).otherwise(0)).alias("missing_count")
+    ).withColumn("missing_ratio", F.col("missing_count") / F.col("total_rows"))
+    
+    cves_with_missing = missing_summary.filter(F.col("missing_ratio") > 0.2).select("cve")
+    missing_cve_list = [row["cve"] for row in cves_with_missing.collect()]
+    print("Number of CVEs with more than 20% missing epss values:", len(missing_cve_list))
+    print("First 30 CVE ids with >20% missing epss values:", missing_cve_list[:30])
+    
+    # 6. Prepare for forward fill:
+    #    Create epss_clean to treat both NaN and null as missing (set them to None).
+    df_joined = df_joined.withColumn(
+        "epss_clean", 
+        F.when(F.isnan(F.col("epss")) | F.col("epss").isNull(), None)
+         .otherwise(F.col("epss"))
+    )
+    
+    # 7. Forward fill missing EPS values using the last non-null observation.
     window_spec = Window.partitionBy("cve").orderBy("date").rowsBetween(Window.unboundedPreceding, Window.currentRow)
-    window_spec_rev = Window.partitionBy("cve").orderBy("date").rowsBetween(Window.currentRow, Window.unboundedFollowing)
-    
-    # Get the last non-null epss value and date in the past.
-    df_joined = df_joined.withColumn("epss_prev", F.last("epss", ignorenulls=True).over(window_spec))
-    df_joined = df_joined.withColumn("date_prev", F.last("date", ignorenulls=True).over(window_spec))
-    
-    # Get the first non-null epss value and date in the future.
-    df_joined = df_joined.withColumn("epss_next", F.first("epss", ignorenulls=True).over(window_spec_rev))
-    df_joined = df_joined.withColumn("date_next", F.first("date", ignorenulls=True).over(window_spec_rev))
-    
-    # Convert dates to timestamps (as seconds) to compute differences.
-    df_joined = df_joined.withColumn("date_ts", F.unix_timestamp("date"))
-    df_joined = df_joined.withColumn("date_prev_ts", F.unix_timestamp("date_prev"))
-    df_joined = df_joined.withColumn("date_next_ts", F.unix_timestamp("date_next"))
-    
-    # Compute fraction: (date - date_prev) / (date_next - date_prev)
-    df_joined = df_joined.withColumn(
-        "fraction",
-        (F.col("date_ts") - F.col("date_prev_ts")) / (F.col("date_next_ts") - F.col("date_prev_ts"))
-    )
-    
-    # Compute interpolated epss: epss_prev + fraction * (epss_next - epss_prev)
-    df_joined = df_joined.withColumn(
-        "interp_epss",
-        F.col("epss_prev") + F.col("fraction") * (F.col("epss_next") - F.col("epss_prev"))
-    )
-    
-    # Use the original epss if present; otherwise use interp_epss.
     df_filled = df_joined.withColumn(
-        "epss_filled",
-        F.when(F.col("epss").isNull(), F.col("interp_epss")).otherwise(F.col("epss"))
+        "epss_filled", 
+        F.last("epss_clean", ignorenulls=True).over(window_spec)
     )
     
-    # 6. Select the desired columns and sort by composite key.
+    # 8. Prepare the final DataFrame: select desired columns and sort by cve and date.
     df_final = df_filled.select("cve", "date", F.col("epss_filled").alias("epss"))
     df_final = df_final.orderBy("cve", "date")
     
-    # 7. Write the result to a Parquet file.
+    # 9. Write the final result to a Parquet file.
     df_final.write.mode("overwrite").parquet(output_parquet)
-    
-    print(f"Finished interpolation. Output written to {output_parquet}")
+    print(f"Finished forward fill. Output written to {output_parquet}")
     
 if __name__ == "__main__":
     input_parquet = "data/epss/epss_parquet/epss_all.parquet"
     output_parquet = "data/epss/processed/epss_processed.parquet"
-    fill_missing_dates_and_interpolate(input_parquet, output_parquet)
+    fill_missing_dates_and_forward_fill(input_parquet, output_parquet)
