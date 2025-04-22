@@ -18,3 +18,4 @@ data/epss/processed/
 
 # Ignore any directory ending with _parquet
 *_parquet/
+*.parquet.crc
