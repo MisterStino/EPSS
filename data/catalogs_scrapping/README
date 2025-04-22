@@ -1,5 +1,0 @@
-This folder contains the scripts used to scrape the complete CVE catalog 
-plus exploitDB, KEV, metasploit and ZDI catalogs to further enrich the dataset so we can even extract 
-more features
-
-USE RUN_ME.py to run all the scripts and generate the catalogs.
