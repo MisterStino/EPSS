@@ -6,8 +6,8 @@ from functools import reduce
 from pyspark.sql.functions import lit
 from pyspark.sql import DataFrame
 
-# We'll assume you have a helper that returns a SparkSession:
 from t3_spark.session import get_spark_session
+from data.general_utils.utils import show_random_rows_with_missing
 
 def create_epss_long_table(
     input_folder='data/epss/uncompressed',
@@ -61,7 +61,6 @@ def create_epss_long_table(
 
     # Sort the final DataFrame by cve and date.
     final_df = final_df.orderBy(["cve", "date"])
-
     # Write out to Parquet (overwrite mode).
     output_path = os.path.join(output_folder, output_parquet)
     final_df.write.mode("overwrite").parquet(output_path)

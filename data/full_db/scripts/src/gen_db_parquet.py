@@ -6,10 +6,10 @@ from t3_spark.session import get_spark_session
 from data.epss.scripts.src.gen_epss_ts_parq import create_epss_long_table
 from data.epss.scripts.utils import decompress_all_files_concurrently, standardize_epss_files_concurrently
 from data.epss.scripts.src.get_epss_data import get_all_epss_data
-from data.epss.scripts.src.handle_missing import fill_missing_dates_and_interpolate
+from data.epss.scripts.src.handle_missing import fill_missing_dates_and_forward_fill
 import os
 import logging
-from data.full_db.scripts.utils import clean_directory_concurrent, filter_epss_dates
+from data.full_db.scripts.utils import clean_directory_concurrent, filter_epss_dates, quick_viz
 from data.epss_features.scripts.age_epss_pub import create_epss_pub 
 
 def cast_common_columns(df):
@@ -45,7 +45,7 @@ def generate_full_database_parquet(modules=['epss'], download_epss=False):
                         format='%(asctime)s %(levelname)s: %(message)s')
     logging.info("Starting the full DB pipeline...")
     # Initialize Spark using your helper
-    # spark = get_spark_session()
+    spark = get_spark_session()
 
     # if download_epss:
     #     # Step 1: Download/fetch raw EPS data.
@@ -69,35 +69,36 @@ def generate_full_database_parquet(modules=['epss'], download_epss=False):
     # standardize_epss_files_concurrently('data/epss/uncompressed', 'data/epss/standardized')
         
     # logging.info("Creating from csv files a long format parquet epss file...")
-    # # remove all files from data/epss/epss_parquet before creating the new parquet file
+    # # # remove all files from data/epss/epss_parquet before creating the new parquet file
     # clean_directory_concurrent('data/epss/epss_parquet')
     # # convert all daily csvs to a single parquet file in long format
     # create_epss_long_table(input_folder = 'data/epss/standardized', output_folder = 'data/epss/epss_parquet', output_parquet = 'epss_all.parquet')
 
     # logging.info("handling missing epss dates...")
-    # #delelte all files in data/epss/processed before creating the new parquet file
-    # clean_directory_concurrent('data/epss/epss_parquet/epss_interpolated.parquet')
-    # # fill in missing dates and interpolate epss values
-    # fill_missing_dates_and_interpolate(input_parquet  = "data/epss/epss_parquet/epss_all.parquet", output_parquet = "data/epss/epss_parquet/epss_interpolated.parquet")
+    #delelte all files in data/epss/processed before creating the new parquet file
+    clean_directory_concurrent('data/epss/epss_parquet/epss_interpolated.parquet')
+    # fill in / add missing dates: fill epss with null and interpolate epss values
+    logging.info("Filling missing dates with null (from files not downloaded) and forward filling epss values...")
+    fill_missing_dates_and_forward_fill(input_parquet  = "data/epss/epss_parquet/epss_all.parquet", output_parquet = "data/epss/epss_parquet/epss_interpolated.parquet")
 
-    # # Step 3: create epss age since epss pub release features
-    # logging.info("Creating age since epss publication feature...")
-    # create_epss_pub(input_parquet = "data/epss/epss_parquet/epss_interpolated.parquet", output_parquet = "data/epss_features/raw/epss_pub_features.parquet")
+    # Step 3: create epss age since epss pub release features
+    logging.info("Creating age since epss publication feature...")
+    create_epss_pub(input_parquet = "data/epss/epss_parquet/epss_interpolated.parquet", output_parquet = "data/epss_features/raw/epss_pub_features.parquet")
 
     
-    # # step 4: Delete epss information before release of epss v2 for both the epss and the features parquet files
-    # logging.info("Deleting epss information before release of epss v2...")
+    # step 4: Delete epss information before release of epss v2 for both the epss and the features parquet files
+    logging.info("Deleting epss information before release of epss v2...")
 
-    # filter_epss_dates(
-    #     input_parquet="data/epss/epss_parquet/epss_interpolated.parquet",
-    #     output_parquet="data/epss/processed/epss_processed.parquet",
-    #     cutoff_date="2022-02-04"
-    # )
-    # filter_epss_dates(
-    #     input_parquet="data/epss_features/raw/epss_pub_features.parquet",
-    #     output_parquet="data/epss_features/processed/epss_features_processed.parquet",
-    #     cutoff_date="2022-02-04"
-    # )
+    filter_epss_dates(
+        input_parquet="data/epss/epss_parquet/epss_interpolated.parquet",
+        output_parquet="data/epss/processed/epss_processed.parquet",
+        cutoff_date="2022-02-04"
+    )
+    filter_epss_dates(
+        input_parquet="data/epss_features/raw/epss_pub_features.parquet",
+        output_parquet="data/epss_features/processed/epss_features_processed.parquet",
+        cutoff_date="2022-02-04"
+    )
     # Step 5: Generate the final full database by merging features.
     logging.info("Generating the final full dataset by merging features...")
 
@@ -153,6 +154,14 @@ def generate_full_database_parquet(modules=['epss'], download_epss=False):
         col_count = len(base_df.columns)
         print(f"After merging {module}, dataset now has {row_count} rows and {col_count} columns.")
     
+
+    # Sanity check for comforts
+    modules_features = ['epss', 'age_epss_pub']
+    # Columns (from the additional modules) which are numeric and should be normalized & plotted.
+    numeric_features = ['age_epss_pub']  # You can add more column names if needed.
+    quick_viz(modules_features, numeric_features)
+
+    logging.info(f"Saving the final merged dataset...")
     # Sort the final DataFrame by (cve, date)
     base_df = base_df.orderBy(['cve', 'date'])
     

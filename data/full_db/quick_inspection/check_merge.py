@@ -171,7 +171,7 @@ def plot_time_series(sample_cves, final_df, numeric_modules):
     plt.tight_layout()
     plt.show()
 
-def main(modules, numeric_modules):
+def quick_viz(modules, numeric_modules):
     """
     Main function for quick visualization.
     modules: a list of module names used in generating the final dataset (e.g., ['epss', 'mock']).
@@ -198,12 +198,25 @@ def main(modules, numeric_modules):
     # Note: The plotting uses data from final_df so it visualizes the merged feature columns as well.
     plot_time_series(sample_cves, final_df, numeric_modules)
     
+    # Final sanity check: Check for missing values in all columns for both dataframes.
+    print("Sanity Check: Missing values in final_df:")
+    missing_final = final_df.select(
+        *[F.sum(F.when(F.col(c).isNull(), 1).otherwise(0)).alias(c) for c in final_df.columns]
+    )
+    missing_final.show()
+    
+    print("Sanity Check: Missing values in base_df:")
+    missing_base = base_df.select(
+        *[F.sum(F.when(F.col(c).isNull(), 1).otherwise(0)).alias(c) for c in base_df.columns]
+    )
+    missing_base.show()
+
     spark.stop()
 
 if __name__ == '__main__':
     # Example of calling the main function:
     # modules used in the pipeline (base module included)
-    modules = ['epss', 'mock']
+    modules = ['epss', 'age_epss_pub']
     # Columns (from the additional modules) which are numeric and should be normalized & plotted.
-    numeric_modules = ['days_since_epss_pub', 'reddit_mentions']  # You can add more column names if needed.
-    main(modules, numeric_modules)
+    numeric_modules = ['age_epss_pub']  # You can add more column names if needed.
+    quick_viz(modules, numeric_modules)
