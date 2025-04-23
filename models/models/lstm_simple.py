@@ -1,252 +1,212 @@
-import os
-import pandas as pd
+# lstm_epss_fullhistory_cuda.py
+"""
+Train an LSTM that, for every prefix of a CVE history, predicts the next
+10 daily EPSS-invlog values.  Optimised for an NVIDIA GPU (RTX 3050 Ti).
+
+Input folders (already inverse-log scaled & calendar-split):
+    TRAIN_DIR / VAL_DIR / TEST_DIR
+
+Each Parquet row:
+    cve, date, epss, age_epss_pub
+"""
+
+import os, time
+from pathlib import Path
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
+from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence
 from sklearn.preprocessing import StandardScaler
+from tqdm import tqdm
 
-def get_device():
-    """
-    Returns the best available device:
-      1) CUDA if available,
-      2) then Intel GPU (torch.xpu) if available,
-      3) otherwise CPU.
-    Also prints info about CPU, NVIDIA GPU count, Intel GPU availability.
-    """
-    num_cpus = os.cpu_count()
-    print(f"[INFO] Number of CPU cores available: {num_cpus}")
-    
+# ───────────────────────── device helper ────────────────────────────
+def get_device() -> torch.device:
+    """Prefer NVIDIA CUDA, fall back to CPU."""
     if torch.cuda.is_available():
-        num_nvidia = torch.cuda.device_count()
-        print(f"[INFO] NVIDIA GPU(s) available: {num_nvidia}")
-    else:
-        print(f"[INFO] No NVIDIA GPU available (torch.cuda.is_available() == False).")
-    
-    has_xpu = False
-    if getattr(torch, "xpu", None) is not None:
-        # Check if xpu is truly available
-        has_xpu = torch.xpu.is_available()
-        print(f"[INFO] Intel GPU availability (torch.xpu.is_available()): {has_xpu}")
-    else:
-        print("[INFO] No Intel GPU extension (torch.xpu) found in this PyTorch version.")
-    
-    if torch.cuda.is_available():
+        name = torch.cuda.get_device_name(0)
+        print(f"[INFO] Using NVIDIA GPU: {name}")
+        # cuDNN autotuner → fastest kernels for this GPU + shapes
+        torch.backends.cudnn.benchmark = True
         return torch.device("cuda")
-    elif has_xpu:
-        return torch.device("xpu")
-    else:
-        return torch.device("cpu")
+    print("[WARN] CUDA unavailable – using CPU.")
+    return torch.device("cpu")
 
 
-class TimeSeriesDataset(Dataset):
-    def __init__(self, X, Y):
-        self.X = torch.from_numpy(X).float()
-        self.Y = torch.from_numpy(Y).float()
+# ───────────────────────── Pandas typing helper ─────────────────────
+def cast_types(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["date"]           = pd.to_datetime(df["date"], errors="raise")
+    df["cve"]            = df["cve"].astype("category")
+    df["epss"]           = df["epss"].astype("float32")
+    df["age_epss_pub"]   = df["age_epss_pub"].astype("int32")
+    return df.sort_values(["cve", "date"]).reset_index(drop=True)
+
+
+# ───────────────────────── Dataset (all prefixes) ────────────────────
+class CVEPrefixDataset(Dataset):
+    """
+    One sample = (prefix [T,2], next-10 target [10])
+    """
+    def __init__(self, df: pd.DataFrame, horizon: int = 10):
+        self.X, self.y, self.len = [], [], []
+        for _, grp in df.groupby("cve", observed=True):
+            vals = grp[["epss", "age_epss_pub"]].values.astype("float32")
+            T    = len(vals)
+            if T <= horizon:
+                continue
+            for t in range(T - horizon):
+                self.X.append(torch.from_numpy(vals[: t + 1]))           # (L,2)
+                self.y.append(torch.from_numpy(vals[t + 1:t + 1 + horizon, 0]))
+                self.len.append(t + 1)
+        print(f"[INFO] Dataset windows: {len(self):,}")
+
     def __len__(self):
         return len(self.X)
+
     def __getitem__(self, idx):
-        return self.X[idx], self.Y[idx]
+        return self.X[idx], self.y[idx], self.len[idx]
 
 
-class MyLSTMModel(nn.Module):
-    def __init__(self, input_dim=2, hidden_dim=64, num_layers=2, output_dim=10, dropout=0.2):
-        super(MyLSTMModel, self).__init__()
-        self.lstm = nn.LSTM(
-            input_size=input_dim,
-            hidden_size=hidden_dim,
-            num_layers=num_layers,
-            batch_first=True,
-            dropout=dropout
-        )
-        self.fc = nn.Linear(hidden_dim, output_dim)
-
-    def forward(self, x):
-        out, (h, c) = self.lstm(x)  # out: (batch_size, seq_len, hidden_dim)
-        last_output = out[:, -1, :]  # (batch_size, hidden_dim)
-        y_hat = self.fc(last_output) # (batch_size, 10)
-        return y_hat
+def collate_pad(batch):
+    x_list, y_list, len_list = zip(*batch)
+    lengths  = torch.tensor(len_list, dtype=torch.int64)
+    x_padded = pad_sequence(x_list, batch_first=True)        # right-pad zeros
+    y_target = torch.stack(y_list)                           # (B, 10)
+    return x_padded, lengths, y_target
 
 
-def create_sequences(dataframe, lookback=30, horizon=10):
-    X_list = []
-    Y_list = []
-    for cve, group in dataframe.groupby("cve"):
-        group = group.sort_values("date")
-        arr = group[["epss", "age_epss_pub"]].values  # shape: [time, 2]
-        
-        for i in range(len(arr) - lookback - horizon + 1):
-            x_window = arr[i : i + lookback, :]  
-            y_future = arr[i + lookback : i + lookback + horizon, 0]  # epss is col 0
-            X_list.append(x_window)
-            Y_list.append(y_future)
-    return np.array(X_list), np.array(Y_list)
+# ───────────────────────── model ─────────────────────────────────────
+class LSTMForecast(nn.Module):
+    def __init__(self, input_dim=2, hidden_dim=128,
+                 num_layers=2, output_dim=10, dropout=0.3):
+        super().__init__()
+        self.lstm = nn.LSTM(input_dim, hidden_dim,
+                            num_layers=num_layers,
+                            batch_first=True,
+                            dropout=dropout)
+        self.head = nn.Linear(hidden_dim, output_dim)
 
-def cast_datatypes(df):
-    """
-    Casts the datatypes of the DataFrame columns to appropriate types.
-    Raises early if any of the casts fail.
-    """
-    df = df.copy()
-    
-    # 1) datetime (errors='raise' will blow up if there are bad values)
-    df["date"] = pd.to_datetime(df["date"], errors="raise")
-    
-    # 2) string identifiers → category
-    df["cve"] = df["cve"].astype("category")
-    
-    # 3) numeric columns
-    #    If you plan to Standard‐scale them anyway, float32 is fine.
-    df["epss"] = pd.to_numeric(df["epss"], errors="raise").astype("float32")
-    
-    #    If you really want integer "days since publication", use an integer dtype:
-    # df["age_epss_pub"] = pd.to_numeric(df["age_epss_pub"], errors="raise").astype("int32")
-    #
-    #    Or, if you prefer to treat age as a continuous feature and save half the
-    #    memory vs float64, float32 is OK:
-    df["age_epss_pub"] = pd.to_numeric(df["age_epss_pub"], errors="raise").astype('int32')
-    
-    return df
+    def forward(self, x_padded, lengths):
+        packed = pack_padded_sequence(x_padded, lengths.cpu(),
+                                      batch_first=True, enforce_sorted=False)
+        _, (h_n, _) = self.lstm(packed)     # h_n: (layers, B, hidden)
+        return self.head(h_n[-1])           # (B, 10)
 
+
+# ───────────────────────── main ─────────────────────────────────────
 if __name__ == "__main__":
-    #####################################
-    # 1) Load and Sort Data
-    #####################################
-    df = pd.read_parquet("data/full_db/sampled/final_full_data_sampled.parquet")
-    df = cast_datatypes(df)
-    df = df.sort_values(by=["date", "cve"]).reset_index(drop=True)
-    print("[INFO] Data loaded and sorted by date, cve.")
-    print(df.head())
-
-    #####################################
-    # 2) Time-based Split
-    #    Enough days for 30-day lookback + 10-day horizon
-    #####################################
-    train_end_date = pd.to_datetime("2023-12-30")
-    val_end_date   = pd.to_datetime("2024-03-30")
-
-    df_train = df[df["date"] <= train_end_date]
-    df_val   = df[(df["date"] > train_end_date) & (df["date"] <= val_end_date)]
-    df_test  = df[df["date"] > val_end_date]
-
-    print(f"[INFO] Train size (rows): {len(df_train)}")
-    print(f"[INFO] Val size   (rows): {len(df_val)}")
-    print(f"[INFO] Test size  (rows): {len(df_test)}")
-
-    #####################################
-    # 3) Scaling: Fit on train, apply to val/test
-    #####################################
-    scaler = StandardScaler()
-    scaler.fit(df_train[["epss", "age_epss_pub"]])
-
-    # Use .loc to avoid SettingWithCopyWarning
-    df_train.loc[:, ["epss", "age_epss_pub"]] = scaler.transform(df_train[["epss", "age_epss_pub"]])
-    df_val.loc[:, ["epss", "age_epss_pub"]]   = scaler.transform(df_val[["epss", "age_epss_pub"]])
-    df_test.loc[:, ["epss", "age_epss_pub"]]  = scaler.transform(df_test[["epss", "age_epss_pub"]])
-    print("[INFO] Scaling done (fitted on train, applied to val/test).")
-
-    #####################################
-    # 4) Window creation
-    #####################################
-    lookback = 30
-    horizon  = 10
-
-    X_train, Y_train = create_sequences(df_train, lookback, horizon)
-    X_val,   Y_val   = create_sequences(df_val,   lookback, horizon)
-    X_test,  Y_test  = create_sequences(df_test,  lookback, horizon)
-
-    print(f"[INFO] X_train: {X_train.shape}, Y_train: {Y_train.shape}")
-    print(f"[INFO] X_val:   {X_val.shape},   Y_val:   {Y_val.shape}")
-    print(f"[INFO] X_test:  {X_test.shape},  Y_test:  {Y_test.shape}")
-
-    #####################################
-    # 5) Dataset and DataLoader
-    #####################################
-    train_dataset = TimeSeriesDataset(X_train, Y_train)
-    val_dataset   = TimeSeriesDataset(X_val,   Y_val)
-    test_dataset  = TimeSeriesDataset(X_test,  Y_test)
-
-    batch_size = 64
-
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,  num_workers=4)
-    val_loader   = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False, num_workers=4)
-    test_loader  = DataLoader(test_dataset,  batch_size=batch_size, shuffle=False, num_workers=4)
-
-    print(f"[INFO] Batches -> Train: {len(train_loader)}, Val: {len(val_loader)}, Test: {len(test_loader)}")
-
-    #####################################
-    # 6) Model, Device, Loss, Optimizer
-    #####################################
+    torch.manual_seed(0)
     device = get_device()
-    print(f"[INFO] Device chosen: {device}")
 
-    model = MyLSTMModel(input_dim=2, hidden_dim=64, num_layers=2, output_dim=10, dropout=0.2).to(device)
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    # ─── constants ──────────────────────────────────────────────────
+    TRAIN_DIR    = "data/full_db/ml-sets-sampled/logit-scaled/train"
+    VAL_DIR      = "data/full_db/ml-sets-sampled/logit-scaled/val"
+    TEST_DIR     = "data/full_db/ml-sets-sampled/logit-scaled/test"
+    HORIZON      = 10
+    BATCH        = 200           # fits into 4 GiB – raise if memory allows
+    EPOCHS       = 12
+    LR           = 1e-3
+    NUM_WORKERS  = 0             # stays 0 for Windows → no spawn/pickle overhead
+    PIN_MEMORY   = True          # fine even with 0 workers
 
-    if hasattr(torch, "compile") and (device.type in ["cuda", "xpu"]):
+    # ─── 1) load splits ─────────────────────────────────────────────
+    df_train = cast_types(pd.read_parquet(TRAIN_DIR, engine="pyarrow"))
+    df_val   = cast_types(pd.read_parquet(VAL_DIR,   engine="pyarrow"))
+    df_test  = cast_types(pd.read_parquet(TEST_DIR,  engine="pyarrow"))
+    print(f"[INFO] rows – train {len(df_train):,} | val {len(df_val):,} | test {len(df_test):,}")
+
+    # ─── 2) scaling ─────────────────────────────────────────────────
+    scaler = StandardScaler().fit(df_train[["epss", "age_epss_pub"]])
+    for _df in (df_train, df_val, df_test):
+        _df[["epss", "age_epss_pub"]] = scaler.transform(_df[["epss", "age_epss_pub"]])
+
+    # ─── 3) datasets & loaders ──────────────────────────────────────
+    train_ds = CVEPrefixDataset(df_train, HORIZON)
+    val_ds   = CVEPrefixDataset(df_val,   HORIZON)
+    test_ds  = CVEPrefixDataset(df_test,  HORIZON)
+
+    # **IMPORTANT**: persistent_workers & prefetch_factor only if NUM_WORKERS > 0
+    train_ld = DataLoader(
+        train_ds,
+        batch_size=BATCH,
+        shuffle=True,
+        num_workers=NUM_WORKERS,
+        pin_memory=PIN_MEMORY,
+        collate_fn=collate_pad
+    )
+    val_ld = DataLoader(
+        val_ds,
+        batch_size=BATCH,
+        shuffle=False,
+        num_workers=NUM_WORKERS,
+        pin_memory=PIN_MEMORY,
+        collate_fn=collate_pad
+    )
+    test_ld = DataLoader(
+        test_ds,
+        batch_size=BATCH,
+        shuffle=False,
+        num_workers=NUM_WORKERS,
+        pin_memory=PIN_MEMORY,
+        collate_fn=collate_pad
+    )
+
+    # ─── 4) model / optim ───────────────────────────────────────────
+    model  = LSTMForecast().to(device)
+    if hasattr(torch, "compile") and device.type == "cuda":
         model = torch.compile(model)
-        print("[INFO] Model compiled with torch.compile().")
 
-    #####################################
-    # 7) Training and Validation
-    #####################################
-    num_epochs = 5
-    for epoch in range(num_epochs):
+    loss_fn = nn.MSELoss()
+    optim_  = optim.Adam(model.parameters(), lr=LR)
+
+    # ─── 5) training loop ───────────────────────────────────────────
+    for epoch in range(1, EPOCHS + 1):
+        print(f"[INFO] Starting: Epoch {epoch:02d}/{EPOCHS} [train]")
         model.train()
-        train_loss_sum = 0.0
-        for X_batch, Y_batch in train_loader:
-            X_batch = X_batch.to(device)
-            Y_batch = Y_batch.to(device)
-
-            optimizer.zero_grad()
-            Y_pred = model(X_batch)
-            loss = criterion(Y_pred, Y_batch)
+        tr_loss, t0 = 0.0, time.perf_counter()
+        for xb, lens, yb in tqdm(train_ld, desc=f"Epoch {epoch:02d}/{EPOCHS} [train]"):
+            xb, lens, yb = (x.to(device, non_blocking=True) for x in (xb, lens, yb))
+            optim_.zero_grad()
+            pred = model(xb, lens)
+            loss = loss_fn(pred, yb)
             loss.backward()
-            optimizer.step()
-
-            train_loss_sum += loss.item()
-        train_loss = train_loss_sum / len(train_loader)
+            nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            optim_.step()
+            tr_loss += loss.item()
+        tr_loss /= len(train_ld)
 
         model.eval()
-        val_loss_sum = 0.0
+        val_loss = 0.0
         with torch.no_grad():
-            for X_valb, Y_valb in val_loader:
-                X_valb = X_valb.to(device)
-                Y_valb = Y_valb.to(device)
-                val_pred = model(X_valb)
-                val_loss_sum += criterion(val_pred, Y_valb).item()
-        val_loss = val_loss_sum / len(val_loader)
+            for xb, lens, yb in val_ld:
+                xb, lens, yb = (x.to(device, non_blocking=True) for x in (xb, lens, yb))
+                val_loss += loss_fn(model(xb, lens), yb).item()
+        val_loss /= len(val_ld)
 
-        print(f"Epoch [{epoch+1}/{num_epochs}] -> Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+        print(f"Epoch {epoch:02d}/{EPOCHS} | train {tr_loss:.4f} | val {val_loss:.4f}")
 
-    #####################################
-    # 8) Test Evaluation and Saving
-    #####################################
+    # ─── 6) test evaluation ─────────────────────────────────────────
     model.eval()
-    test_preds_list = []
-    test_tgts_list  = []
-
+    preds, trues = [], []
     with torch.no_grad():
-        for X_testb, Y_testb in test_loader:
-            X_testb = X_testb.to(device)
-            Y_testb = Y_testb.to(device)
-            Y_test_pred = model(X_testb)  # (batch_size, horizon)
-            test_preds_list.append(Y_test_pred.cpu().numpy())
-            test_tgts_list.append(Y_testb.cpu().numpy())
+        for xb, lens, yb in test_ld:
+            xb, lens = xb.to(device, non_blocking=True), lens.to(device, non_blocking=True)
+            preds.append(model(xb, lens).cpu())
+            trues.append(yb)
+    preds = torch.cat(preds).numpy()
+    trues = torch.cat(trues).numpy()
 
-    test_preds = np.concatenate(test_preds_list, axis=0)
-    test_tgts  = np.concatenate(test_tgts_list,  axis=0)
+    mse = np.mean((preds - trues) ** 2)
+    mae = np.mean(np.abs(preds - trues))
+    print(f"[RESULT] test MSE {mse:.4f} | MAE {mae:.4f}")
 
-    test_mse = np.mean((test_preds - test_tgts)**2)
-    test_mae = np.mean(np.abs(test_preds - test_tgts))
-    print(f"[RESULT] Test MSE: {test_mse:.4f}")
-    print(f"[RESULT] Test MAE: {test_mae:.4f}")
-
-    df_preds = pd.DataFrame({f"Pred_Step_{i+1}": test_preds[:, i] for i in range(horizon)})
-    df_tgts  = pd.DataFrame({f"True_Step_{i+1}": test_tgts[:, i] for i in range(horizon)})
-    df_out   = pd.concat([df_preds, df_tgts], axis=1)
-    df_out.to_csv("predictions_lstm.csv", index=False)
-    print("[INFO] Predictions saved to 'predictions_lstm.csv'.")
-
+    # ─── 7) save csv ────────────────────────────────────────────────
+    pd.DataFrame(
+        np.hstack([preds, trues]),
+        columns=[f"pred_t+{i+1}" for i in range(HORIZON)] +
+                [f"true_t+{i+1}" for i in range(HORIZON)]
+    ).to_csv("predictions_lstm_fullhistory.csv", index=False)
+    print("[INFO] predictions saved → predictions_lstm_fullhistory.csv")

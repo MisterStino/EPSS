@@ -74,11 +74,11 @@ def split_epss_by_calendar(
 
 
 if __name__ == "__main__":
-    INPUT   = "data/full_db/sampled/final_full_data_sampled.parquet"
-    OUTPUT  = "data/full_db/ml-sets-sampled/raw"
+    INPUT   = "data/full_db/ml-sets-sampled/logit-scaled/full"
+    OUTPUT  = "data/full_db/ml-sets-sampled/logit-scaled"
     NFILES  = 64
 
-    spark = get_spark_session(app_name="EPSS_calendar_split")
+    spark = get_spark_session()
     split_epss_by_calendar(spark, INPUT, OUTPUT, NFILES)
     spark.stop()
     print("[INFO] all done ✅")

@@ -140,7 +140,7 @@ def sample_and_check(
 if __name__ == "__main__":
     # ── Hard‑coded parameters ───────────────────────────────
     FULL_DB_PARQUET = "data/full_db/sampled/final_full_data_sampled.parquet"
-    SPLIT_BASE_DIR  = "data/full_db/ml-sets-sampled/raw"
+    SPLIT_BASE_DIR  = "data/full_db/ml-sets-sampled/logit-scaled"
     LOW_THRESHOLD   = 0.7
     SAMPLE_SIZE     = 5
     # ────────────────────────────────────────────────────────

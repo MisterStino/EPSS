@@ -129,7 +129,7 @@ def generate_full_database_parquet(modules=['epss'], download_epss=False):
 
     # Merge additional modules onto the base DataFrame
     for module in modules:
-        # Skip the base module since it's already loaded
+        # Skip the base module since it's already loaded  
         if module == base_module:
             continue
         logging.info(f"Merging module: {module}...")
