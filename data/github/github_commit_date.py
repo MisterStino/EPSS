@@ -3,7 +3,6 @@ import csv
 import time
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-import math
 
 def get_github_token():
     # Replace with your GitHub Personal Access Token
@@ -16,14 +15,22 @@ def run_rest_query(endpoint, query, token, page=1, per_page=100, retries=3):
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             return response.json()
-        elif response.status_code == 403 and "secondary rate limit" in response.text.lower():
-            wait_times = [300, 1800, 3600]  # 5 min, 30 min, 60 min
-            wait_time = wait_times[attempt]
-            print(f"Hit secondary rate limit on attempt {attempt + 1}/{retries}. Waiting {wait_time // 60} minutes...")
+        elif response.status_code == 403:
+            retry_after = response.headers.get("Retry-After")
+            reset_time = response.headers.get("X-RateLimit-Reset")
+            if retry_after:  # Prefer Retry-After for secondary rate limits
+                wait_time = int(retry_after) + 10
+                print(f"Hit rate limit (Retry-After). Waiting {wait_time} seconds...")
+            elif reset_time:  # Use X-RateLimit-Reset for primary rate limit
+                wait_time = max(int(reset_time) - int(time.time()), 0) + 10
+                print(f"Hit rate limit (X-RateLimit-Reset). Waiting {wait_time // 60} minutes...")
+            else:  # Fallback for rate limit without headers
+                wait_time = 300  # 5 minutes
+                print(f"Hit rate limit (no headers). Waiting {wait_time // 60} minutes...")
             time.sleep(wait_time)
         else:
             raise Exception(f"REST query failed: {response.status_code} - {response.text}")
-    raise Exception(f"Failed after {retries} retries due to secondary rate limit")
+    raise Exception(f"Failed after {retries} retries due to rate limit")
 
 def fetch_commits(cve_id, start_dt, end_dt, all_commits, seen_shas, per_page=100):
     start_str = start_dt.strftime('%Y-%m-%d')
@@ -101,7 +108,6 @@ def get_commit_dates_by_cve(cve_id, start_date, end_date):
 
     return commit_details
 
-#change output file name if needed
 def write_to_csv(details, output_file="github_commit_dates.csv", is_first_write=False):
     headers = ['cve_id', 'commit_date']
     mode = 'w' if is_first_write else 'a'
@@ -124,9 +130,8 @@ def read_cve_file(filename):
     return cve_list
 
 def main():
-    #change the input file and output file at needs
     input_file = "cve_time_ranges.csv"
-    output_file = "github_commit_dates.csv"
+    output_file = "github_commit_dates_9k.csv"
 
     try:
         cve_entries = read_cve_file(input_file)
@@ -135,11 +140,14 @@ def main():
         is_first_write = True
         for cve_id, start_date, end_date in cve_entries:
             print(f"Fetching commit dates for {cve_id} from {start_date} to {end_date}...")
-            commit_details = get_commit_dates_by_cve(cve_id, start_date, end_date)
-            print(f"Commits retrieved: {len(commit_details)}")
-            if commit_details:
-                write_to_csv(commit_details, output_file, is_first_write)
-                is_first_write = False
+            try:
+                commit_details = get_commit_dates_by_cve(cve_id, start_date, end_date)
+                print(f"Commits retrieved: {len(commit_details)}")
+                if commit_details:
+                    write_to_csv(commit_details, output_file, is_first_write)
+                    is_first_write = False
+            except Exception as e:
+                print(f"Error processing {cve_id}: {str(e)}")
             time.sleep(5)
 
         print(f"Commit dates saved to {output_file}")
