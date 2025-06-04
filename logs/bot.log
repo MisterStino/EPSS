@@ -1,0 +1,1185 @@
+2025-06-04 13:44:55,843 - INFO: Processing 229 files
+2025-06-04 13:44:55,843 - INFO: Processing W:\reddit\comments\RC_2005-12.zst -> data/reddit/raw\RC_2005-12.csv (Is submission: False)
+2025-06-04 13:44:55,864 - INFO: Completed: Total: 1075, Matched: 0, Errors: 0
+2025-06-04 13:44:55,865 - INFO: Processing W:\reddit\comments\RC_2006-01.zst -> data/reddit/raw\RC_2006-01.csv (Is submission: False)
+2025-06-04 13:44:55,924 - INFO: Completed: Total: 3666, Matched: 0, Errors: 0
+2025-06-04 13:44:55,924 - INFO: Processing W:\reddit\comments\RC_2006-02.zst -> data/reddit/raw\RC_2006-02.csv (Is submission: False)
+2025-06-04 13:44:56,013 - INFO: Completed: Total: 9095, Matched: 0, Errors: 0
+2025-06-04 13:44:56,014 - INFO: Processing W:\reddit\comments\RC_2006-03.zst -> data/reddit/raw\RC_2006-03.csv (Is submission: False)
+2025-06-04 13:44:56,205 - INFO: Completed: Total: 13859, Matched: 0, Errors: 0
+2025-06-04 13:44:56,205 - INFO: Processing W:\reddit\comments\RC_2006-04.zst -> data/reddit/raw\RC_2006-04.csv (Is submission: False)
+2025-06-04 13:44:56,428 - INFO: Completed: Total: 19090, Matched: 0, Errors: 0
+2025-06-04 13:44:56,429 - INFO: Processing W:\reddit\comments\RC_2006-05.zst -> data/reddit/raw\RC_2006-05.csv (Is submission: False)
+2025-06-04 13:44:56,713 - INFO: Completed: Total: 26859, Matched: 0, Errors: 0
+2025-06-04 13:44:56,714 - INFO: Processing W:\reddit\comments\RC_2006-06.zst -> data/reddit/raw\RC_2006-06.csv (Is submission: False)
+2025-06-04 13:44:57,010 - INFO: Completed: Total: 29163, Matched: 0, Errors: 0
+2025-06-04 13:44:57,011 - INFO: Processing W:\reddit\comments\RC_2006-07.zst -> data/reddit/raw\RC_2006-07.csv (Is submission: False)
+2025-06-04 13:44:57,476 - INFO: Completed: Total: 37031, Matched: 0, Errors: 0
+2025-06-04 13:44:57,476 - INFO: Processing W:\reddit\comments\RC_2006-08.zst -> data/reddit/raw\RC_2006-08.csv (Is submission: False)
+2025-06-04 13:44:57,938 - INFO: Completed: Total: 50559, Matched: 0, Errors: 0
+2025-06-04 13:44:57,939 - INFO: Processing W:\reddit\comments\RC_2006-09.zst -> data/reddit/raw\RC_2006-09.csv (Is submission: False)
+2025-06-04 13:44:58,397 - INFO: Completed: Total: 50675, Matched: 0, Errors: 0
+2025-06-04 13:44:58,397 - INFO: Processing W:\reddit\comments\RC_2006-10.zst -> data/reddit/raw\RC_2006-10.csv (Is submission: False)
+2025-06-04 13:44:59,042 - INFO: Completed: Total: 54148, Matched: 0, Errors: 0
+2025-06-04 13:44:59,043 - INFO: Processing W:\reddit\comments\RC_2006-11.zst -> data/reddit/raw\RC_2006-11.csv (Is submission: False)
+2025-06-04 13:44:59,619 - INFO: Completed: Total: 62021, Matched: 0, Errors: 0
+2025-06-04 13:44:59,619 - INFO: Processing W:\reddit\comments\RC_2006-12.zst -> data/reddit/raw\RC_2006-12.csv (Is submission: False)
+2025-06-04 13:45:00,193 - INFO: Completed: Total: 61018, Matched: 0, Errors: 0
+2025-06-04 13:45:00,194 - INFO: Processing W:\reddit\comments\RC_2007-01.zst -> data/reddit/raw\RC_2007-01.csv (Is submission: False)
+2025-06-04 13:45:00,906 - INFO: Completed: Total: 81341, Matched: 0, Errors: 0
+2025-06-04 13:45:00,907 - INFO: Processing W:\reddit\comments\RC_2007-02.zst -> data/reddit/raw\RC_2007-02.csv (Is submission: False)
+2025-06-04 13:45:01,815 - INFO: Completed: Total: 95634, Matched: 0, Errors: 0
+2025-06-04 13:45:01,816 - INFO: Processing W:\reddit\comments\RC_2007-03.zst -> data/reddit/raw\RC_2007-03.csv (Is submission: False)
+2025-06-04 13:45:02,765 - INFO: Completed: Total: 112444, Matched: 0, Errors: 0
+2025-06-04 13:45:02,765 - INFO: Processing W:\reddit\comments\RC_2007-04.zst -> data/reddit/raw\RC_2007-04.csv (Is submission: False)
+2025-06-04 13:45:03,870 - INFO: Completed: Total: 126773, Matched: 0, Errors: 0
+2025-06-04 13:45:03,871 - INFO: Processing W:\reddit\comments\RC_2007-05.zst -> data/reddit/raw\RC_2007-05.csv (Is submission: False)
+2025-06-04 13:45:05,446 - INFO: Completed: Total: 170097, Matched: 0, Errors: 0
+2025-06-04 13:45:05,446 - INFO: Processing W:\reddit\comments\RC_2007-06.zst -> data/reddit/raw\RC_2007-06.csv (Is submission: False)
+2025-06-04 13:45:06,968 - INFO: Completed: Total: 178800, Matched: 1, Errors: 0
+2025-06-04 13:45:06,968 - INFO: Processing W:\reddit\comments\RC_2007-07.zst -> data/reddit/raw\RC_2007-07.csv (Is submission: False)
+2025-06-04 13:45:08,779 - INFO: Completed: Total: 203319, Matched: 0, Errors: 0
+2025-06-04 13:45:08,780 - INFO: Processing W:\reddit\comments\RC_2007-08.zst -> data/reddit/raw\RC_2007-08.csv (Is submission: False)
+2025-06-04 13:45:10,733 - INFO: Completed: Total: 225111, Matched: 1, Errors: 0
+2025-06-04 13:45:10,735 - INFO: Processing W:\reddit\comments\RC_2007-09.zst -> data/reddit/raw\RC_2007-09.csv (Is submission: False)
+2025-06-04 13:45:12,860 - INFO: Completed: Total: 259497, Matched: 0, Errors: 0
+2025-06-04 13:45:12,860 - INFO: Processing W:\reddit\comments\RC_2007-10.zst -> data/reddit/raw\RC_2007-10.csv (Is submission: False)
+2025-06-04 13:45:15,175 - INFO: Completed: Total: 274170, Matched: 0, Errors: 0
+2025-06-04 13:45:15,176 - INFO: Processing W:\reddit\comments\RC_2007-11.zst -> data/reddit/raw\RC_2007-11.csv (Is submission: False)
+2025-06-04 13:45:18,401 - INFO: Completed: Total: 372983, Matched: 1, Errors: 0
+2025-06-04 13:45:18,402 - INFO: Processing W:\reddit\comments\RC_2007-12.zst -> data/reddit/raw\RC_2007-12.csv (Is submission: False)
+2025-06-04 13:45:21,750 - INFO: Completed: Total: 363390, Matched: 0, Errors: 0
+2025-06-04 13:45:21,751 - INFO: Processing W:\reddit\comments\RC_2008-01.zst -> data/reddit/raw\RC_2008-01.csv (Is submission: False)
+2025-06-04 13:45:25,834 - INFO: Completed: Total: 452990, Matched: 0, Errors: 0
+2025-06-04 13:45:25,834 - INFO: Processing W:\reddit\comments\RC_2008-02.zst -> data/reddit/raw\RC_2008-02.csv (Is submission: False)
+2025-06-04 14:11:59,498 - INFO: Processing 37 files
+2025-06-04 14:11:59,499 - INFO: Processing W:\reddit\comments\RC_2021-12.zst -> data/reddit/raw\RC_2021-12.csv (Is submission: False)
+2025-06-04 14:13:55,816 - INFO: Processing 37 files
+2025-06-04 14:13:55,816 - INFO: Processing W:\reddit\comments\RC_2021-12.zst -> data/reddit/raw\RC_2021-12.csv (Is submission: False)
+2025-06-04 14:17:50,718 - INFO: Processing 37 files
+2025-06-04 14:17:50,718 - INFO: Processing W:\reddit\comments\RC_2021-12.zst -> W:\reddit\scraped\comments_scraped\RC_2021-12.csv (Is submission: False)
+2025-06-04 14:18:18,112 - INFO: Processing 37 files
+2025-06-04 14:18:18,113 - INFO: Processing W:\reddit\comments\RC_2021-12.zst -> W:\reddit\scraped\comments_scraped\RC_2021-12.csv (Is submission: False)
+2025-06-04 14:23:37,111 - INFO: Searching for CVE IDs in field: selftext
+2025-06-04 14:23:37,111 - INFO: Date range: 2005-01-01 to 2030-12-31
+2025-06-04 14:23:37,112 - INFO: Output format: csv
+2025-06-04 14:23:37,112 - INFO: Processing 36 files.
+2025-06-04 14:23:37,113 - INFO: Processing: W:\reddit\submissions\RS_2021-12.zst -> W:\reddit\scraped\submissions_scraped>\RS_2021-12.csv, Is submission: True
+2025-06-04 14:23:37,113 - WARNING: Error processing W:\reddit\submissions\RS_2021-12.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2021-12.csv'
+2025-06-04 14:23:37,116 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2021-12.csv'
+
+2025-06-04 14:23:37,117 - INFO: Processing: W:\reddit\submissions\RS_2022-01.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-01.csv, Is submission: True
+2025-06-04 14:23:37,117 - WARNING: Error processing W:\reddit\submissions\RS_2022-01.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-01.csv'
+2025-06-04 14:23:37,117 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-01.csv'
+
+2025-06-04 14:23:37,118 - INFO: Processing: W:\reddit\submissions\RS_2022-02.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-02.csv, Is submission: True
+2025-06-04 14:23:37,118 - WARNING: Error processing W:\reddit\submissions\RS_2022-02.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-02.csv'
+2025-06-04 14:23:37,118 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-02.csv'
+
+2025-06-04 14:23:37,119 - INFO: Processing: W:\reddit\submissions\RS_2022-03.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-03.csv, Is submission: True
+2025-06-04 14:23:37,119 - WARNING: Error processing W:\reddit\submissions\RS_2022-03.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-03.csv'
+2025-06-04 14:23:37,119 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-03.csv'
+
+2025-06-04 14:23:37,121 - INFO: Processing: W:\reddit\submissions\RS_2022-04.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-04.csv, Is submission: True
+2025-06-04 14:23:37,121 - WARNING: Error processing W:\reddit\submissions\RS_2022-04.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-04.csv'
+2025-06-04 14:23:37,121 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-04.csv'
+
+2025-06-04 14:23:37,122 - INFO: Processing: W:\reddit\submissions\RS_2022-05.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-05.csv, Is submission: True
+2025-06-04 14:23:37,122 - WARNING: Error processing W:\reddit\submissions\RS_2022-05.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-05.csv'
+2025-06-04 14:23:37,122 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-05.csv'
+
+2025-06-04 14:23:37,123 - INFO: Processing: W:\reddit\submissions\RS_2022-06.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-06.csv, Is submission: True
+2025-06-04 14:23:37,123 - WARNING: Error processing W:\reddit\submissions\RS_2022-06.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-06.csv'
+2025-06-04 14:23:37,124 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-06.csv'
+
+2025-06-04 14:23:37,124 - INFO: Processing: W:\reddit\submissions\RS_2022-07.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-07.csv, Is submission: True
+2025-06-04 14:23:37,124 - WARNING: Error processing W:\reddit\submissions\RS_2022-07.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-07.csv'
+2025-06-04 14:23:37,125 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-07.csv'
+
+2025-06-04 14:23:37,125 - INFO: Processing: W:\reddit\submissions\RS_2022-08.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-08.csv, Is submission: True
+2025-06-04 14:23:37,125 - WARNING: Error processing W:\reddit\submissions\RS_2022-08.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-08.csv'
+2025-06-04 14:23:37,125 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-08.csv'
+
+2025-06-04 14:23:37,126 - INFO: Processing: W:\reddit\submissions\RS_2022-09.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-09.csv, Is submission: True
+2025-06-04 14:23:37,126 - WARNING: Error processing W:\reddit\submissions\RS_2022-09.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-09.csv'
+2025-06-04 14:23:37,127 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-09.csv'
+
+2025-06-04 14:23:37,127 - INFO: Processing: W:\reddit\submissions\RS_2022-10.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-10.csv, Is submission: True
+2025-06-04 14:23:37,127 - WARNING: Error processing W:\reddit\submissions\RS_2022-10.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-10.csv'
+2025-06-04 14:23:37,129 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-10.csv'
+
+2025-06-04 14:23:37,129 - INFO: Processing: W:\reddit\submissions\RS_2022-11.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-11.csv, Is submission: True
+2025-06-04 14:23:37,130 - WARNING: Error processing W:\reddit\submissions\RS_2022-11.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-11.csv'
+2025-06-04 14:23:37,130 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-11.csv'
+
+2025-06-04 14:23:37,131 - INFO: Processing: W:\reddit\submissions\RS_2022-12.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-12.csv, Is submission: True
+2025-06-04 14:23:37,131 - WARNING: Error processing W:\reddit\submissions\RS_2022-12.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-12.csv'
+2025-06-04 14:23:37,131 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-12.csv'
+
+2025-06-04 14:23:37,133 - INFO: Processing: W:\reddit\submissions\RS_2023-01.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-01.csv, Is submission: True
+2025-06-04 14:23:37,133 - WARNING: Error processing W:\reddit\submissions\RS_2023-01.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-01.csv'
+2025-06-04 14:23:37,134 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-01.csv'
+
+2025-06-04 14:23:37,135 - INFO: Processing: W:\reddit\submissions\RS_2023-02.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-02.csv, Is submission: True
+2025-06-04 14:23:37,135 - WARNING: Error processing W:\reddit\submissions\RS_2023-02.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-02.csv'
+2025-06-04 14:23:37,136 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-02.csv'
+
+2025-06-04 14:23:37,137 - INFO: Processing: W:\reddit\submissions\RS_2023-03.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-03.csv, Is submission: True
+2025-06-04 14:23:37,137 - WARNING: Error processing W:\reddit\submissions\RS_2023-03.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-03.csv'
+2025-06-04 14:23:37,138 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-03.csv'
+
+2025-06-04 14:23:37,138 - INFO: Processing: W:\reddit\submissions\RS_2023-04.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-04.csv, Is submission: True
+2025-06-04 14:23:37,139 - WARNING: Error processing W:\reddit\submissions\RS_2023-04.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-04.csv'
+2025-06-04 14:23:37,140 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-04.csv'
+
+2025-06-04 14:23:37,140 - INFO: Processing: W:\reddit\submissions\RS_2023-05.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-05.csv, Is submission: True
+2025-06-04 14:23:37,140 - WARNING: Error processing W:\reddit\submissions\RS_2023-05.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-05.csv'
+2025-06-04 14:23:37,141 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-05.csv'
+
+2025-06-04 14:23:37,141 - INFO: Processing: W:\reddit\submissions\RS_2023-06.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-06.csv, Is submission: True
+2025-06-04 14:23:37,142 - WARNING: Error processing W:\reddit\submissions\RS_2023-06.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-06.csv'
+2025-06-04 14:23:37,142 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-06.csv'
+
+2025-06-04 14:23:37,143 - INFO: Processing: W:\reddit\submissions\RS_2023-07.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-07.csv, Is submission: True
+2025-06-04 14:23:37,143 - WARNING: Error processing W:\reddit\submissions\RS_2023-07.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-07.csv'
+2025-06-04 14:23:37,144 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-07.csv'
+
+2025-06-04 14:23:37,144 - INFO: Processing: W:\reddit\submissions\RS_2023-09.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-09.csv, Is submission: True
+2025-06-04 14:23:37,145 - WARNING: Error processing W:\reddit\submissions\RS_2023-09.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-09.csv'
+2025-06-04 14:23:37,145 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-09.csv'
+
+2025-06-04 14:23:37,146 - INFO: Processing: W:\reddit\submissions\RS_2023-10.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-10.csv, Is submission: True
+2025-06-04 14:23:37,146 - WARNING: Error processing W:\reddit\submissions\RS_2023-10.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-10.csv'
+2025-06-04 14:23:37,147 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-10.csv'
+
+2025-06-04 14:23:37,148 - INFO: Processing: W:\reddit\submissions\RS_2023-11.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-11.csv, Is submission: True
+2025-06-04 14:23:37,148 - WARNING: Error processing W:\reddit\submissions\RS_2023-11.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-11.csv'
+2025-06-04 14:23:37,149 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-11.csv'
+
+2025-06-04 14:23:37,151 - INFO: Processing: W:\reddit\submissions\RS_2023-12.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-12.csv, Is submission: True
+2025-06-04 14:23:37,158 - WARNING: Error processing W:\reddit\submissions\RS_2023-12.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-12.csv'
+2025-06-04 14:23:37,158 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-12.csv'
+
+2025-06-04 14:23:37,160 - INFO: Processing: W:\reddit\submissions\RS_2024-01.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-01.csv, Is submission: True
+2025-06-04 14:23:37,160 - WARNING: Error processing W:\reddit\submissions\RS_2024-01.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-01.csv'
+2025-06-04 14:23:37,161 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-01.csv'
+
+2025-06-04 14:23:37,161 - INFO: Processing: W:\reddit\submissions\RS_2024-02.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-02.csv, Is submission: True
+2025-06-04 14:23:37,162 - WARNING: Error processing W:\reddit\submissions\RS_2024-02.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-02.csv'
+2025-06-04 14:23:37,163 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-02.csv'
+
+2025-06-04 14:23:37,163 - INFO: Processing: W:\reddit\submissions\RS_2024-03.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-03.csv, Is submission: True
+2025-06-04 14:23:37,163 - WARNING: Error processing W:\reddit\submissions\RS_2024-03.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-03.csv'
+2025-06-04 14:23:37,165 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-03.csv'
+
+2025-06-04 14:23:37,166 - INFO: Processing: W:\reddit\submissions\RS_2024-04.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-04.csv, Is submission: True
+2025-06-04 14:23:37,166 - WARNING: Error processing W:\reddit\submissions\RS_2024-04.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-04.csv'
+2025-06-04 14:23:37,167 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-04.csv'
+
+2025-06-04 14:23:37,167 - INFO: Processing: W:\reddit\submissions\RS_2024-05.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-05.csv, Is submission: True
+2025-06-04 14:23:37,168 - WARNING: Error processing W:\reddit\submissions\RS_2024-05.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-05.csv'
+2025-06-04 14:23:37,169 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-05.csv'
+
+2025-06-04 14:23:37,169 - INFO: Processing: W:\reddit\submissions\RS_2024-06.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-06.csv, Is submission: True
+2025-06-04 14:23:37,170 - WARNING: Error processing W:\reddit\submissions\RS_2024-06.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-06.csv'
+2025-06-04 14:23:37,170 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-06.csv'
+
+2025-06-04 14:23:37,172 - INFO: Processing: W:\reddit\submissions\RS_2024-07.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-07.csv, Is submission: True
+2025-06-04 14:23:37,172 - WARNING: Error processing W:\reddit\submissions\RS_2024-07.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-07.csv'
+2025-06-04 14:23:37,173 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-07.csv'
+
+2025-06-04 14:23:37,174 - INFO: Processing: W:\reddit\submissions\RS_2024-08.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-08.csv, Is submission: True
+2025-06-04 14:23:37,175 - WARNING: Error processing W:\reddit\submissions\RS_2024-08.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-08.csv'
+2025-06-04 14:23:37,176 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-08.csv'
+
+2025-06-04 14:23:37,176 - INFO: Processing: W:\reddit\submissions\RS_2024-09.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-09.csv, Is submission: True
+2025-06-04 14:23:37,177 - WARNING: Error processing W:\reddit\submissions\RS_2024-09.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-09.csv'
+2025-06-04 14:23:37,178 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-09.csv'
+
+2025-06-04 14:23:37,179 - INFO: Processing: W:\reddit\submissions\RS_2024-10.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-10.csv, Is submission: True
+2025-06-04 14:23:37,179 - WARNING: Error processing W:\reddit\submissions\RS_2024-10.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-10.csv'
+2025-06-04 14:23:37,180 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-10.csv'
+
+2025-06-04 14:23:37,181 - INFO: Processing: W:\reddit\submissions\RS_2024-11.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-11.csv, Is submission: True
+2025-06-04 14:23:37,181 - WARNING: Error processing W:\reddit\submissions\RS_2024-11.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-11.csv'
+2025-06-04 14:23:37,182 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-11.csv'
+
+2025-06-04 14:23:37,183 - INFO: Processing: W:\reddit\submissions\RS_2024-12.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-12.csv, Is submission: True
+2025-06-04 14:23:37,183 - WARNING: Error processing W:\reddit\submissions\RS_2024-12.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-12.csv'
+2025-06-04 14:23:37,184 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-12.csv'
+
+2025-06-04 14:26:12,442 - INFO: Processing 37 files
+2025-06-04 14:26:12,443 - INFO: Processing W:\reddit\comments\RC_2021-12.zst -> W:\reddit\scraped\comments_scraped\RC_2021-12.csv (Is submission: False)
+2025-06-04 14:28:52,387 - INFO: Searching for CVE IDs in field: selftext
+2025-06-04 14:28:52,387 - INFO: Date range: 2005-01-01 to 2030-12-31
+2025-06-04 14:28:52,388 - INFO: Output format: csv
+2025-06-04 14:28:52,388 - INFO: Processing 36 files.
+2025-06-04 14:28:52,389 - INFO: Processing: W:\reddit\submissions\RS_2021-12.zst -> W:\reddit\scraped\submissions_scraped>\RS_2021-12.csv, Is submission: True
+2025-06-04 14:28:52,389 - WARNING: Error processing W:\reddit\submissions\RS_2021-12.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2021-12.csv'
+2025-06-04 14:28:52,392 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2021-12.csv'
+
+2025-06-04 14:28:52,393 - INFO: Processing: W:\reddit\submissions\RS_2022-01.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-01.csv, Is submission: True
+2025-06-04 14:28:52,393 - WARNING: Error processing W:\reddit\submissions\RS_2022-01.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-01.csv'
+2025-06-04 14:28:52,393 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-01.csv'
+
+2025-06-04 14:28:52,394 - INFO: Processing: W:\reddit\submissions\RS_2022-02.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-02.csv, Is submission: True
+2025-06-04 14:28:52,394 - WARNING: Error processing W:\reddit\submissions\RS_2022-02.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-02.csv'
+2025-06-04 14:28:52,394 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-02.csv'
+
+2025-06-04 14:28:52,395 - INFO: Processing: W:\reddit\submissions\RS_2022-03.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-03.csv, Is submission: True
+2025-06-04 14:28:52,395 - WARNING: Error processing W:\reddit\submissions\RS_2022-03.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-03.csv'
+2025-06-04 14:28:52,396 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-03.csv'
+
+2025-06-04 14:28:52,396 - INFO: Processing: W:\reddit\submissions\RS_2022-04.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-04.csv, Is submission: True
+2025-06-04 14:28:52,396 - WARNING: Error processing W:\reddit\submissions\RS_2022-04.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-04.csv'
+2025-06-04 14:28:52,397 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-04.csv'
+
+2025-06-04 14:28:52,397 - INFO: Processing: W:\reddit\submissions\RS_2022-05.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-05.csv, Is submission: True
+2025-06-04 14:28:52,397 - WARNING: Error processing W:\reddit\submissions\RS_2022-05.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-05.csv'
+2025-06-04 14:28:52,398 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-05.csv'
+
+2025-06-04 14:28:52,398 - INFO: Processing: W:\reddit\submissions\RS_2022-06.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-06.csv, Is submission: True
+2025-06-04 14:28:52,398 - WARNING: Error processing W:\reddit\submissions\RS_2022-06.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-06.csv'
+2025-06-04 14:28:52,399 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-06.csv'
+
+2025-06-04 14:28:52,399 - INFO: Processing: W:\reddit\submissions\RS_2022-07.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-07.csv, Is submission: True
+2025-06-04 14:28:52,399 - WARNING: Error processing W:\reddit\submissions\RS_2022-07.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-07.csv'
+2025-06-04 14:28:52,399 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-07.csv'
+
+2025-06-04 14:28:52,400 - INFO: Processing: W:\reddit\submissions\RS_2022-08.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-08.csv, Is submission: True
+2025-06-04 14:28:52,400 - WARNING: Error processing W:\reddit\submissions\RS_2022-08.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-08.csv'
+2025-06-04 14:28:52,400 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-08.csv'
+
+2025-06-04 14:28:52,400 - INFO: Processing: W:\reddit\submissions\RS_2022-09.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-09.csv, Is submission: True
+2025-06-04 14:28:52,400 - WARNING: Error processing W:\reddit\submissions\RS_2022-09.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-09.csv'
+2025-06-04 14:28:52,401 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-09.csv'
+
+2025-06-04 14:28:52,401 - INFO: Processing: W:\reddit\submissions\RS_2022-10.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-10.csv, Is submission: True
+2025-06-04 14:28:52,401 - WARNING: Error processing W:\reddit\submissions\RS_2022-10.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-10.csv'
+2025-06-04 14:28:52,401 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-10.csv'
+
+2025-06-04 14:28:52,402 - INFO: Processing: W:\reddit\submissions\RS_2022-11.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-11.csv, Is submission: True
+2025-06-04 14:28:52,402 - WARNING: Error processing W:\reddit\submissions\RS_2022-11.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-11.csv'
+2025-06-04 14:28:52,402 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-11.csv'
+
+2025-06-04 14:28:52,402 - INFO: Processing: W:\reddit\submissions\RS_2022-12.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-12.csv, Is submission: True
+2025-06-04 14:28:52,403 - WARNING: Error processing W:\reddit\submissions\RS_2022-12.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-12.csv'
+2025-06-04 14:28:52,403 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-12.csv'
+
+2025-06-04 14:28:52,403 - INFO: Processing: W:\reddit\submissions\RS_2023-01.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-01.csv, Is submission: True
+2025-06-04 14:28:52,403 - WARNING: Error processing W:\reddit\submissions\RS_2023-01.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-01.csv'
+2025-06-04 14:28:52,404 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-01.csv'
+
+2025-06-04 14:28:52,404 - INFO: Processing: W:\reddit\submissions\RS_2023-02.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-02.csv, Is submission: True
+2025-06-04 14:28:52,404 - WARNING: Error processing W:\reddit\submissions\RS_2023-02.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-02.csv'
+2025-06-04 14:28:52,405 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-02.csv'
+
+2025-06-04 14:28:52,405 - INFO: Processing: W:\reddit\submissions\RS_2023-03.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-03.csv, Is submission: True
+2025-06-04 14:28:52,405 - WARNING: Error processing W:\reddit\submissions\RS_2023-03.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-03.csv'
+2025-06-04 14:28:52,405 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-03.csv'
+
+2025-06-04 14:28:52,406 - INFO: Processing: W:\reddit\submissions\RS_2023-04.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-04.csv, Is submission: True
+2025-06-04 14:28:52,406 - WARNING: Error processing W:\reddit\submissions\RS_2023-04.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-04.csv'
+2025-06-04 14:28:52,406 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-04.csv'
+
+2025-06-04 14:28:52,407 - INFO: Processing: W:\reddit\submissions\RS_2023-05.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-05.csv, Is submission: True
+2025-06-04 14:28:52,407 - WARNING: Error processing W:\reddit\submissions\RS_2023-05.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-05.csv'
+2025-06-04 14:28:52,408 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-05.csv'
+
+2025-06-04 14:28:52,408 - INFO: Processing: W:\reddit\submissions\RS_2023-06.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-06.csv, Is submission: True
+2025-06-04 14:28:52,408 - WARNING: Error processing W:\reddit\submissions\RS_2023-06.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-06.csv'
+2025-06-04 14:28:52,409 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-06.csv'
+
+2025-06-04 14:28:52,409 - INFO: Processing: W:\reddit\submissions\RS_2023-07.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-07.csv, Is submission: True
+2025-06-04 14:28:52,409 - WARNING: Error processing W:\reddit\submissions\RS_2023-07.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-07.csv'
+2025-06-04 14:28:52,409 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-07.csv'
+
+2025-06-04 14:28:52,411 - INFO: Processing: W:\reddit\submissions\RS_2023-09.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-09.csv, Is submission: True
+2025-06-04 14:28:52,411 - WARNING: Error processing W:\reddit\submissions\RS_2023-09.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-09.csv'
+2025-06-04 14:28:52,411 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-09.csv'
+
+2025-06-04 14:28:52,411 - INFO: Processing: W:\reddit\submissions\RS_2023-10.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-10.csv, Is submission: True
+2025-06-04 14:28:52,411 - WARNING: Error processing W:\reddit\submissions\RS_2023-10.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-10.csv'
+2025-06-04 14:28:52,412 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-10.csv'
+
+2025-06-04 14:28:52,412 - INFO: Processing: W:\reddit\submissions\RS_2023-11.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-11.csv, Is submission: True
+2025-06-04 14:28:52,412 - WARNING: Error processing W:\reddit\submissions\RS_2023-11.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-11.csv'
+2025-06-04 14:28:52,413 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-11.csv'
+
+2025-06-04 14:28:52,413 - INFO: Processing: W:\reddit\submissions\RS_2023-12.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-12.csv, Is submission: True
+2025-06-04 14:28:52,413 - WARNING: Error processing W:\reddit\submissions\RS_2023-12.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-12.csv'
+2025-06-04 14:28:52,414 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-12.csv'
+
+2025-06-04 14:28:52,414 - INFO: Processing: W:\reddit\submissions\RS_2024-01.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-01.csv, Is submission: True
+2025-06-04 14:28:52,414 - WARNING: Error processing W:\reddit\submissions\RS_2024-01.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-01.csv'
+2025-06-04 14:28:52,415 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-01.csv'
+
+2025-06-04 14:28:52,415 - INFO: Processing: W:\reddit\submissions\RS_2024-02.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-02.csv, Is submission: True
+2025-06-04 14:28:52,415 - WARNING: Error processing W:\reddit\submissions\RS_2024-02.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-02.csv'
+2025-06-04 14:28:52,415 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-02.csv'
+
+2025-06-04 14:28:52,416 - INFO: Processing: W:\reddit\submissions\RS_2024-03.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-03.csv, Is submission: True
+2025-06-04 14:28:52,416 - WARNING: Error processing W:\reddit\submissions\RS_2024-03.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-03.csv'
+2025-06-04 14:28:52,416 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-03.csv'
+
+2025-06-04 14:28:52,416 - INFO: Processing: W:\reddit\submissions\RS_2024-04.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-04.csv, Is submission: True
+2025-06-04 14:28:52,417 - WARNING: Error processing W:\reddit\submissions\RS_2024-04.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-04.csv'
+2025-06-04 14:28:52,417 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-04.csv'
+
+2025-06-04 14:28:52,417 - INFO: Processing: W:\reddit\submissions\RS_2024-05.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-05.csv, Is submission: True
+2025-06-04 14:28:52,417 - WARNING: Error processing W:\reddit\submissions\RS_2024-05.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-05.csv'
+2025-06-04 14:28:52,418 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-05.csv'
+
+2025-06-04 14:28:52,418 - INFO: Processing: W:\reddit\submissions\RS_2024-06.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-06.csv, Is submission: True
+2025-06-04 14:28:52,418 - WARNING: Error processing W:\reddit\submissions\RS_2024-06.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-06.csv'
+2025-06-04 14:28:52,419 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-06.csv'
+
+2025-06-04 14:28:52,419 - INFO: Processing: W:\reddit\submissions\RS_2024-07.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-07.csv, Is submission: True
+2025-06-04 14:28:52,420 - WARNING: Error processing W:\reddit\submissions\RS_2024-07.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-07.csv'
+2025-06-04 14:28:52,420 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-07.csv'
+
+2025-06-04 14:28:52,420 - INFO: Processing: W:\reddit\submissions\RS_2024-08.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-08.csv, Is submission: True
+2025-06-04 14:28:52,421 - WARNING: Error processing W:\reddit\submissions\RS_2024-08.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-08.csv'
+2025-06-04 14:28:52,421 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-08.csv'
+
+2025-06-04 14:28:52,421 - INFO: Processing: W:\reddit\submissions\RS_2024-09.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-09.csv, Is submission: True
+2025-06-04 14:28:52,421 - WARNING: Error processing W:\reddit\submissions\RS_2024-09.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-09.csv'
+2025-06-04 14:28:52,423 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-09.csv'
+
+2025-06-04 14:28:52,423 - INFO: Processing: W:\reddit\submissions\RS_2024-10.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-10.csv, Is submission: True
+2025-06-04 14:28:52,423 - WARNING: Error processing W:\reddit\submissions\RS_2024-10.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-10.csv'
+2025-06-04 14:28:52,423 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-10.csv'
+
+2025-06-04 14:28:52,423 - INFO: Processing: W:\reddit\submissions\RS_2024-11.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-11.csv, Is submission: True
+2025-06-04 14:28:52,424 - WARNING: Error processing W:\reddit\submissions\RS_2024-11.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-11.csv'
+2025-06-04 14:28:52,424 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-11.csv'
+
+2025-06-04 14:28:52,424 - INFO: Processing: W:\reddit\submissions\RS_2024-12.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-12.csv, Is submission: True
+2025-06-04 14:28:52,424 - WARNING: Error processing W:\reddit\submissions\RS_2024-12.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-12.csv'
+2025-06-04 14:28:52,425 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-12.csv'
+
+2025-06-04 14:31:29,077 - INFO: Searching for CVE IDs in field: selftext
+2025-06-04 14:31:29,078 - INFO: Date range: 2005-01-01 to 2030-12-31
+2025-06-04 14:31:29,078 - INFO: Output format: csv
+2025-06-04 14:31:29,079 - INFO: Processing 36 files.
+2025-06-04 14:31:29,080 - INFO: Processing: W:\reddit\submissions\RS_2021-12.zst -> W:\reddit\scraped\submissions_scraped>\RS_2021-12.csv, Is submission: True
+2025-06-04 14:31:29,080 - WARNING: Error processing W:\reddit\submissions\RS_2021-12.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2021-12.csv'
+2025-06-04 14:31:29,087 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2021-12.csv'
+
+2025-06-04 14:31:29,088 - INFO: Processing: W:\reddit\submissions\RS_2022-01.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-01.csv, Is submission: True
+2025-06-04 14:31:29,089 - WARNING: Error processing W:\reddit\submissions\RS_2022-01.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-01.csv'
+2025-06-04 14:31:29,090 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-01.csv'
+
+2025-06-04 14:31:29,090 - INFO: Processing: W:\reddit\submissions\RS_2022-02.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-02.csv, Is submission: True
+2025-06-04 14:31:29,091 - WARNING: Error processing W:\reddit\submissions\RS_2022-02.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-02.csv'
+2025-06-04 14:31:29,092 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-02.csv'
+
+2025-06-04 14:31:29,092 - INFO: Processing: W:\reddit\submissions\RS_2022-03.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-03.csv, Is submission: True
+2025-06-04 14:31:29,093 - WARNING: Error processing W:\reddit\submissions\RS_2022-03.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-03.csv'
+2025-06-04 14:31:29,094 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-03.csv'
+
+2025-06-04 14:31:29,095 - INFO: Processing: W:\reddit\submissions\RS_2022-04.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-04.csv, Is submission: True
+2025-06-04 14:31:29,096 - WARNING: Error processing W:\reddit\submissions\RS_2022-04.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-04.csv'
+2025-06-04 14:31:29,097 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-04.csv'
+
+2025-06-04 14:31:29,097 - INFO: Processing: W:\reddit\submissions\RS_2022-05.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-05.csv, Is submission: True
+2025-06-04 14:31:29,099 - WARNING: Error processing W:\reddit\submissions\RS_2022-05.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-05.csv'
+2025-06-04 14:31:29,099 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-05.csv'
+
+2025-06-04 14:31:29,100 - INFO: Processing: W:\reddit\submissions\RS_2022-06.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-06.csv, Is submission: True
+2025-06-04 14:31:29,100 - WARNING: Error processing W:\reddit\submissions\RS_2022-06.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-06.csv'
+2025-06-04 14:31:29,101 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-06.csv'
+
+2025-06-04 14:31:29,101 - INFO: Processing: W:\reddit\submissions\RS_2022-07.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-07.csv, Is submission: True
+2025-06-04 14:31:29,103 - WARNING: Error processing W:\reddit\submissions\RS_2022-07.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-07.csv'
+2025-06-04 14:31:29,103 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-07.csv'
+
+2025-06-04 14:31:29,103 - INFO: Processing: W:\reddit\submissions\RS_2022-08.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-08.csv, Is submission: True
+2025-06-04 14:31:29,104 - WARNING: Error processing W:\reddit\submissions\RS_2022-08.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-08.csv'
+2025-06-04 14:31:29,105 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-08.csv'
+
+2025-06-04 14:31:29,105 - INFO: Processing: W:\reddit\submissions\RS_2022-09.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-09.csv, Is submission: True
+2025-06-04 14:31:29,106 - WARNING: Error processing W:\reddit\submissions\RS_2022-09.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-09.csv'
+2025-06-04 14:31:29,107 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-09.csv'
+
+2025-06-04 14:31:29,107 - INFO: Processing: W:\reddit\submissions\RS_2022-10.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-10.csv, Is submission: True
+2025-06-04 14:31:29,108 - WARNING: Error processing W:\reddit\submissions\RS_2022-10.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-10.csv'
+2025-06-04 14:31:29,109 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-10.csv'
+
+2025-06-04 14:31:29,109 - INFO: Processing: W:\reddit\submissions\RS_2022-11.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-11.csv, Is submission: True
+2025-06-04 14:31:29,111 - WARNING: Error processing W:\reddit\submissions\RS_2022-11.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-11.csv'
+2025-06-04 14:31:29,111 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-11.csv'
+
+2025-06-04 14:31:29,112 - INFO: Processing: W:\reddit\submissions\RS_2022-12.zst -> W:\reddit\scraped\submissions_scraped>\RS_2022-12.csv, Is submission: True
+2025-06-04 14:31:29,112 - WARNING: Error processing W:\reddit\submissions\RS_2022-12.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-12.csv'
+2025-06-04 14:31:29,113 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2022-12.csv'
+
+2025-06-04 14:31:29,114 - INFO: Processing: W:\reddit\submissions\RS_2023-01.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-01.csv, Is submission: True
+2025-06-04 14:31:29,114 - WARNING: Error processing W:\reddit\submissions\RS_2023-01.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-01.csv'
+2025-06-04 14:31:29,115 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-01.csv'
+
+2025-06-04 14:31:29,116 - INFO: Processing: W:\reddit\submissions\RS_2023-02.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-02.csv, Is submission: True
+2025-06-04 14:31:29,116 - WARNING: Error processing W:\reddit\submissions\RS_2023-02.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-02.csv'
+2025-06-04 14:31:29,117 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-02.csv'
+
+2025-06-04 14:31:29,118 - INFO: Processing: W:\reddit\submissions\RS_2023-03.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-03.csv, Is submission: True
+2025-06-04 14:31:29,118 - WARNING: Error processing W:\reddit\submissions\RS_2023-03.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-03.csv'
+2025-06-04 14:31:29,119 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-03.csv'
+
+2025-06-04 14:31:29,121 - INFO: Processing: W:\reddit\submissions\RS_2023-04.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-04.csv, Is submission: True
+2025-06-04 14:31:29,121 - WARNING: Error processing W:\reddit\submissions\RS_2023-04.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-04.csv'
+2025-06-04 14:31:29,122 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-04.csv'
+
+2025-06-04 14:31:29,122 - INFO: Processing: W:\reddit\submissions\RS_2023-05.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-05.csv, Is submission: True
+2025-06-04 14:31:29,123 - WARNING: Error processing W:\reddit\submissions\RS_2023-05.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-05.csv'
+2025-06-04 14:31:29,124 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-05.csv'
+
+2025-06-04 14:31:29,124 - INFO: Processing: W:\reddit\submissions\RS_2023-06.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-06.csv, Is submission: True
+2025-06-04 14:31:29,125 - WARNING: Error processing W:\reddit\submissions\RS_2023-06.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-06.csv'
+2025-06-04 14:31:29,126 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-06.csv'
+
+2025-06-04 14:31:29,126 - INFO: Processing: W:\reddit\submissions\RS_2023-07.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-07.csv, Is submission: True
+2025-06-04 14:31:29,127 - WARNING: Error processing W:\reddit\submissions\RS_2023-07.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-07.csv'
+2025-06-04 14:31:29,128 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-07.csv'
+
+2025-06-04 14:31:29,128 - INFO: Processing: W:\reddit\submissions\RS_2023-09.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-09.csv, Is submission: True
+2025-06-04 14:31:29,129 - WARNING: Error processing W:\reddit\submissions\RS_2023-09.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-09.csv'
+2025-06-04 14:31:29,129 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-09.csv'
+
+2025-06-04 14:31:29,130 - INFO: Processing: W:\reddit\submissions\RS_2023-10.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-10.csv, Is submission: True
+2025-06-04 14:31:29,131 - WARNING: Error processing W:\reddit\submissions\RS_2023-10.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-10.csv'
+2025-06-04 14:31:29,132 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-10.csv'
+
+2025-06-04 14:31:29,133 - INFO: Processing: W:\reddit\submissions\RS_2023-11.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-11.csv, Is submission: True
+2025-06-04 14:31:29,133 - WARNING: Error processing W:\reddit\submissions\RS_2023-11.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-11.csv'
+2025-06-04 14:31:29,134 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-11.csv'
+
+2025-06-04 14:31:29,135 - INFO: Processing: W:\reddit\submissions\RS_2023-12.zst -> W:\reddit\scraped\submissions_scraped>\RS_2023-12.csv, Is submission: True
+2025-06-04 14:31:29,135 - WARNING: Error processing W:\reddit\submissions\RS_2023-12.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-12.csv'
+2025-06-04 14:31:29,136 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2023-12.csv'
+
+2025-06-04 14:31:29,137 - INFO: Processing: W:\reddit\submissions\RS_2024-01.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-01.csv, Is submission: True
+2025-06-04 14:31:29,137 - WARNING: Error processing W:\reddit\submissions\RS_2024-01.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-01.csv'
+2025-06-04 14:31:29,138 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-01.csv'
+
+2025-06-04 14:31:29,139 - INFO: Processing: W:\reddit\submissions\RS_2024-02.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-02.csv, Is submission: True
+2025-06-04 14:31:29,140 - WARNING: Error processing W:\reddit\submissions\RS_2024-02.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-02.csv'
+2025-06-04 14:31:29,140 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-02.csv'
+
+2025-06-04 14:31:29,141 - INFO: Processing: W:\reddit\submissions\RS_2024-03.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-03.csv, Is submission: True
+2025-06-04 14:31:29,141 - WARNING: Error processing W:\reddit\submissions\RS_2024-03.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-03.csv'
+2025-06-04 14:31:29,142 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-03.csv'
+
+2025-06-04 14:31:29,142 - INFO: Processing: W:\reddit\submissions\RS_2024-04.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-04.csv, Is submission: True
+2025-06-04 14:31:29,143 - WARNING: Error processing W:\reddit\submissions\RS_2024-04.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-04.csv'
+2025-06-04 14:31:29,144 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-04.csv'
+
+2025-06-04 14:31:29,144 - INFO: Processing: W:\reddit\submissions\RS_2024-05.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-05.csv, Is submission: True
+2025-06-04 14:31:29,145 - WARNING: Error processing W:\reddit\submissions\RS_2024-05.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-05.csv'
+2025-06-04 14:31:29,146 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-05.csv'
+
+2025-06-04 14:31:29,146 - INFO: Processing: W:\reddit\submissions\RS_2024-06.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-06.csv, Is submission: True
+2025-06-04 14:31:29,147 - WARNING: Error processing W:\reddit\submissions\RS_2024-06.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-06.csv'
+2025-06-04 14:31:29,148 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-06.csv'
+
+2025-06-04 14:31:29,148 - INFO: Processing: W:\reddit\submissions\RS_2024-07.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-07.csv, Is submission: True
+2025-06-04 14:31:29,149 - WARNING: Error processing W:\reddit\submissions\RS_2024-07.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-07.csv'
+2025-06-04 14:31:29,149 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-07.csv'
+
+2025-06-04 14:31:29,150 - INFO: Processing: W:\reddit\submissions\RS_2024-08.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-08.csv, Is submission: True
+2025-06-04 14:31:29,151 - WARNING: Error processing W:\reddit\submissions\RS_2024-08.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-08.csv'
+2025-06-04 14:31:29,151 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-08.csv'
+
+2025-06-04 14:31:29,153 - INFO: Processing: W:\reddit\submissions\RS_2024-09.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-09.csv, Is submission: True
+2025-06-04 14:31:29,154 - WARNING: Error processing W:\reddit\submissions\RS_2024-09.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-09.csv'
+2025-06-04 14:31:29,154 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-09.csv'
+
+2025-06-04 14:31:29,155 - INFO: Processing: W:\reddit\submissions\RS_2024-10.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-10.csv, Is submission: True
+2025-06-04 14:31:29,156 - WARNING: Error processing W:\reddit\submissions\RS_2024-10.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-10.csv'
+2025-06-04 14:31:29,157 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-10.csv'
+
+2025-06-04 14:31:29,157 - INFO: Processing: W:\reddit\submissions\RS_2024-11.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-11.csv, Is submission: True
+2025-06-04 14:31:29,158 - WARNING: Error processing W:\reddit\submissions\RS_2024-11.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-11.csv'
+2025-06-04 14:31:29,158 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-11.csv'
+
+2025-06-04 14:31:29,159 - INFO: Processing: W:\reddit\submissions\RS_2024-12.zst -> W:\reddit\scraped\submissions_scraped>\RS_2024-12.csv, Is submission: True
+2025-06-04 14:31:29,159 - WARNING: Error processing W:\reddit\submissions\RS_2024-12.zst: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-12.csv'
+2025-06-04 14:31:29,160 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 108, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument: 'W:\\reddit\\scraped\\submissions_scraped>\\RS_2024-12.csv'
+
+2025-06-04 14:34:11,414 - INFO: Searching for CVE IDs in field: selftext
+2025-06-04 14:34:11,414 - INFO: Date range: 2005-01-01 to 2030-12-31
+2025-06-04 14:34:11,415 - INFO: Output format: csv
+2025-06-04 14:34:11,415 - INFO: Processing 36 files.
+2025-06-04 14:34:11,416 - INFO: Processing: W:\reddit\submissions\RS_2021-12.zst -> W:\reddit\scraped\submissions_scraped\RS_2021-12.csv, Is submission: True
+2025-06-04 14:34:11,431 - WARNING: Error processing W:\reddit\submissions\RS_2021-12.zst: zstd decompress error: Data corruption detected
+2025-06-04 14:34:11,436 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 121, in process_file
+    for line, _ in read_lines_zst(input_file):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 91, in read_lines_zst
+    chunk = reader.read(2**27).decode(errors='ignore')
+            ^^^^^^^^^^^^^^^^^^
+zstd.ZstdError: zstd decompress error: Data corruption detected
+
+2025-06-04 14:34:11,438 - INFO: Processing: W:\reddit\submissions\RS_2022-01.zst -> W:\reddit\scraped\submissions_scraped\RS_2022-01.csv, Is submission: True
+2025-06-04 14:34:11,463 - WARNING: Error processing W:\reddit\submissions\RS_2022-01.zst: zstd decompress error: Data corruption detected
+2025-06-04 14:34:11,464 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 121, in process_file
+    for line, _ in read_lines_zst(input_file):
+  File "C:\Users\stijn\Desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 91, in read_lines_zst
+    chunk = reader.read(2**27).decode(errors='ignore')
+            ^^^^^^^^^^^^^^^^^^
+zstd.ZstdError: zstd decompress error: Data corruption detected
+
+2025-06-04 14:34:11,465 - INFO: Processing: W:\reddit\submissions\RS_2022-02.zst -> W:\reddit\scraped\submissions_scraped\RS_2022-02.csv, Is submission: True

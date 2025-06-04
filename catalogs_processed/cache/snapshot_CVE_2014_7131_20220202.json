@@ -1,0 +1,14 @@
+{
+  "CVE_ID": "CVE-2014-7131",
+  "state": "PUBLISHED",
+  "assigner": "certcc",
+  "date_published": "2014-10-19T10:00:00",
+  "date_updated": "2024-08-06T12:40:18.738Z",
+  "cvss_score": NaN,
+  "cvss_version": NaN,
+  "cwes": NaN,
+  "references": "",
+  "reconstruction_date": "2022-02-02T00:00:00",
+  "changes_applied": 2,
+  "total_changes": 3
+}

@@ -1,0 +1,15 @@
+{
+  "CVE_ID": "CVE-2014-7308",
+  "state": "REJECTED",
+  "assigner": "certcc",
+  "date_published": "2017-05-11T14:01:00",
+  "date_updated": "2017-05-11T13:57:01",
+  "cvss_score": NaN,
+  "cvss_version": NaN,
+  "cwes": NaN,
+  "references": NaN,
+  "description": "** REJECT **  DO NOT USE THIS CANDIDATE NUMBER. ConsultIDs: none. Reason: The CNA or individual who requested this candidate did not associate it with any vulnerability during 2014. Notes: none.",
+  "reconstruction_date": "2022-02-02T00:00:00",
+  "changes_applied": 2,
+  "total_changes": 3
+}
