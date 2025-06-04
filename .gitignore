@@ -36,4 +36,7 @@ cvelistV5/
 euvd/
 kev-data/
 
+# Ignore environment files with sensitive information
+.env
+
 
