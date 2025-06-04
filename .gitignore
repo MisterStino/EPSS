@@ -26,4 +26,8 @@ data/epss/processed/
 *_SUCCESS
 *_SUCCESS.crc
 
+# Ignore large prediction files
+predictions_fullseq.npz
+*.npz
+
 
