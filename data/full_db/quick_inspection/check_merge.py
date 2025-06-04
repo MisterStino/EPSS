@@ -216,7 +216,8 @@ def quick_viz(modules, numeric_modules):
 if __name__ == '__main__':
     # Example of calling the main function:
     # modules used in the pipeline (base module included)
-    modules = ['epss', 'age_epss_pub']
+    modules = ['epss', 'age_epss_pub', 'github']
     # Columns (from the additional modules) which are numeric and should be normalized & plotted.
-    numeric_modules = ['age_epss_pub']  # You can add more column names if needed.
+    numeric_modules = ['age_epss_pub', 'commit_count', 'issue_count', 'comment_count', 'repo_count']  # You can add more column names if needed.
     quick_viz(modules, numeric_modules)
+    

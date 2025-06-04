@@ -74,7 +74,7 @@ import time
 from pyspark.sql import functions as F
 from t3_spark.session import get_spark_session
 
-def create_high_score_above_x_subset(x, date_range=None):
+def create_high_score_above_x_subset(x, date_range=None, full_data_path='data/full_db/processed/final_full_data.parquet'):
     """
     Creates a subset of the full dataset that contains only those CVEs that have at least
     one row where epss > x.
@@ -91,10 +91,6 @@ def create_high_score_above_x_subset(x, date_range=None):
     """
     # Initialize the Spark session using your helper function.
     spark = get_spark_session()
-    
-    # Define the path to the full dataset (stored as a Parquet folder).
-    full_data_path = os.path.join('data', 'full_db', 'processed', 'final_full_data_parquet')
-    
     # Read the full dataset and cast columns to the proper types.
     full_df = spark.read.parquet(full_data_path)
     full_df = cast_common_columns(full_df)
@@ -115,6 +111,9 @@ def create_high_score_above_x_subset(x, date_range=None):
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, f"high_score_above_{x}.parquet")
     
+
+    # print the number of rows in the subset DataFrame.
+    print(f"Number of rows in the subset DataFrame: {subset_df.count()}")
     # Write the subset as a Parquet file (overwrite if it exists).
     subset_df.write.mode("overwrite").parquet(output_path)
     print(f"Subset Parquet file (epss > {x}) saved to: {output_path}")

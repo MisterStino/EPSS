@@ -5,7 +5,10 @@ __pycache__/
 *.pyc
 *.csv
 *.gz
-
+*.png
+*.csv.gz
+*.pdf
+*mp4
 data/epss/raw/
 
 data/epss/cve-time-series/
@@ -21,4 +24,6 @@ data/epss/processed/
 *.parquet.crc
 *.crc
 *_SUCCESS
+*_SUCCESS.crc
+
 
