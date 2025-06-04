@@ -30,4 +30,10 @@ data/epss/processed/
 predictions_fullseq.npz
 *.npz
 
+# Ignore git repositories that we want locally but not tracked
+exploitdb/
+cvelistV5/
+euvd/
+kev-data/
+
 
