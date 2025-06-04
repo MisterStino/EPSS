@@ -168,7 +168,7 @@ if __name__ == "__main__":
     torch.manual_seed(0)
     dev = get_device()
 
-    HORIZON = 10; BATCH = 32; EPOCHS = 12; LR = 1e-3
+    HORIZON = 60; BATCH = 64; EPOCHS = 12; LR = 1e-3
 
     # ---------- dataset & loaders
     L_max = BIG.groupby("cve", observed=True).size().max()
@@ -218,6 +218,26 @@ if __name__ == "__main__":
             mask_.append(mh)
             eval_.append(me)
     P = torch.cat(pred_); T = torch.cat(true_); MH = torch.cat(mask_); ME = torch.cat(eval_)
+    
+    # DEBUG: Let's measure the actual tensor sizes
+    print(f"\n=== DEBUGGING TENSOR SIZES ===")
+    print(f"P shape: {P.shape}, size: {P.numel() * 4 / 1024 / 1024:.1f} MB")
+    print(f"T shape: {T.shape}, size: {T.numel() * 4 / 1024 / 1024:.1f} MB") 
+    print(f"MH shape: {MH.shape}, size: {MH.numel() * 4 / 1024 / 1024:.1f} MB")
+    print(f"ME shape: {ME.shape}, size: {ME.numel() * 4 / 1024 / 1024:.1f} MB")
+    
+    print(f"\nME.unsqueeze(-1) would have shape: {ME.unsqueeze(-1).shape}")
+    print(f"ME.unsqueeze(-1) size: {ME.unsqueeze(-1).numel() * 4 / 1024 / 1024:.1f} MB")
+    
+    print(f"\nBroadcasted multiplication result would be:")
+    print(f"Shape: {torch.broadcast_shapes(MH.shape, ME.unsqueeze(-1).shape)}")
+    result_numel = torch.broadcast_shapes(MH.shape, ME.unsqueeze(-1).shape)
+    result_size = result_numel[0] * result_numel[1] * result_numel[2] * 4 / 1024 / 1024
+    print(f"Size: {result_size:.1f} MB")
+    
+    print(f"\nTotal memory needed for operation: {MH.numel() * 4 / 1024 / 1024 + ME.unsqueeze(-1).numel() * 4 / 1024 / 1024 + result_size:.1f} MB")
+    print(f"================================\n")
+    
     # combine masks into a float mask of shape (N, L_max, H)
     m_comb = MH * ME.unsqueeze(-1)                # zeros out any position not in test
     err    = (P - T) ** 2
