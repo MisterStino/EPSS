@@ -5,10 +5,12 @@ import asyncio
 import aiohttp
 import pandas as pd
 from datetime import datetime, date, timedelta
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 import logging
 from pathlib import Path
 from tqdm import tqdm
+import tempfile
+import hashlib
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -28,6 +30,127 @@ class CVEHistoricalReconstructor:
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         
+        # Error tracking
+        self.errors = []
+        self.error_log_file = self.cache_dir / "processing_errors.csv"
+        self._initialize_error_log()
+        
+    def _initialize_error_log(self):
+        """Initialize the error log CSV file with headers."""
+        if not self.error_log_file.exists():
+            self._atomic_write_csv(self.error_log_file, [], [
+                'timestamp', 'cve_id', 'operation', 'error_type', 'error_message', 'details'
+            ])
+    
+    def _log_error(self, cve_id: str, operation: str, error_type: str, error_message: str, details: str = ""):
+        """Log an error to both memory and CSV file."""
+        error_record = {
+            'timestamp': datetime.now().isoformat(),
+            'cve_id': cve_id,
+            'operation': operation,
+            'error_type': error_type,
+            'error_message': str(error_message),
+            'details': details
+        }
+        
+        self.errors.append(error_record)
+        
+        # Append to CSV atomically
+        try:
+            self._atomic_append_csv(self.error_log_file, [error_record])
+        except Exception as e:
+            logger.error(f"Failed to log error to CSV: {e}")
+    
+    def _atomic_write_json(self, file_path: Path, data: dict) -> bool:
+        """Atomically write JSON data to file using .tmp pattern."""
+        tmp_file = file_path.with_suffix(file_path.suffix + '.tmp')
+        
+        try:
+            with open(tmp_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            # Atomic rename
+            tmp_file.replace(file_path)
+            return True
+            
+        except Exception as e:
+            # Clean up temp file if it exists
+            if tmp_file.exists():
+                tmp_file.unlink()
+            raise e
+    
+    def _atomic_write_csv(self, file_path: Path, data: List[Dict], fieldnames: List[str]) -> bool:
+        """Atomically write CSV data to file using .tmp pattern."""
+        tmp_file = file_path.with_suffix(file_path.suffix + '.tmp')
+        
+        try:
+            with open(tmp_file, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(data)
+            
+            # Atomic rename
+            tmp_file.replace(file_path)
+            return True
+            
+        except Exception as e:
+            # Clean up temp file if it exists
+            if tmp_file.exists():
+                tmp_file.unlink()
+            raise e
+    
+    def _atomic_append_csv(self, file_path: Path, data: List[Dict]) -> bool:
+        """Atomically append CSV data to existing file."""
+        if not file_path.exists():
+            return False
+        
+        # Read existing data
+        existing_data = []
+        fieldnames = []
+        
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                fieldnames = reader.fieldnames or []
+                existing_data = list(reader)
+        except Exception as e:
+            logger.error(f"Failed to read existing CSV {file_path}: {e}")
+            return False
+        
+        # Combine with new data
+        combined_data = existing_data + data
+        
+        # Write atomically
+        return self._atomic_write_csv(file_path, combined_data, fieldnames)
+    
+    def _validate_json_file(self, file_path: Path) -> Tuple[bool, str]:
+        """Validate that a JSON file is properly formatted and complete."""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            # Basic validation
+            if not isinstance(data, (dict, list)):
+                return False, "Invalid JSON structure"
+            
+            if isinstance(data, list) and len(data) == 0:
+                return False, "Empty data list"
+            
+            return True, "Valid"
+            
+        except json.JSONDecodeError as e:
+            return False, f"JSON decode error: {e}"
+        except Exception as e:
+            return False, f"File validation error: {e}"
+    
+    def _calculate_file_hash(self, file_path: Path) -> str:
+        """Calculate SHA-256 hash of file contents for integrity checking."""
+        try:
+            with open(file_path, 'rb') as f:
+                return hashlib.sha256(f.read()).hexdigest()
+        except Exception:
+            return ""
+    
     def _find_catalog(self) -> str:
         """Find the CVE catalog file."""
         possible_paths = [
@@ -92,20 +215,30 @@ class CVEHistoricalReconstructor:
         return None
     
     async def get_change_history(self, cve_id: str) -> List[Dict]:
-        """Get complete change history for a CVE with caching."""
-        # Check cache first
+        """Get complete change history for a CVE with atomic caching and error handling."""
         cache_file = self.cache_dir / f"changes_{cve_id.replace('-', '_')}.json"
         
+        # Check cache first
         if cache_file.exists():
             try:
-                with open(cache_file, 'r', encoding='utf-8') as f:
-                    cached_changes = json.load(f)
-                logger.debug(f"Loaded {len(cached_changes)} changes from cache for {cve_id}")
-                return cached_changes
+                # Validate cached file
+                is_valid, validation_msg = self._validate_json_file(cache_file)
+                if is_valid:
+                    with open(cache_file, 'r', encoding='utf-8') as f:
+                        cached_changes = json.load(f)
+                    logger.debug(f"Loaded {len(cached_changes)} changes from cache for {cve_id}")
+                    return cached_changes
+                else:
+                    logger.warning(f"Invalid cached file for {cve_id}: {validation_msg}")
+                    self._log_error(cve_id, "cache_validation", "invalid_cache", validation_msg)
+                    # Remove invalid cache file
+                    cache_file.unlink()
             except Exception as e:
-                logger.warning(f"Failed to load cache for {cve_id}: {e}")
+                error_msg = f"Failed to load cache for {cve_id}: {e}"
+                logger.warning(error_msg)
+                self._log_error(cve_id, "cache_load", "cache_error", str(e))
         
-        # Fetch from API if not cached
+        # Fetch from API if not cached or cache invalid
         params = {"cveId": cve_id}
         
         try:
@@ -114,6 +247,7 @@ class CVEHistoricalReconstructor:
                     data = await response.json()
                     changes = []
                     
+                    # Extract changes
                     for change_wrapper in data.get("cveChanges", []):
                         change = change_wrapper.get("change", {})
                         changes.append(change)
@@ -121,17 +255,56 @@ class CVEHistoricalReconstructor:
                     # Sort by creation date (oldest first)
                     changes.sort(key=lambda x: x.get("created", ""))
                     
-                    # Cache the results
+                    # Atomic cache write with validation
                     try:
-                        with open(cache_file, 'w', encoding='utf-8') as f:
-                            json.dump(changes, f, indent=2)
-                        logger.debug(f"Cached {len(changes)} changes for {cve_id}")
+                        if self._atomic_write_json(cache_file, changes):
+                            # Validate written file
+                            is_valid, validation_msg = self._validate_json_file(cache_file)
+                            if is_valid:
+                                logger.debug(f"Atomically cached {len(changes)} changes for {cve_id}")
+                            else:
+                                logger.error(f"Cache validation failed for {cve_id}: {validation_msg}")
+                                self._log_error(cve_id, "cache_write_validation", "validation_failed", validation_msg)
+                                # Remove invalid file
+                                if cache_file.exists():
+                                    cache_file.unlink()
+                        else:
+                            self._log_error(cve_id, "cache_write", "write_failed", "Atomic write returned False")
+                            
                     except Exception as e:
-                        logger.warning(f"Failed to cache changes for {cve_id}: {e}")
+                        error_msg = f"Failed to atomically cache changes for {cve_id}: {e}"
+                        logger.warning(error_msg)
+                        self._log_error(cve_id, "cache_write", "write_error", str(e))
                     
                     return changes
+                    
+                elif response.status == 429:
+                    # Rate limit
+                    error_msg = f"Rate limited for {cve_id}"
+                    logger.warning(error_msg)
+                    self._log_error(cve_id, "api_fetch", "rate_limit", "HTTP 429")
+                    
+                elif response.status == 404:
+                    # CVE not found
+                    error_msg = f"CVE {cve_id} not found (404)"
+                    logger.warning(error_msg)
+                    self._log_error(cve_id, "api_fetch", "not_found", "HTTP 404")
+                    
+                else:
+                    # Other HTTP error
+                    error_msg = f"HTTP {response.status} for {cve_id}"
+                    logger.error(error_msg)
+                    self._log_error(cve_id, "api_fetch", "http_error", f"HTTP {response.status}")
+                    
+        except asyncio.TimeoutError:
+            error_msg = f"Timeout fetching change history for {cve_id}"
+            logger.error(error_msg)
+            self._log_error(cve_id, "api_fetch", "timeout", "Request timeout")
+            
         except Exception as e:
-            logger.error(f"Failed to get change history for {cve_id}: {e}")
+            error_msg = f"Failed to get change history for {cve_id}: {e}"
+            logger.error(error_msg)
+            self._log_error(cve_id, "api_fetch", "exception", str(e))
         
         return []
     
@@ -200,90 +373,132 @@ class CVEHistoricalReconstructor:
     
     async def reconstruct_cve_at_date(self, cve_id: str, target_date: datetime) -> Optional[Dict]:
         """
-        Reconstruct CVE snapshot at a specific date.
-        
-        Algorithm:
-        1. Check if reconstruction is already cached
-        2. Start with current CVE snapshot
-        3. Get all change history
-        4. Apply changes in reverse chronological order
-        5. Stop when we reach target_date
-        6. Cache the result
+        Reconstruct CVE snapshot at a specific date with atomic operations and error handling.
         """
         logger.info(f"Reconstructing {cve_id} at {target_date}")
         
-        # Check if reconstruction is already cached
+        # Generate cache file path
         date_str = target_date.strftime("%Y%m%d")
         snapshot_cache_file = self.cache_dir / f"snapshot_{cve_id.replace('-', '_')}_{date_str}.json"
         
+        # Check if reconstruction is already cached
         if snapshot_cache_file.exists():
             try:
-                with open(snapshot_cache_file, 'r', encoding='utf-8') as f:
-                    cached_snapshot = json.load(f)
-                logger.debug(f"Loaded cached reconstruction for {cve_id} at {target_date}")
-                return cached_snapshot
+                # Validate cached snapshot
+                is_valid, validation_msg = self._validate_json_file(snapshot_cache_file)
+                if is_valid:
+                    with open(snapshot_cache_file, 'r', encoding='utf-8') as f:
+                        cached_snapshot = json.load(f)
+                    logger.debug(f"Loaded cached reconstruction for {cve_id} at {target_date}")
+                    return cached_snapshot
+                else:
+                    logger.warning(f"Invalid cached snapshot for {cve_id}: {validation_msg}")
+                    self._log_error(cve_id, "snapshot_cache_validation", "invalid_cache", validation_msg)
+                    # Remove invalid cache
+                    snapshot_cache_file.unlink()
             except Exception as e:
-                logger.warning(f"Failed to load cached snapshot for {cve_id}: {e}")
+                error_msg = f"Failed to load cached snapshot for {cve_id}: {e}"
+                logger.warning(error_msg)
+                self._log_error(cve_id, "snapshot_cache_load", "cache_error", str(e))
         
-        # Step 1: Get current snapshot
-        if cve_id in self.current_cves:
-            current_snapshot = self.current_cves[cve_id].copy()
-        else:
-            logger.warning(f"CVE {cve_id} not found in catalog, fetching from API")
-            current_snapshot = await self.get_full_current_cve(cve_id)
-            if not current_snapshot:
-                logger.error(f"Could not get current snapshot for {cve_id}")
-                return None
-        
-        # Step 2: Get change history
-        changes = await self.get_change_history(cve_id)
-        if not changes:
-            logger.info(f"No change history for {cve_id}, returning current snapshot")
-            # Cache the current snapshot
-            try:
-                with open(snapshot_cache_file, 'w', encoding='utf-8') as f:
-                    json.dump(current_snapshot, f, indent=2)
-            except Exception as e:
-                logger.warning(f"Failed to cache snapshot for {cve_id}: {e}")
-            return current_snapshot
-        
-        # Step 3: Apply changes in reverse chronological order
-        reconstructed = current_snapshot.copy()
-        changes_applied = 0
-        
-        # Process changes from newest to oldest
-        for change in reversed(changes):
-            change_date = self.parse_change_date(change.get("created", ""))
-            
-            # If this change happened after our target date, reverse it
-            if change_date > target_date:
-                reconstructed = self.apply_reverse_change(reconstructed, change)
-                changes_applied += 1
-                logger.debug(f"Applied reverse change from {change_date}")
-            else:
-                # We've reached changes that happened before target date, stop
-                break
-        
-        logger.info(f"Reconstructed {cve_id} at {target_date}: applied {changes_applied} reverse changes")
-        
-        # Add reconstruction metadata
-        reconstructed["reconstruction_date"] = target_date.isoformat()
-        reconstructed["changes_applied"] = changes_applied
-        reconstructed["total_changes"] = len(changes)
-        
-        # Cache the reconstructed snapshot
         try:
-            with open(snapshot_cache_file, 'w', encoding='utf-8') as f:
-                json.dump(reconstructed, f, indent=2)
-            logger.debug(f"Cached reconstruction for {cve_id} at {target_date}")
+            # Step 1: Get current snapshot
+            if cve_id in self.current_cves:
+                current_snapshot = self.current_cves[cve_id].copy()
+            else:
+                logger.warning(f"CVE {cve_id} not found in catalog, fetching from API")
+                current_snapshot = await self.get_full_current_cve(cve_id)
+                if not current_snapshot:
+                    error_msg = f"Could not get current snapshot for {cve_id}"
+                    logger.error(error_msg)
+                    self._log_error(cve_id, "current_snapshot", "fetch_failed", "API returned None")
+                    return None
+            
+            # Step 2: Get change history
+            changes = await self.get_change_history(cve_id)
+            if not changes:
+                logger.info(f"No change history for {cve_id}, using current snapshot")
+                # Cache the current snapshot atomically
+                try:
+                    if self._atomic_write_json(snapshot_cache_file, current_snapshot):
+                        logger.debug(f"Atomically cached current snapshot for {cve_id}")
+                    else:
+                        self._log_error(cve_id, "current_snapshot_cache", "write_failed", "Atomic write returned False")
+                except Exception as e:
+                    error_msg = f"Failed to cache current snapshot for {cve_id}: {e}"
+                    logger.warning(error_msg)
+                    self._log_error(cve_id, "current_snapshot_cache", "write_error", str(e))
+                
+                return current_snapshot
+            
+            # Step 3: Apply changes in reverse chronological order
+            reconstructed = current_snapshot.copy()
+            changes_applied = 0
+            
+            # Process changes from newest to oldest
+            for i, change in enumerate(reversed(changes)):
+                try:
+                    change_date = self.parse_change_date(change.get("created", ""))
+                    
+                    # If this change happened after our target date, reverse it
+                    if change_date > target_date:
+                        reconstructed = self.apply_reverse_change(reconstructed, change)
+                        changes_applied += 1
+                        logger.debug(f"Applied reverse change {i+1} from {change_date}")
+                    else:
+                        # We've reached changes that happened before target date, stop
+                        break
+                        
+                except Exception as e:
+                    error_msg = f"Failed to apply change {i} for {cve_id}: {e}"
+                    logger.error(error_msg)
+                    self._log_error(cve_id, "change_application", "processing_error", 
+                                  f"Change {i}: {str(e)}")
+                    # Continue with next change
+                    continue
+            
+            logger.info(f"Reconstructed {cve_id} at {target_date}: applied {changes_applied} reverse changes")
+            
+            # Add reconstruction metadata
+            reconstructed["reconstruction_date"] = target_date.isoformat()
+            reconstructed["changes_applied"] = changes_applied
+            reconstructed["total_changes"] = len(changes)
+            reconstructed["reconstruction_timestamp"] = datetime.now().isoformat()
+            reconstructed["cache_file_hash"] = self._calculate_file_hash(snapshot_cache_file) if snapshot_cache_file.exists() else ""
+            
+            # Atomic cache write with validation
+            try:
+                if self._atomic_write_json(snapshot_cache_file, reconstructed):
+                    # Validate written file
+                    is_valid, validation_msg = self._validate_json_file(snapshot_cache_file)
+                    if is_valid:
+                        logger.debug(f"Atomically cached reconstruction for {cve_id} at {target_date}")
+                    else:
+                        logger.error(f"Reconstruction cache validation failed for {cve_id}: {validation_msg}")
+                        self._log_error(cve_id, "reconstruction_cache_validation", "validation_failed", validation_msg)
+                        # Remove invalid file
+                        if snapshot_cache_file.exists():
+                            snapshot_cache_file.unlink()
+                else:
+                    self._log_error(cve_id, "reconstruction_cache", "write_failed", "Atomic write returned False")
+                    
+            except Exception as e:
+                error_msg = f"Failed to atomically cache reconstruction for {cve_id}: {e}"
+                logger.warning(error_msg)
+                self._log_error(cve_id, "reconstruction_cache", "write_error", str(e))
+            
+            return reconstructed
+            
         except Exception as e:
-            logger.warning(f"Failed to cache reconstruction for {cve_id}: {e}")
-        
-        return reconstructed
+            error_msg = f"Fatal error reconstructing {cve_id} at {target_date}: {e}"
+            logger.error(error_msg)
+            self._log_error(cve_id, "reconstruction", "fatal_error", str(e))
+            return None
     
     async def reconstruct_multiple_cves_at_date(self, cve_ids: List[str], target_date: datetime) -> Dict[str, Dict]:
-        """Reconstruct multiple CVEs at a specific date."""
+        """Reconstruct multiple CVEs at a specific date with comprehensive error tracking."""
         results = {}
+        failures = 0
         
         # Add progress bar
         with tqdm(total=len(cve_ids), desc=f"Reconstructing CVEs at {target_date.strftime('%Y-%m-%d')}", unit="CVE") as pbar:
@@ -292,27 +507,46 @@ class CVEHistoricalReconstructor:
                     reconstructed = await self.reconstruct_cve_at_date(cve_id, target_date)
                     if reconstructed:
                         results[cve_id] = reconstructed
-                        pbar.set_postfix({"Success": len(results), "Current": cve_id})
+                        pbar.set_postfix({
+                            "Success": len(results), 
+                            "Failed": failures, 
+                            "Current": cve_id[:12]  # Truncate for display
+                        })
                     else:
-                        pbar.set_postfix({"Success": len(results), "Failed": cve_id})
+                        failures += 1
+                        self._log_error(cve_id, "batch_reconstruction", "reconstruction_failed", 
+                                      f"Returned None for date {target_date}")
+                        pbar.set_postfix({
+                            "Success": len(results), 
+                            "Failed": failures, 
+                            "Error": cve_id[:12]
+                        })
                     
                     # Rate limiting
                     await asyncio.sleep(0.1)
                     
                 except Exception as e:
-                    logger.error(f"Failed to reconstruct {cve_id}: {e}")
-                    pbar.set_postfix({"Success": len(results), "Error": cve_id})
+                    failures += 1
+                    error_msg = f"Exception during reconstruction of {cve_id}: {e}"
+                    logger.error(error_msg)
+                    self._log_error(cve_id, "batch_reconstruction", "exception", str(e))
+                    pbar.set_postfix({
+                        "Success": len(results), 
+                        "Failed": failures, 
+                        "Exception": cve_id[:12]
+                    })
                 
                 # Update progress bar
                 pbar.update(1)
         
+        logger.info(f"Batch reconstruction complete: {len(results)} success, {failures} failures")
         return results
     
     async def batch_reconstruct_cves(self, cve_ids: List[str], date_range: List[datetime], 
                                    output_dir: str = "catalogs_processed", 
                                    save_each_date: bool = True) -> Dict[str, Dict[str, Dict]]:
         """
-        Batch reconstruct CVEs across multiple dates.
+        Batch reconstruct CVEs across multiple dates with comprehensive error tracking.
         
         Args:
             cve_ids: List of CVE IDs to reconstruct
@@ -324,6 +558,8 @@ class CVEHistoricalReconstructor:
             Dict mapping date_str -> {cve_id -> reconstructed_snapshot}
         """
         all_results = {}
+        total_success = 0
+        total_failures = 0
         
         logger.info(f"Starting batch reconstruction for {len(cve_ids)} CVEs across {len(date_range)} dates")
         
@@ -339,26 +575,66 @@ class CVEHistoricalReconstructor:
                 date_str = target_date.strftime('%Y-%m-%d')
                 date_pbar.set_description(f"Processing {date_str}")
                 
-                # Reconstruct all CVEs for this date
-                results = await self.reconstruct_multiple_cves_at_date(cve_ids, target_date)
-                all_results[date_str] = results
+                try:
+                    # Reconstruct all CVEs for this date
+                    results = await self.reconstruct_multiple_cves_at_date(cve_ids, target_date)
+                    all_results[date_str] = results
+                    
+                    # Update counters
+                    date_success = len(results)
+                    date_failures = len(cve_ids) - date_success
+                    total_success += date_success
+                    total_failures += date_failures
+                    
+                    # Save results for this date if requested
+                    if save_each_date and results:
+                        try:
+                            self.save_reconstructed_snapshots(results, target_date, output_dir)
+                        except Exception as e:
+                            error_msg = f"Failed to save snapshots for {date_str}: {e}"
+                            logger.error(error_msg)
+                            self._log_error("N/A", "batch_save", "save_error", f"Date {date_str}: {str(e)}")
+                    
+                    date_pbar.set_postfix({
+                        "Date": date_str, 
+                        "Success": date_success,
+                        "Failed": date_failures,
+                        "Total": f"{total_success}/{total_success + total_failures}"
+                    })
+                    
+                except Exception as e:
+                    error_msg = f"Fatal error processing date {date_str}: {e}"
+                    logger.error(error_msg)
+                    self._log_error("N/A", "batch_date_processing", "fatal_error", f"Date {date_str}: {str(e)}")
+                    all_results[date_str] = {}
+                    total_failures += len(cve_ids)
+                    
+                    date_pbar.set_postfix({
+                        "Date": date_str, 
+                        "Error": "FATAL",
+                        "Total": f"{total_success}/{total_success + total_failures}"
+                    })
                 
-                # Save results for this date if requested
-                if save_each_date and results:
-                    self.save_reconstructed_snapshots(results, target_date, output_dir)
-                
-                date_pbar.set_postfix({
-                    "Date": date_str, 
-                    "CVEs": len(results), 
-                    "Total": f"{sum(len(r) for r in all_results.values())}"
-                })
                 date_pbar.update(1)
         
-        logger.info(f"Batch reconstruction complete. Processed {len(all_results)} dates")
+        # Final summary
+        logger.info(f"Batch reconstruction complete:")
+        logger.info(f"  - Dates processed: {len(all_results)}")
+        logger.info(f"  - Total reconstructions successful: {total_success}")
+        logger.info(f"  - Total failures: {total_failures}")
+        logger.info(f"  - Success rate: {total_success/(total_success + total_failures)*100:.1f}%")
+        
+        # Error summary
+        error_summary = self.get_error_summary()
+        if error_summary['total_errors'] > 0:
+            logger.warning(f"Total errors encountered: {error_summary['total_errors']}")
+            logger.warning(f"Error log saved to: {error_summary['error_log_file']}")
+            logger.info(f"Error breakdown by type: {error_summary['error_types']}")
+        
         return all_results
     
     def save_reconstructed_snapshots(self, snapshots: Dict[str, Dict], target_date: datetime, output_dir: str = "catalogs_processed"):
-        """Save reconstructed snapshots to CSV."""
+        """Save reconstructed snapshots to CSV with atomic operations."""
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
         
@@ -367,24 +643,44 @@ class CVEHistoricalReconstructor:
         
         if not snapshots:
             logger.warning("No snapshots to save")
+            self._log_error("N/A", "save_snapshots", "no_data", f"No snapshots for {target_date}")
             return
         
-        # Convert to list of dictionaries for CSV
-        rows = []
-        for cve_id, snapshot in snapshots.items():
-            # Add composite key
-            snapshot["composite_key"] = f"{date_str}_{cve_id}"
-            rows.append(snapshot)
-        
-        # Write to CSV
-        fieldnames = list(rows[0].keys()) if rows else []
-        
-        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(rows)
-        
-        logger.info(f"Saved {len(rows)} reconstructed snapshots to {filename}")
+        try:
+            # Convert to list of dictionaries for CSV
+            rows = []
+            for cve_id, snapshot in snapshots.items():
+                try:
+                    # Add composite key
+                    snapshot_copy = snapshot.copy()
+                    snapshot_copy["composite_key"] = f"{date_str}_{cve_id}"
+                    rows.append(snapshot_copy)
+                except Exception as e:
+                    error_msg = f"Failed to process snapshot for {cve_id}: {e}"
+                    logger.error(error_msg)
+                    self._log_error(cve_id, "snapshot_processing", "processing_error", str(e))
+                    continue
+            
+            if not rows:
+                logger.warning("No valid snapshots to save after processing")
+                self._log_error("N/A", "save_snapshots", "no_valid_data", f"No valid snapshots for {target_date}")
+                return
+            
+            # Get fieldnames from first row
+            fieldnames = list(rows[0].keys()) if rows else []
+            
+            # Atomic CSV write
+            if self._atomic_write_csv(filename, rows, fieldnames):
+                logger.info(f"Atomically saved {len(rows)} reconstructed snapshots to {filename}")
+            else:
+                error_msg = f"Failed to atomically save snapshots to {filename}"
+                logger.error(error_msg)
+                self._log_error("N/A", "save_snapshots", "write_failed", f"Atomic CSV write failed for {filename}")
+                
+        except Exception as e:
+            error_msg = f"Fatal error saving snapshots for {target_date}: {e}"
+            logger.error(error_msg)
+            self._log_error("N/A", "save_snapshots", "fatal_error", str(e))
 
     def get_cache_status(self, cve_ids: List[str], target_dates: List[datetime] = None) -> Dict[str, any]:
         """Check which CVEs are cached vs need to be fetched."""
@@ -428,6 +724,40 @@ class CVEHistoricalReconstructor:
             logger.info(f"Snapshot cache: {snapshots_cached}/{snapshots_total} ({result['snapshots_cache_hit_rate']:.1%})")
         
         return result
+
+    def get_error_summary(self) -> Dict[str, any]:
+        """Get comprehensive error summary and statistics."""
+        if not self.errors:
+            return {"total_errors": 0, "error_types": {}, "operations": {}, "cves_with_errors": []}
+        
+        error_types = {}
+        operations = {}
+        cve_errors = {}
+        
+        for error in self.errors:
+            # Count by error type
+            error_type = error['error_type']
+            error_types[error_type] = error_types.get(error_type, 0) + 1
+            
+            # Count by operation
+            operation = error['operation']
+            operations[operation] = operations.get(operation, 0) + 1
+            
+            # Track CVEs with errors
+            cve_id = error['cve_id']
+            if cve_id != "N/A":
+                if cve_id not in cve_errors:
+                    cve_errors[cve_id] = []
+                cve_errors[cve_id].append(error)
+        
+        return {
+            "total_errors": len(self.errors),
+            "error_types": error_types,
+            "operations": operations,
+            "cves_with_errors": list(cve_errors.keys()),
+            "cve_error_details": cve_errors,
+            "error_log_file": str(self.error_log_file)
+        }
 
 # Example usage and testing
 async def test_reconstruction():
@@ -477,7 +807,7 @@ if __name__ == "__main__":
                 current_date += timedelta(days=30)
             
             cves = reconstructor.load_current_cve_catalog()
-            cve_ids = list(cves.keys())[300]  # Limit to first 100 for testing
+            cve_ids = list(cves.keys())[:100]  # Limit to first 100 for testing
             
             logger.info(f"Processing {len(cve_ids)} CVEs across {len(date_range)} dates")
             await reconstructor.batch_reconstruct_cves(cve_ids, date_range)

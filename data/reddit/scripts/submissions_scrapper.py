@@ -1,209 +1,173 @@
-"""
-High-throughput, zero-duplication Reddit CVE extractor.
-  * ProcessPoolExecutor  — one process per .zst
-  * Atomic output renames — no half-written CSVs
-  * Final-line flush      — no lost rows
-  * UTF-8 'replace'       — no decode-drops
-  * Batch writes          — ~1 MB per syscall
-Tested on Windows 11 + Python 3.12; works unchanged on Linux/macOS.
-"""
-
-from __future__ import annotations
-import os, sys, csv, re, json, logging, shutil, traceback
+import zstandard 
+import os
+import json
+import sys
+import csv
+import re
 from datetime import datetime
-from functools import partial
-from concurrent.futures import ProcessPoolExecutor, as_completed
+import logging.handlers
 
-import zstandard as zstd
+input_file = r"W:\reddit\submissions"
+output_file = r"c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions"
+output_format = "csv"
+single_field = None
+write_bad_lines = True
+from_date = datetime.strptime("2005-01-01", "%Y-%m-%d")
+to_date = datetime.strptime("2030-12-31", "%Y-%m-%d")
 
-# ────────────────────────── CONFIG ──────────────────────────
-INPUT_DIR   = r"W:\reddit\submissions"
-OUTPUT_DIR  = r"W:\reddit\scraped\submissions_scraped"
-FIELD       = "selftext"
-CVE_REGEX   = re.compile(r"cve-\d{4}-\d{4,7}", re.IGNORECASE)
-FROM_DATE   = datetime(2005, 1, 1)
-TO_DATE     = datetime(2030, 12, 31)
-BATCH_SIZE  = 5_000                      # rows before flush
-CHUNK_BYTES = 1 << 28                    # 256 MiB decompressed
-# ────────────────────────────────────────────────────────────
+# Specify the field to search in and define the regex pattern for CVE IDs
+field = "selftext"
+cve_pattern = re.compile(r'cve-\d{4}-\d{4,7}', re.IGNORECASE)
 
-# Optional speed-up
-try:
-    import orjson as _json
-    def _loads(b: str | bytes):   # keep same API as json.loads
-        return _json.loads(b)
-except ModuleNotFoundError:
-    _loads = json.loads
-
-# Logging
-log = logging.getLogger("extract")
+# Sets up logging
+log = logging.getLogger("bot")
 log.setLevel(logging.INFO)
-h = logging.StreamHandler()
-h.setFormatter(logging.Formatter("%(asctime)s  %(levelname)s: %(message)s"))
-log.addHandler(h)
+log_formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(message)s')
+log_str_handler = logging.StreamHandler()
+log_str_handler.setFormatter(log_formatter)
+log.addHandler(log_str_handler)
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+log_file_handler = logging.handlers.RotatingFileHandler(os.path.join("logs", "bot.log"), maxBytes=1024*1024*16, backupCount=5)
+log_file_handler.setFormatter(log_formatter)
+log.addHandler(log_file_handler)
 
-# ─────────────────────────── HELPERS ───────────────────────────
 
-def extract_post_id(url: str) -> str:
-    m = re.search(r"/comments/([^/]+)/", url)
-    return m.group(1) if m else ""
+def extract_post_id(url):
+    """
+    Extracts the post ID from a Reddit URL.
+    Example URL: https://www.reddit.com/r/AskNetsec/comments/unb6n/_/c4wvfbo
+    The post ID here is "unb6n".
+    """
+    match = re.search(r'/comments/([^/]+)/', url)
+    if match:
+        return match.group(1)
+    return ""
 
-def read_lines_zst(path: str):
-    """Yield (line:str) streaming; never loads the full file."""
-    with open(path, "rb") as fh:
-        rdr = zstd.ZstdDecompressor(max_window_size=1 << 31).stream_reader(fh)
-        buf = ""
+
+def write_line_csv(writer, obj, is_submission, cve_id, post_id):
+    """Writes a CSV row with an extra column for the extracted CVE ID and post ID."""
+    output_list = []
+    output_list.append(str(obj['score']))
+    output_list.append(datetime.fromtimestamp(int(obj['created_utc'])).strftime("%Y-%m-%d"))
+    
+    # For submissions, include the title; for comments, a brief excerpt or "body"
+    if is_submission:
+        output_list.append(obj.get('title', ""))
+    else:
+        output_list.append(obj.get('body', ""))
+    
+    output_list.append(f"u/{obj['author']}")
+    
+    # Build the permalink URL
+    if 'permalink' in obj:
+        permalink = f"https://www.reddit.com{obj['permalink']}"
+    else:
+        permalink = f"https://www.reddit.com/r/{obj['subreddit']}/comments/{obj['link_id'][3:]}/_/{obj['id']}"
+    output_list.append(permalink)
+    
+    # Depending on whether it's a submission or comment, include selftext/url or body
+    if is_submission:
+        if obj.get('is_self', False):
+            output_list.append(obj.get('selftext', ""))
+        else:
+            output_list.append(obj.get('url', ""))
+    else:
+        output_list.append(obj.get('body', ""))
+    
+    # Append the extracted CVE ID and Post ID columns
+    output_list.append(cve_id)
+    output_list.append(post_id)
+    
+    writer.writerow(output_list)
+
+
+def read_lines_zst(file_name):
+    with open(file_name, 'rb') as file_handle:
+        buffer = ''
+        reader = zstandard.ZstdDecompressor(max_window_size=2**31).stream_reader(file_handle)
         while True:
-            chunk = rdr.read(CHUNK_BYTES)
+            # Read and decode chunk; ignore decode errors
+            chunk = reader.read(2**27).decode(errors='ignore')
             if not chunk:
                 break
-            lines = (buf + chunk.decode(errors="replace")).split("\n")
-            for ln in lines[:-1]:
-                yield ln
-            buf = lines[-1]
-        if buf:          # flush last line even if no trailing \n
-            yield buf
+            lines = (buffer + chunk).split("\n")
+            for line in lines[:-1]:
+                yield line.strip(), file_handle.tell()
+            buffer = lines[-1]
+        reader.close()
 
-def write_csv_header(writer: csv.writer):
-    writer.writerow([
-        "Score", "Date", "Title/Body", "Author", "Permalink",
-        "Content", "CVE ID", "Post ID",
-    ])
 
-def process_one(
-    file_in: str,
-    file_out_base: str,
-) -> tuple[str, int, int, int]:
-    """
-    Returns (basename, total_lines, matched, bad)
-    Raises on unrecoverable errors.
-    """
-    # Ensure child process has logging handlers
-    if not log.handlers:                      # child has no handlers yet
-        h = logging.StreamHandler(sys.stdout) # or sys.stderr
-        h.setFormatter(logging.Formatter("%(asctime)s  %(levelname)s: %(message)s"))
-        log.addHandler(h)
-        log.setLevel(logging.INFO)
-    
-    tmp_path   = f"{file_out_base}.csv.tmp"
-    final_path = f"{file_out_base}.csv"
+def process_file(input_file, output_file, output_format, field, from_date, to_date, single_field):
+    output_path = f"{output_file}.{output_format}"
+    is_submission = "submission" in input_file
+    log.info(f"Processing: {input_file} -> {output_path}, Is submission: {is_submission}")
 
-    os.makedirs(os.path.dirname(tmp_path), exist_ok=True)
+    writer = None
+    if output_format == "csv":
+        handle = open(output_path, 'w', encoding='UTF-8', newline='')
+        writer = csv.writer(handle)
+        # Write CSV headers with additional columns for CVE ID and Post ID
+        csv_headers = [
+            "Score", "Date", "Title/Body", "Author", "Permalink",
+            "Content", "CVE ID", "Post ID"
+        ]
+        writer.writerow(csv_headers)
+    else:
+        log.error(f"Unsupported output format {output_format}")
+        sys.exit()
 
-    total = matched = bad = 0
-    is_sub = "submission" in os.path.basename(file_in)
+    total_lines, matched_lines, bad_lines = 0, 0, 0
+    for line, _ in read_lines_zst(input_file):
+        total_lines += 1
+        try:
+            obj = json.loads(line)
+            created = datetime.utcfromtimestamp(int(obj['created_utc']))
+            if not (from_date <= created <= to_date):
+                continue
 
-    with open(tmp_path, "w", newline="", encoding="utf-8", buffering=1_048_576) as fh:
-        w = csv.writer(fh)
-        write_csv_header(w)
-        batch: list[list[str]] = []
+            if field in obj:
+                field_value = obj[field]
+                match = cve_pattern.search(field_value)
+                if not match:
+                    continue  # Skip if no CVE ID is found
 
-        for line in read_lines_zst(file_in):
-            total += 1
-            if total % 500000 == 0:
-                log.info(f"{os.path.basename(file_in)}  {total:,d} lines scanned "
-                         f"({matched:,d} matches, {bad:,d} bad)")
-            try:
-                obj = _loads(
-                        line if _loads.__module__ != "orjson"
-                        else line.encode("utf-8", "surrogateescape")
-                    )
-                t     = datetime.utcfromtimestamp(int(obj["created_utc"]))
-                if t < FROM_DATE or t > TO_DATE:
-                    continue
+                cve_id = match.group(0)  # Extract the first CVE ID found
 
-                text  = obj.get(FIELD, "")
-                m     = CVE_REGEX.search(text)
-                if not m:
-                    continue
-                cve_id = m.group(0)
-
-                # permalink
-                if "permalink" in obj:
+                # Build the permalink URL as used in CSV output
+                if 'permalink' in obj:
                     url = f"https://www.reddit.com{obj['permalink']}"
                 else:
                     url = f"https://www.reddit.com/r/{obj['subreddit']}/comments/{obj['link_id'][3:]}/_/{obj['id']}"
                 post_id = extract_post_id(url)
 
-                row = [
-                    str(obj["score"]),
-                    t.strftime("%Y-%m-%d"),
-                    obj.get("title", "") if is_sub else obj.get("body", ""),
-                    f"u/{obj['author']}",
-                    url,
-                    obj.get("selftext" if (is_sub and obj.get("is_self", False)) else "url", "") if is_sub
-                    else obj.get("body", ""),
-                    cve_id,
-                    post_id,
-                ]
-                batch.append(row)
-                matched += 1
+                matched_lines += 1
+                if output_format == "csv":
+                    write_line_csv(writer, obj, is_submission, cve_id, post_id)
 
-                if len(batch) >= BATCH_SIZE:
-                    w.writerows(batch)
-                    batch.clear()
+        except (KeyError, json.JSONDecodeError) as err:
+            bad_lines += 1
+            log.warning(f"Error processing line: {err}")
 
-            except Exception:         # JSON error, KeyError, etc.
-                bad += 1
-                if bad % 10_000 == 0:
-                    log.warning(f"{os.path.basename(file_in)} bad lines so far: {bad}")
+    handle.close()
+    log.info(f"Processing complete: {total_lines} total, {matched_lines} matched, {bad_lines} bad lines.")
 
-        if batch:
-            w.writerows(batch)
-
-    # Atomic replace
-    os.replace(tmp_path, final_path)
-    return os.path.basename(file_in), total, matched, bad
-
-# ────────────────────────────  MAIN  ────────────────────────────
-
-def main() -> None:
-    # Discover inputs
-    if os.path.isfile(INPUT_DIR):
-        candidates = [INPUT_DIR]
-    else:
-        candidates = sorted(
-            os.path.join(INPUT_DIR, f)
-            for f in os.listdir(INPUT_DIR) if f.endswith(".zst")
-        )
-
-    # De-dup & collision checks
-    seen_in, seen_out = set(), set()
-    tasks = []
-    for z in candidates:
-        if z in seen_in:
-            raise RuntimeError(f"Duplicate input file {z}")
-        seen_in.add(z)
-
-        stem = os.path.splitext(os.path.basename(z))[0]
-        out  = os.path.join(OUTPUT_DIR, stem)
-        if out in seen_out:
-            raise RuntimeError(f"Duplicate output base {out}")
-        seen_out.add(out)
-        tasks.append((z, out))
-
-    if not tasks:
-        log.info("No input files found.")
-        return
-
-    cores = os.cpu_count() or 1
-    workers = 15
-    log.info(f"{len(tasks)} files queued; spawning {workers} workers")
-
-    with ProcessPoolExecutor(max_workers=workers) as pool:
-        fut = {pool.submit(process_one, f_in, f_out): (f_in, f_out) for f_in, f_out in tasks}
-        done = 0
-        for f in as_completed(fut):
-            base, total, matched, bad = f.result()
-            done += 1
-            log.info(f"✅ {base:25} | {matched:7} / {total:8} rows  | bad {bad:6}  ({done}/{len(tasks)})")
-
-    log.info("🎉 All files processed without duplicates or data loss.")
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        log.error(f"Fatal: {e}")
-        traceback.print_exc()
-        sys.exit(1)
+    log.info(f"Searching for CVE IDs in field: {field}")
+    log.info(f"Date range: {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')}")
+    log.info(f"Output format: {output_format}")
+
+    input_files = [(input_file, output_file)] if os.path.isfile(input_file) else [
+        (os.path.join(input_file, file), os.path.join(output_file, os.path.splitext(file)[0]))
+        for file in os.listdir(input_file) if file.endswith(".zst")
+    ]
+
+    log.info(f"Processing {len(input_files)} files.")
+    for file_in, file_out in input_files:
+        try:
+            process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+        except Exception as err:
+            import traceback
+            log.warning(f"Error processing {file_in}: {err}")
+            log.warning(traceback.format_exc())

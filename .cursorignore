@@ -28,7 +28,7 @@ __pycache__/
 *.csv.xz
 *.tsv
 
-
+catalogs_processed/cve_history/
 
 
 data/epss/raw/

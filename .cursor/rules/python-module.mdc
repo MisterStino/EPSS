@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Always run python files as modules. Always write python code knowing that the file will only be ran as a python module e.g. : python -m module.script.

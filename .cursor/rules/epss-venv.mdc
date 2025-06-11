@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Run in this project always code by first activating the projects venv: .\epss-env\Scripts\Activate.ps1

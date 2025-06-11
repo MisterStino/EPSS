@@ -10,7 +10,7 @@ import logging.handlers
 # Path to input file or folder
 input_file = r"W:\reddit\comments"
 # Path to output file or folder
-output_file = r"W:\reddit\scraped\comments_scraped"
+output_file = r"c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments"
 # Output format
 output_format = "csv"
 

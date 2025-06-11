@@ -168,7 +168,7 @@ if __name__ == "__main__":
     torch.manual_seed(0)
     dev = get_device()
 
-    HORIZON = 60; BATCH = 64; EPOCHS = 12; LR = 1e-3
+    HORIZON = 10; BATCH = 64; EPOCHS = 12; LR = 1e-3
 
     # ---------- dataset & loaders
     L_max = BIG.groupby("cve", observed=True).size().max()

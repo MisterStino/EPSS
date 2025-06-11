@@ -1183,3 +1183,433 @@ zstd.ZstdError: zstd decompress error: Data corruption detected
 zstd.ZstdError: zstd decompress error: Data corruption detected
 
 2025-06-04 14:34:11,465 - INFO: Processing: W:\reddit\submissions\RS_2022-02.zst -> W:\reddit\scraped\submissions_scraped\RS_2022-02.csv, Is submission: True
+2025-06-04 19:47:29,047 - INFO: Processing 1 files
+2025-06-04 19:47:29,048 - INFO: Processing C:\Users\andre\Desktop\subreddits24 -> C:\Users\andre\Desktop\output.csv (Is submission: False)
+2025-06-04 19:47:29,048 - WARNING: Error processing C:\Users\andre\Desktop\subreddits24: [Errno 2] No such file or directory: 'C:\\Users\\andre\\Desktop\\output.csv'
+2025-06-04 19:47:29,050 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 138, in <module>
+    process_file(file_in, file_out, output_format, cve_regex, from_date, to_date)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 92, in process_file
+    handle = open(output_path, 'w', encoding='UTF-8', newline='')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\andre\\Desktop\\output.csv'
+
+2025-06-04 19:48:38,532 - INFO: Processing 0 files
+2025-06-04 19:49:33,171 - INFO: Processing 36 files
+2025-06-04 19:49:33,171 - INFO: Processing W:\reddit\submissions\RS_2021-12.zst -> W:\reddit\scraped\submissions_scraped\output\RS_2021-12.csv (Is submission: True)
+2025-06-04 19:49:33,199 - WARNING: Error processing W:\reddit\submissions\RS_2021-12.zst: zstd decompress error: Data corruption detected
+2025-06-04 19:49:33,201 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 138, in <module>
+    process_file(file_in, file_out, output_format, cve_regex, from_date, to_date)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 102, in process_file
+    for line in read_lines_zst(input_file):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 74, in read_lines_zst
+    chunk = reader.read(2**27).decode(errors='ignore')
+            ^^^^^^^^^^^^^^^^^^
+zstd.ZstdError: zstd decompress error: Data corruption detected
+
+2025-06-04 19:49:33,202 - INFO: Processing W:\reddit\submissions\RS_2022-01.zst -> W:\reddit\scraped\submissions_scraped\output\RS_2022-01.csv (Is submission: True)
+2025-06-04 19:49:33,218 - WARNING: Error processing W:\reddit\submissions\RS_2022-01.zst: zstd decompress error: Data corruption detected
+2025-06-04 19:49:33,219 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 138, in <module>
+    process_file(file_in, file_out, output_format, cve_regex, from_date, to_date)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 102, in process_file
+    for line in read_lines_zst(input_file):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 74, in read_lines_zst
+    chunk = reader.read(2**27).decode(errors='ignore')
+            ^^^^^^^^^^^^^^^^^^
+zstd.ZstdError: zstd decompress error: Data corruption detected
+
+2025-06-04 19:49:33,219 - INFO: Processing W:\reddit\submissions\RS_2022-02.zst -> W:\reddit\scraped\submissions_scraped\output\RS_2022-02.csv (Is submission: True)
+2025-06-04 19:50:01,548 - INFO: Processing 36 files
+2025-06-04 19:50:01,549 - INFO: Processing W:\reddit\submissions\RS_2021-12.zst -> W:\reddit\scraped\submissions_scraped\output\RS_2021-12.csv (Is submission: True)
+2025-06-04 19:50:01,550 - WARNING: Error processing W:\reddit\submissions\RS_2021-12.zst: zstd decompress error: Data corruption detected
+2025-06-04 19:50:01,553 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 138, in <module>
+    process_file(file_in, file_out, output_format, cve_regex, from_date, to_date)
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 102, in process_file
+    for line in read_lines_zst(input_file):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 74, in read_lines_zst
+    chunk = reader.read(2**27).decode(errors='ignore')
+            ^^^^^^^^^^^^^^^^^^
+zstd.ZstdError: zstd decompress error: Data corruption detected
+
+2025-06-04 19:50:01,555 - INFO: Processing W:\reddit\submissions\RS_2022-01.zst -> W:\reddit\scraped\submissions_scraped\output\RS_2022-01.csv (Is submission: True)
+2025-06-04 19:50:01,560 - WARNING: Error processing W:\reddit\submissions\RS_2022-01.zst: zstd decompress error: Data corruption detected
+2025-06-04 19:50:01,561 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 138, in <module>
+    process_file(file_in, file_out, output_format, cve_regex, from_date, to_date)
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 102, in process_file
+    for line in read_lines_zst(input_file):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 74, in read_lines_zst
+    chunk = reader.read(2**27).decode(errors='ignore')
+            ^^^^^^^^^^^^^^^^^^
+zstd.ZstdError: zstd decompress error: Data corruption detected
+
+2025-06-04 19:50:01,561 - INFO: Processing W:\reddit\submissions\RS_2022-02.zst -> W:\reddit\scraped\submissions_scraped\output\RS_2022-02.csv (Is submission: True)
+2025-06-04 19:52:58,903 - INFO: Processing 36 files
+2025-06-04 19:52:58,904 - INFO: Processing W:\reddit\submissions\RS_2021-12.zst -> W:\reddit\scraped\submissions_scraped\output\RS_2021-12.csv (Is submission: True)
+2025-06-04 19:52:58,905 - WARNING: Error processing W:\reddit\submissions\RS_2021-12.zst: zstd decompress error: Data corruption detected
+2025-06-04 19:52:58,907 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 138, in <module>
+    process_file(file_in, file_out, output_format, cve_regex, from_date, to_date)
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 102, in process_file
+    for line in read_lines_zst(input_file):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 74, in read_lines_zst
+    chunk = reader.read(2**27).decode(errors='replace')
+            ^^^^^^^^^^^^^^^^^^
+zstd.ZstdError: zstd decompress error: Data corruption detected
+
+2025-06-04 19:52:58,907 - INFO: Processing W:\reddit\submissions\RS_2022-01.zst -> W:\reddit\scraped\submissions_scraped\output\RS_2022-01.csv (Is submission: True)
+2025-06-04 19:52:58,912 - WARNING: Error processing W:\reddit\submissions\RS_2022-01.zst: zstd decompress error: Data corruption detected
+2025-06-04 19:52:58,913 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 138, in <module>
+    process_file(file_in, file_out, output_format, cve_regex, from_date, to_date)
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 102, in process_file
+    for line in read_lines_zst(input_file):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 74, in read_lines_zst
+    chunk = reader.read(2**27).decode(errors='replace')
+            ^^^^^^^^^^^^^^^^^^
+zstd.ZstdError: zstd decompress error: Data corruption detected
+
+2025-06-04 19:52:58,913 - INFO: Processing W:\reddit\submissions\RS_2022-02.zst -> W:\reddit\scraped\submissions_scraped\output\RS_2022-02.csv (Is submission: True)
+2025-06-04 19:53:14,457 - INFO: Processing 36 files
+2025-06-04 19:53:14,458 - INFO: Processing W:\reddit\submissions\RS_2021-12.zst -> W:\reddit\scraped\submissions_scraped\output\RS_2021-12.csv (Is submission: True)
+2025-06-04 19:53:14,460 - WARNING: Error processing W:\reddit\submissions\RS_2021-12.zst: zstd decompress error: Data corruption detected
+2025-06-04 19:53:14,462 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 138, in <module>
+    process_file(file_in, file_out, output_format, cve_regex, from_date, to_date)
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 102, in process_file
+    for line in read_lines_zst(input_file):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 74, in read_lines_zst
+    chunk = reader.read(2**27).decode(errors='ignore')
+            ^^^^^^^^^^^^^^^^^^
+zstd.ZstdError: zstd decompress error: Data corruption detected
+
+2025-06-04 19:53:14,463 - INFO: Processing W:\reddit\submissions\RS_2022-01.zst -> W:\reddit\scraped\submissions_scraped\output\RS_2022-01.csv (Is submission: True)
+2025-06-04 19:53:14,469 - WARNING: Error processing W:\reddit\submissions\RS_2022-01.zst: zstd decompress error: Data corruption detected
+2025-06-04 19:53:14,470 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 138, in <module>
+    process_file(file_in, file_out, output_format, cve_regex, from_date, to_date)
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 102, in process_file
+    for line in read_lines_zst(input_file):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 74, in read_lines_zst
+    chunk = reader.read(2**27).decode(errors='ignore')
+            ^^^^^^^^^^^^^^^^^^
+zstd.ZstdError: zstd decompress error: Data corruption detected
+
+2025-06-04 19:53:14,471 - INFO: Processing W:\reddit\submissions\RS_2022-02.zst -> W:\reddit\scraped\submissions_scraped\output\RS_2022-02.csv (Is submission: True)
+2025-06-04 20:50:36,492 - INFO: Completed: Total: 29843162, Matched: 1075, Errors: 0
+2025-06-04 20:50:36,492 - INFO: Processing W:\reddit\submissions\RS_2022-03.zst -> W:\reddit\scraped\submissions_scraped\output\RS_2022-03.csv (Is submission: True)
+2025-06-04 21:31:22,948 - INFO: Searching for CVE IDs in field: selftext
+2025-06-04 21:31:22,948 - INFO: Date range: 2005-01-01 to 2030-12-31
+2025-06-04 21:31:22,948 - INFO: Output format: csv
+2025-06-04 21:37:42,112 - INFO: Searching for CVE IDs in field: selftext
+2025-06-04 21:37:42,113 - INFO: Date range: 2005-01-01 to 2030-12-31
+2025-06-04 21:37:42,113 - INFO: Output format: csv
+2025-06-04 21:37:42,114 - INFO: Processing 36 files.
+2025-06-04 21:37:42,114 - INFO: Processing: W:\reddit\submissions\RS_2021-12.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2021-12.csv, Is submission: True
+2025-06-04 21:37:42,126 - WARNING: Error processing W:\reddit\submissions\RS_2021-12.zst: zstd decompress error: Corrupted block detected
+2025-06-04 21:37:42,129 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 121, in process_file
+    for line, _ in read_lines_zst(input_file):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 91, in read_lines_zst
+    chunk = reader.read(2**27).decode(errors='ignore')
+            ^^^^^^^^^^^^^^^^^^
+zstd.ZstdError: zstd decompress error: Corrupted block detected
+
+2025-06-04 21:37:42,129 - INFO: Processing: W:\reddit\submissions\RS_2022-01.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-01.csv, Is submission: True
+2025-06-04 21:37:42,136 - WARNING: Error processing W:\reddit\submissions\RS_2022-01.zst: zstd decompress error: Corrupted block detected
+2025-06-04 21:37:42,137 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 121, in process_file
+    for line, _ in read_lines_zst(input_file):
+  File "C:\Users\stijn\desktop\epss_fresh\data\reddit\scripts\submissions_scrapper.py", line 91, in read_lines_zst
+    chunk = reader.read(2**27).decode(errors='ignore')
+            ^^^^^^^^^^^^^^^^^^
+zstd.ZstdError: zstd decompress error: Corrupted block detected
+
+2025-06-04 21:37:42,138 - INFO: Processing: W:\reddit\submissions\RS_2022-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-02.csv, Is submission: True
+2025-06-07 15:03:29,016 - INFO: Searching for CVE IDs in field: selftext
+2025-06-07 15:03:29,016 - INFO: Date range: 2005-01-01 to 2030-12-31
+2025-06-07 15:03:29,017 - INFO: Output format: csv
+2025-06-07 15:03:29,022 - INFO: Processing 235 files.
+2025-06-07 15:03:29,023 - INFO: Processing: W:\reddit\submissions\RS_2005-06.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-06.csv, Is submission: True
+2025-06-07 15:03:29,034 - INFO: Processing complete: 103 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:29,035 - INFO: Processing: W:\reddit\submissions\RS_2005-07.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-07.csv, Is submission: True
+2025-06-07 15:03:29,058 - INFO: Processing complete: 1079 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:29,059 - INFO: Processing: W:\reddit\submissions\RS_2005-08.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-08.csv, Is submission: True
+2025-06-07 15:03:29,094 - INFO: Processing complete: 2069 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:29,094 - INFO: Processing: W:\reddit\submissions\RS_2005-09.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-09.csv, Is submission: True
+2025-06-07 15:03:29,144 - INFO: Processing complete: 2449 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:29,144 - INFO: Processing: W:\reddit\submissions\RS_2005-10.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-10.csv, Is submission: True
+2025-06-07 15:03:29,198 - INFO: Processing complete: 3498 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:29,198 - INFO: Processing: W:\reddit\submissions\RS_2005-11.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-11.csv, Is submission: True
+2025-06-07 15:03:29,265 - INFO: Processing complete: 3699 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:29,265 - INFO: Processing: W:\reddit\submissions\RS_2005-12.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-12.csv, Is submission: True
+2025-06-07 15:03:29,347 - INFO: Processing complete: 5356 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:29,347 - INFO: Processing: W:\reddit\submissions\RS_2006-01.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-01.csv, Is submission: True
+2025-06-07 15:03:29,467 - INFO: Processing complete: 8048 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:29,467 - INFO: Processing: W:\reddit\submissions\RS_2006-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-02.csv, Is submission: True
+2025-06-07 15:03:29,611 - INFO: Processing complete: 9501 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:29,611 - INFO: Processing: W:\reddit\submissions\RS_2006-03.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-03.csv, Is submission: True
+2025-06-07 15:03:29,805 - INFO: Processing complete: 12525 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:29,806 - INFO: Processing: W:\reddit\submissions\RS_2006-04.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-04.csv, Is submission: True
+2025-06-07 15:03:29,982 - INFO: Processing complete: 12556 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:29,982 - INFO: Processing: W:\reddit\submissions\RS_2006-05.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-05.csv, Is submission: True
+2025-06-07 15:03:30,202 - INFO: Processing complete: 14701 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:30,202 - INFO: Processing: W:\reddit\submissions\RS_2006-06.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-06.csv, Is submission: True
+2025-06-07 15:03:30,457 - INFO: Processing complete: 16942 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:30,458 - INFO: Processing: W:\reddit\submissions\RS_2006-07.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-07.csv, Is submission: True
+2025-06-07 15:03:30,815 - INFO: Processing complete: 24026 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:30,815 - INFO: Processing: W:\reddit\submissions\RS_2006-08.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-08.csv, Is submission: True
+2025-06-07 15:03:31,366 - INFO: Processing complete: 40750 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:31,367 - INFO: Processing: W:\reddit\submissions\RS_2006-09.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-09.csv, Is submission: True
+2025-06-07 15:03:32,082 - INFO: Processing complete: 54043 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:32,082 - INFO: Processing: W:\reddit\submissions\RS_2006-10.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-10.csv, Is submission: True
+2025-06-07 15:03:32,619 - INFO: Processing complete: 38333 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:32,619 - INFO: Processing: W:\reddit\submissions\RS_2006-11.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-11.csv, Is submission: True
+2025-06-07 15:03:33,153 - INFO: Processing complete: 36824 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:33,153 - INFO: Processing: W:\reddit\submissions\RS_2006-12.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-12.csv, Is submission: True
+2025-06-07 15:03:33,672 - INFO: Processing complete: 36434 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:33,673 - INFO: Processing: W:\reddit\submissions\RS_2007-01.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2007-01.csv, Is submission: True
+2025-06-07 15:03:34,279 - INFO: Processing complete: 43725 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:34,279 - INFO: Processing: W:\reddit\submissions\RS_2007-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2007-02.csv, Is submission: True
+2025-06-07 15:03:34,961 - INFO: Processing complete: 47317 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:34,962 - INFO: Processing: W:\reddit\submissions\RS_2007-03.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2007-03.csv, Is submission: True
+2025-06-07 15:03:35,782 - INFO: Processing complete: 58642 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:35,782 - INFO: Processing: W:\reddit\submissions\RS_2007-04.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2007-04.csv, Is submission: True
+2025-06-07 15:03:36,648 - INFO: Processing complete: 61544 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:36,648 - INFO: Processing: W:\reddit\submissions\RS_2007-05.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2007-05.csv, Is submission: True
+2025-06-07 15:03:37,566 - INFO: Processing complete: 65098 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:37,566 - INFO: Processing: W:\reddit\submissions\RS_2007-06.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2007-06.csv, Is submission: True
+2025-06-07 15:03:38,445 - INFO: Processing complete: 62693 total, 0 matched, 0 bad lines.
+2025-06-07 15:03:38,446 - INFO: Processing: W:\reddit\submissions\RS_2007-07.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2007-07.csv, Is submission: True
+2025-06-07 15:05:57,246 - INFO: Searching for CVE IDs in field: selftext
+2025-06-07 15:05:57,247 - INFO: Date range: 2005-01-01 to 2030-12-31
+2025-06-07 15:05:57,247 - INFO: Output format: csv
+2025-06-07 15:05:57,248 - INFO: Processing 235 files.
+2025-06-07 15:05:57,248 - INFO: Processing: W:\reddit\submissions\RS_2005-06.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-06.csv, Is submission: True
+2025-06-07 15:05:57,252 - INFO: Processing complete: 103 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:57,252 - INFO: Processing: W:\reddit\submissions\RS_2005-07.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-07.csv, Is submission: True
+2025-06-07 15:05:57,266 - INFO: Processing complete: 1079 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:57,266 - INFO: Processing: W:\reddit\submissions\RS_2005-08.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-08.csv, Is submission: True
+2025-06-07 15:05:57,291 - INFO: Processing complete: 2069 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:57,291 - INFO: Processing: W:\reddit\submissions\RS_2005-09.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-09.csv, Is submission: True
+2025-06-07 15:05:57,319 - INFO: Processing complete: 2449 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:57,320 - INFO: Processing: W:\reddit\submissions\RS_2005-10.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-10.csv, Is submission: True
+2025-06-07 15:05:57,360 - INFO: Processing complete: 3498 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:57,360 - INFO: Processing: W:\reddit\submissions\RS_2005-11.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-11.csv, Is submission: True
+2025-06-07 15:05:57,402 - INFO: Processing complete: 3699 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:57,403 - INFO: Processing: W:\reddit\submissions\RS_2005-12.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-12.csv, Is submission: True
+2025-06-07 15:05:57,466 - INFO: Processing complete: 5356 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:57,466 - INFO: Processing: W:\reddit\submissions\RS_2006-01.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-01.csv, Is submission: True
+2025-06-07 15:05:57,556 - INFO: Processing complete: 8048 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:57,556 - INFO: Processing: W:\reddit\submissions\RS_2006-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-02.csv, Is submission: True
+2025-06-07 15:05:57,669 - INFO: Processing complete: 9501 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:57,669 - INFO: Processing: W:\reddit\submissions\RS_2006-03.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-03.csv, Is submission: True
+2025-06-07 15:05:57,814 - INFO: Processing complete: 12525 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:57,814 - INFO: Processing: W:\reddit\submissions\RS_2006-04.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-04.csv, Is submission: True
+2025-06-07 15:05:57,974 - INFO: Processing complete: 12556 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:57,975 - INFO: Processing: W:\reddit\submissions\RS_2006-05.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-05.csv, Is submission: True
+2025-06-07 15:05:58,152 - INFO: Processing complete: 14701 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:58,152 - INFO: Processing: W:\reddit\submissions\RS_2006-06.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-06.csv, Is submission: True
+2025-06-07 15:05:58,360 - INFO: Processing complete: 16942 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:58,361 - INFO: Processing: W:\reddit\submissions\RS_2006-07.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-07.csv, Is submission: True
+2025-06-07 15:05:58,664 - INFO: Processing complete: 24026 total, 0 matched, 0 bad lines.
+2025-06-07 15:05:58,664 - INFO: Processing: W:\reddit\submissions\RS_2006-08.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-08.csv, Is submission: True
+2025-06-07 17:56:13,847 - INFO: Searching for CVE IDs in field: selftext
+2025-06-07 17:56:13,848 - INFO: Date range: 2005-01-01 to 2030-12-31
+2025-06-07 17:56:13,848 - INFO: Output format: csv
+2025-06-07 17:56:13,849 - INFO: Processing 235 files.
+2025-06-07 17:56:13,850 - INFO: Processing: W:\reddit\submissions\RS_2005-06.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-06.csv, Is submission: True
+2025-06-07 17:56:13,853 - INFO: Processing complete: 103 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:13,853 - INFO: Processing: W:\reddit\submissions\RS_2005-07.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-07.csv, Is submission: True
+2025-06-07 17:56:13,870 - INFO: Processing complete: 1079 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:13,871 - INFO: Processing: W:\reddit\submissions\RS_2005-08.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-08.csv, Is submission: True
+2025-06-07 17:56:13,898 - INFO: Processing complete: 2069 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:13,899 - INFO: Processing: W:\reddit\submissions\RS_2005-09.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-09.csv, Is submission: True
+2025-06-07 17:56:13,934 - INFO: Processing complete: 2449 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:13,934 - INFO: Processing: W:\reddit\submissions\RS_2005-10.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-10.csv, Is submission: True
+2025-06-07 17:56:13,982 - INFO: Processing complete: 3498 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:13,982 - INFO: Processing: W:\reddit\submissions\RS_2005-11.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-11.csv, Is submission: True
+2025-06-07 17:56:14,032 - INFO: Processing complete: 3699 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:14,032 - INFO: Processing: W:\reddit\submissions\RS_2005-12.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2005-12.csv, Is submission: True
+2025-06-07 17:56:14,103 - INFO: Processing complete: 5356 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:14,103 - INFO: Processing: W:\reddit\submissions\RS_2006-01.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-01.csv, Is submission: True
+2025-06-07 17:56:14,206 - INFO: Processing complete: 8048 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:14,206 - INFO: Processing: W:\reddit\submissions\RS_2006-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-02.csv, Is submission: True
+2025-06-07 17:56:14,321 - INFO: Processing complete: 9501 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:14,321 - INFO: Processing: W:\reddit\submissions\RS_2006-03.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-03.csv, Is submission: True
+2025-06-07 17:56:14,471 - INFO: Processing complete: 12525 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:14,471 - INFO: Processing: W:\reddit\submissions\RS_2006-04.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-04.csv, Is submission: True
+2025-06-07 17:56:14,631 - INFO: Processing complete: 12556 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:14,631 - INFO: Processing: W:\reddit\submissions\RS_2006-05.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-05.csv, Is submission: True
+2025-06-07 17:56:14,810 - INFO: Processing complete: 14701 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:14,811 - INFO: Processing: W:\reddit\submissions\RS_2006-06.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-06.csv, Is submission: True
+2025-06-07 17:56:15,042 - INFO: Processing complete: 16942 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:15,043 - INFO: Processing: W:\reddit\submissions\RS_2006-07.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-07.csv, Is submission: True
+2025-06-07 17:56:15,411 - INFO: Processing complete: 24026 total, 0 matched, 0 bad lines.
+2025-06-07 17:56:15,411 - INFO: Processing: W:\reddit\submissions\RS_2006-08.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2006-08.csv, Is submission: True
+2025-06-08 02:20:37,797 - INFO: Searching for CVE IDs in field: selftext
+2025-06-08 02:20:37,798 - INFO: Date range: 2005-01-01 to 2030-12-31
+2025-06-08 02:20:37,798 - INFO: Output format: csv
+2025-06-08 02:20:37,799 - INFO: Processing 39 files.
+2025-06-08 02:20:37,799 - INFO: Processing: W:\reddit\submissions\RS_2022-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-02.csv, Is submission: True
+2025-06-08 02:21:47,504 - INFO: Searching for CVE IDs in field: selftext
+2025-06-08 02:21:47,504 - INFO: Date range: 2005-01-01 to 2030-12-31
+2025-06-08 02:21:47,504 - INFO: Output format: csv
+2025-06-08 02:21:47,505 - INFO: Processing 39 files.
+2025-06-08 02:21:47,505 - INFO: Processing: W:\reddit\submissions\RS_2022-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-02.csv, Is submission: True
+2025-06-08 02:29:23,493 - INFO: Processing 39 files
+2025-06-08 02:29:23,493 - INFO: Processing W:\reddit\comments\RC_2022-02.zst -> W:\reddit\scraped\comments_scraped\RC_2022-02.csv (Is submission: False)
+2025-06-08 02:32:11,663 - INFO: Processing 39 files
+2025-06-08 02:32:11,663 - INFO: Processing W:\reddit\comments\RC_2022-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2022-02.csv (Is submission: False)
+2025-06-08 02:47:58,732 - INFO: Processing complete: 29843162 total, 79 matched, 0 bad lines.
+2025-06-08 02:47:58,733 - INFO: Processing: W:\reddit\submissions\RS_2022-03.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-03.csv, Is submission: True
+2025-06-08 03:25:13,379 - INFO: Processing complete: 32677372 total, 111 matched, 0 bad lines.
+2025-06-08 03:25:13,380 - INFO: Processing: W:\reddit\submissions\RS_2022-04.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-04.csv, Is submission: True
+2025-06-08 03:57:01,604 - INFO: Processing complete: 33002461 total, 92 matched, 0 bad lines.
+2025-06-08 03:57:01,605 - INFO: Processing: W:\reddit\submissions\RS_2022-05.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-05.csv, Is submission: True
+2025-06-08 03:58:19,553 - INFO: Completed: Total: 219927645, Matched: 189, Errors: 0
+2025-06-08 03:58:19,555 - INFO: Processing W:\reddit\comments\RC_2022-03.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2022-03.csv (Is submission: False)
+2025-06-08 04:31:27,783 - INFO: Processing complete: 34838318 total, 80 matched, 0 bad lines.
+2025-06-08 04:31:27,783 - INFO: Processing: W:\reddit\submissions\RS_2022-06.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-06.csv, Is submission: True
+2025-06-08 05:12:29,302 - INFO: Processing complete: 34395243 total, 74 matched, 0 bad lines.
+2025-06-08 05:12:29,305 - INFO: Processing: W:\reddit\submissions\RS_2022-07.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-07.csv, Is submission: True
+2025-06-08 05:33:01,910 - INFO: Completed: Total: 236554668, Matched: 276, Errors: 0
+2025-06-08 05:33:01,916 - INFO: Processing W:\reddit\comments\RC_2022-04.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2022-04.csv (Is submission: False)
+2025-06-08 05:50:33,456 - INFO: Processing complete: 37222497 total, 38 matched, 0 bad lines.
+2025-06-08 05:50:33,459 - INFO: Processing: W:\reddit\submissions\RS_2022-08.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-08.csv, Is submission: True
+2025-06-08 06:29:36,551 - INFO: Processing complete: 38178282 total, 73 matched, 0 bad lines.
+2025-06-08 06:29:36,552 - INFO: Processing: W:\reddit\submissions\RS_2022-09.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-09.csv, Is submission: True
+2025-06-08 07:09:42,308 - INFO: Processing complete: 35115349 total, 51 matched, 0 bad lines.
+2025-06-08 07:09:42,313 - INFO: Processing: W:\reddit\submissions\RS_2022-10.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-10.csv, Is submission: True
+2025-06-08 07:10:23,071 - INFO: Completed: Total: 231188077, Matched: 176, Errors: 0
+2025-06-08 07:10:23,079 - INFO: Processing W:\reddit\comments\RC_2022-05.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2022-05.csv (Is submission: False)
+2025-06-08 07:48:54,613 - INFO: Processing complete: 35685153 total, 82 matched, 0 bad lines.
+2025-06-08 07:48:54,616 - INFO: Processing: W:\reddit\submissions\RS_2022-11.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-11.csv, Is submission: True
+2025-06-08 08:17:08,191 - INFO: Processing complete: 33166596 total, 64 matched, 0 bad lines.
+2025-06-08 08:17:08,195 - INFO: Processing: W:\reddit\submissions\RS_2022-12.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2022-12.csv, Is submission: True
+2025-06-08 08:41:31,687 - INFO: Completed: Total: 230492108, Matched: 174, Errors: 0
+2025-06-08 08:41:31,689 - INFO: Processing W:\reddit\comments\RC_2022-06.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2022-06.csv (Is submission: False)
+2025-06-08 08:54:00,814 - INFO: Processing complete: 35865148 total, 85 matched, 0 bad lines.
+2025-06-08 08:54:00,816 - INFO: Processing: W:\reddit\submissions\RS_2023-01.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2023-01.csv, Is submission: True
+2025-06-08 09:36:29,122 - INFO: Processing complete: 36090941 total, 72 matched, 0 bad lines.
+2025-06-08 09:36:29,125 - INFO: Processing: W:\reddit\submissions\RS_2023-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2023-02.csv, Is submission: True
+2025-06-08 10:15:44,266 - INFO: Processing complete: 33928903 total, 79 matched, 0 bad lines.
+2025-06-08 10:15:44,269 - INFO: Processing: W:\reddit\submissions\RS_2023-03.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2023-03.csv, Is submission: True
+2025-06-08 10:20:30,357 - INFO: Completed: Total: 218842949, Matched: 234, Errors: 0
+2025-06-08 10:20:30,361 - INFO: Processing W:\reddit\comments\RC_2022-07.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2022-07.csv (Is submission: False)
+2025-06-08 11:02:11,958 - INFO: Processing complete: 39724726 total, 305 matched, 0 bad lines.
+2025-06-08 11:02:11,961 - INFO: Processing: W:\reddit\submissions\RS_2023-04.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2023-04.csv, Is submission: True
+2025-06-08 11:44:48,447 - INFO: Processing complete: 52094224 total, 124 matched, 0 bad lines.
+2025-06-08 11:44:48,450 - INFO: Processing: W:\reddit\submissions\RS_2023-05.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2023-05.csv, Is submission: True
+2025-06-08 12:03:11,019 - INFO: Completed: Total: 242504279, Matched: 131, Errors: 0
+2025-06-08 12:03:11,021 - INFO: Processing W:\reddit\comments\RC_2022-08.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2022-08.csv (Is submission: False)
+2025-06-08 12:09:49,666 - INFO: Processing complete: 38450420 total, 92 matched, 0 bad lines.
+2025-06-08 12:09:49,669 - INFO: Processing: W:\reddit\submissions\RS_2023-06.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2023-06.csv, Is submission: True
+2025-06-08 12:36:00,033 - INFO: Processing complete: 42820922 total, 91 matched, 0 bad lines.
+2025-06-08 12:36:00,033 - INFO: Processing: W:\reddit\submissions\RS_2023-07.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2023-07.csv, Is submission: True
+2025-06-08 13:18:20,828 - INFO: Processing complete: 45437960 total, 116 matched, 0 bad lines.
+2025-06-08 13:18:20,829 - INFO: Processing: W:\reddit\submissions\RS_2023-08.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2023-08.csv, Is submission: True
+2025-06-08 13:30:06,979 - INFO: Completed: Total: 247215325, Matched: 191, Errors: 0
+2025-06-08 13:30:06,983 - INFO: Processing W:\reddit\comments\RC_2022-09.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2022-09.csv (Is submission: False)
+2025-06-08 13:58:37,922 - INFO: Processing complete: 46212450 total, 107 matched, 0 bad lines.
+2025-06-08 13:58:37,926 - INFO: Processing: W:\reddit\submissions\RS_2023-09.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2023-09.csv, Is submission: True
+2025-06-08 14:37:51,451 - INFO: Processing complete: 42881758 total, 118 matched, 0 bad lines.
+2025-06-08 14:37:51,454 - INFO: Processing: W:\reddit\submissions\RS_2023-10.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2023-10.csv, Is submission: True
+2025-06-08 15:05:55,540 - INFO: Completed: Total: 234131223, Matched: 110, Errors: 0
+2025-06-08 15:05:55,543 - INFO: Processing W:\reddit\comments\RC_2022-10.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2022-10.csv (Is submission: False)
+2025-06-08 15:16:18,915 - INFO: Processing complete: 40431726 total, 167 matched, 0 bad lines.
+2025-06-08 15:16:18,917 - INFO: Processing: W:\reddit\submissions\RS_2023-11.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2023-11.csv, Is submission: True
+2025-06-08 15:45:08,290 - INFO: Processing complete: 38107467 total, 97 matched, 0 bad lines.
+2025-06-08 15:45:08,291 - INFO: Processing: W:\reddit\submissions\RS_2023-12.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2023-12.csv, Is submission: True
+2025-06-08 16:14:23,494 - INFO: Processing complete: 39245797 total, 95 matched, 0 bad lines.
+2025-06-08 16:14:23,495 - INFO: Processing: W:\reddit\submissions\RS_2024-01.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2024-01.csv, Is submission: True
+2025-06-08 16:23:29,139 - INFO: Completed: Total: 237365072, Matched: 180, Errors: 0
+2025-06-08 16:23:29,140 - INFO: Processing W:\reddit\comments\RC_2022-11.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2022-11.csv (Is submission: False)
+2025-06-08 16:48:56,195 - INFO: Processing complete: 41263034 total, 141 matched, 0 bad lines.
+2025-06-08 16:48:56,196 - INFO: Processing: W:\reddit\submissions\RS_2024-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2024-02.csv, Is submission: True
+2025-06-08 17:23:45,713 - INFO: Processing complete: 39030731 total, 135 matched, 0 bad lines.
+2025-06-08 17:23:45,714 - INFO: Processing: W:\reddit\submissions\RS_2024-03.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2024-03.csv, Is submission: True
+2025-06-08 17:50:45,395 - INFO: Completed: Total: 229478878, Matched: 177, Errors: 0
+2025-06-08 17:50:45,396 - INFO: Processing W:\reddit\comments\RC_2022-12.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2022-12.csv (Is submission: False)
+2025-06-08 17:58:01,474 - INFO: Processing complete: 41926097 total, 111 matched, 0 bad lines.
+2025-06-08 17:58:01,476 - INFO: Processing: W:\reddit\submissions\RS_2024-04.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2024-04.csv, Is submission: True
+2025-06-08 18:26:16,580 - INFO: Processing complete: 40715240 total, 156 matched, 0 bad lines.
+2025-06-08 18:26:16,581 - INFO: Processing: W:\reddit\submissions\RS_2024-05.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2024-05.csv, Is submission: True
+2025-06-08 18:54:44,111 - INFO: Processing complete: 39884567 total, 114 matched, 0 bad lines.
+2025-06-08 18:54:44,112 - INFO: Processing: W:\reddit\submissions\RS_2024-06.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2024-06.csv, Is submission: True
+2025-06-08 19:03:00,925 - INFO: Completed: Total: 238862690, Matched: 151, Errors: 0
+2025-06-08 19:03:00,926 - INFO: Processing W:\reddit\comments\RC_2023-01.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-01.csv (Is submission: False)
+2025-06-08 19:21:26,940 - INFO: Processing complete: 38429821 total, 120 matched, 0 bad lines.
+2025-06-08 19:21:26,940 - INFO: Processing: W:\reddit\submissions\RS_2024-07.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2024-07.csv, Is submission: True
+2025-06-08 19:50:59,320 - INFO: Processing complete: 40932609 total, 124 matched, 0 bad lines.
+2025-06-08 19:50:59,321 - INFO: Processing: W:\reddit\submissions\RS_2024-08.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2024-08.csv, Is submission: True
+2025-06-08 20:25:35,605 - INFO: Processing complete: 41497995 total, 120 matched, 0 bad lines.
+2025-06-08 20:25:35,610 - INFO: Processing: W:\reddit\submissions\RS_2024-09.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2024-09.csv, Is submission: True
+2025-06-08 20:26:02,764 - INFO: Completed: Total: 253577512, Matched: 179, Errors: 0
+2025-06-08 20:26:02,766 - INFO: Processing W:\reddit\comments\RC_2023-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-02.csv (Is submission: False)
+2025-06-08 20:56:39,719 - INFO: Processing complete: 38603093 total, 137 matched, 0 bad lines.
+2025-06-08 20:56:39,721 - INFO: Processing: W:\reddit\submissions\RS_2024-10.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2024-10.csv, Is submission: True
+2025-06-08 21:22:38,477 - INFO: Processing complete: 38990206 total, 182 matched, 0 bad lines.
+2025-06-08 21:22:38,479 - INFO: Processing: W:\reddit\submissions\RS_2024-11.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2024-11.csv, Is submission: True
+2025-06-08 22:31:11,805 - INFO: Processing 27 files
+2025-06-08 22:31:11,805 - INFO: Processing W:\reddit\comments\RC_2023-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-02.csv (Is submission: False)
+2025-06-08 22:34:07,628 - INFO: Processing 7 files
+2025-06-08 22:34:07,628 - INFO: Processing W:\reddit\comments\RC_2023-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-02.csv (Is submission: False)
+2025-06-08 22:37:33,519 - INFO: Processing 27 files
+2025-06-08 22:37:33,519 - INFO: Processing W:\reddit\comments\RC_2023-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-02.csv (Is submission: False)
+2025-06-08 22:40:25,076 - INFO: Searching for CVE IDs in field: selftext
+2025-06-08 22:40:25,076 - INFO: Date range: 2005-01-01 to 2030-12-31
+2025-06-08 22:40:25,076 - INFO: Output format: csv
+2025-06-08 22:40:25,076 - INFO: Processing 6 files.
+2025-06-08 22:40:25,076 - INFO: Processing: W:\reddit\submissions\RS_2024-11.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2024-11.csv, Is submission: True
+2025-06-08 23:16:41,060 - INFO: Processing complete: 38025803 total, 113 matched, 0 bad lines.
+2025-06-08 23:16:41,062 - INFO: Processing: W:\reddit\submissions\RS_2024-12.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2024-12.csv, Is submission: True
+2025-06-08 23:52:27,118 - INFO: Processing complete: 38192053 total, 151 matched, 0 bad lines.
+2025-06-08 23:52:27,118 - INFO: Processing: W:\reddit\submissions\RS_2025-01.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2025-01.csv, Is submission: True
+2025-06-09 00:30:09,221 - INFO: Searching for CVE IDs in field: selftext
+2025-06-09 00:30:09,221 - INFO: Date range: 2005-01-01 to 2030-12-31
+2025-06-09 00:30:09,221 - INFO: Output format: csv
+2025-06-09 00:30:09,221 - INFO: Processing 4 files.
+2025-06-09 00:30:09,221 - INFO: Processing: W:\reddit\submissions\RS_2025-01.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2025-01.csv, Is submission: True
+2025-06-09 00:30:58,666 - INFO: Processing 27 files
+2025-06-09 00:30:58,666 - INFO: Processing W:\reddit\comments\RC_2023-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-02.csv (Is submission: False)
+2025-06-09 01:30:22,017 - WARNING: Error processing W:\reddit\submissions\RS_2025-01.zst: zstd decompress error: Unknown frame descriptor
+2025-06-09 01:30:22,064 - WARNING: Traceback (most recent call last):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 169, in <module>
+    process_file(file_in, file_out, output_format, field, from_date, to_date, single_field)
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 121, in process_file
+    for line, _ in read_lines_zst(input_file):
+  File "C:\Users\stijn\Desktop\EPSS_FRESH\data\reddit\scripts\submissions_scrapper.py", line 91, in read_lines_zst
+    chunk = reader.read(2**27).decode(errors='ignore')
+            ^^^^^^^^^^^^^^^^^^
+zstd.ZstdError: zstd decompress error: Unknown frame descriptor
+
+2025-06-09 01:30:22,138 - INFO: Processing: W:\reddit\submissions\RS_2025-02.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2025-02.csv, Is submission: True
+2025-06-09 02:14:29,696 - INFO: Processing complete: 36173237 total, 156 matched, 0 bad lines.
+2025-06-09 02:14:29,698 - INFO: Processing: W:\reddit\submissions\RS_2025-03.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2025-03.csv, Is submission: True
+2025-06-09 02:18:53,321 - INFO: Completed: Total: 221285501, Matched: 167, Errors: 0
+2025-06-09 02:18:53,325 - INFO: Processing W:\reddit\comments\RC_2023-03.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-03.csv (Is submission: False)
+2025-06-09 03:09:02,357 - INFO: Processing complete: 39637988 total, 315 matched, 0 bad lines.
+2025-06-09 03:09:02,361 - INFO: Processing: W:\reddit\submissions\RS_2025-04.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_submissions\RS_2025-04.csv, Is submission: True
+2025-06-09 03:48:10,078 - INFO: Processing complete: 38776404 total, 268 matched, 0 bad lines.
+2025-06-09 03:54:43,172 - INFO: Completed: Total: 240661398, Matched: 351, Errors: 0
+2025-06-09 03:54:43,174 - INFO: Processing W:\reddit\comments\RC_2023-04.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-04.csv (Is submission: False)
+2025-06-09 04:50:33,911 - INFO: Completed: Total: 233853959, Matched: 197, Errors: 0
+2025-06-09 04:50:33,912 - INFO: Processing W:\reddit\comments\RC_2023-05.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-05.csv (Is submission: False)
+2025-06-09 05:47:42,071 - INFO: Completed: Total: 239038612, Matched: 179, Errors: 0
+2025-06-09 05:47:42,071 - INFO: Processing W:\reddit\comments\RC_2023-06.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-06.csv (Is submission: False)
+2025-06-09 06:42:20,473 - INFO: Completed: Total: 227684217, Matched: 169, Errors: 0
+2025-06-09 06:42:20,473 - INFO: Processing W:\reddit\comments\RC_2023-07.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-07.csv (Is submission: False)
+2025-06-09 07:40:59,420 - INFO: Completed: Total: 245135943, Matched: 193, Errors: 0
+2025-06-09 07:40:59,425 - INFO: Processing W:\reddit\comments\RC_2023-08.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-08.csv (Is submission: False)
+2025-06-09 08:43:39,051 - INFO: Completed: Total: 259403102, Matched: 185, Errors: 0
+2025-06-09 08:43:39,053 - INFO: Processing W:\reddit\comments\RC_2023-09.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-09.csv (Is submission: False)
+2025-06-09 09:55:06,543 - INFO: Completed: Total: 258302394, Matched: 243, Errors: 0
+2025-06-09 09:55:06,544 - INFO: Processing W:\reddit\comments\RC_2023-10.zst -> c:/Users/stijn/Desktop/EPSS_FRESH/data/reddit/raw_comments\RC_2023-10.csv (Is submission: False)
