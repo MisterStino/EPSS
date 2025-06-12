@@ -21,7 +21,8 @@ MAX_RETRY     = 8
 BACKOFF0      = 0.2
 MAX_WORKERS   = 12        # default concurrent requests
 
-
+SNAPSHOT_DATE   = TODAY                      # e.g. "2025-06-11"
+SNAPSHOT_TS     = f"{SNAPSHOT_DATE}T00:00:00.000"
 # -------------------------------------------------------------------------
 def _mkdir(p: Path) -> Path:
     p.mkdir(parents=True, exist_ok=True)
@@ -235,56 +236,87 @@ class NVDHelper:
             for ln in fh_snap:
                 yield json.loads(ln)
 
-    def _timeline(self, cur: Dict[str, Any], chgs: List[Any]) -> List[Any]:
-        # ============================================================================
-        # 🚨 CRITICAL FIX - DUPLICATE PREVENTION 🚨
-        # ============================================================================
-        # This method was creating duplicate timeline states when historical changes
-        # resulted in identical states. Fixed by adding hash-based deduplication.
-        # 
-        # ⚠️  WARNING: THIS FIX HAS NOT BEEN TESTED DUE TO TIME CONSTRAINTS
-        # ⚠️  VALIDATE THOROUGHLY BEFORE PRODUCTION USE
-        # ============================================================================
-        
-        s = json.loads(json.dumps(cur))
-        out = [s]
-        last_hash = hashlib.md5(json.dumps(s, sort_keys=True).encode()).hexdigest()
+    def _state_hash(self, obj: dict[str, Any]) -> str:
+        return hashlib.md5(json.dumps(obj, sort_keys=True).encode()).hexdigest()
 
-        for w in reversed(chgs):
-            s = self._undo(s, w["change"]["details"])
-            s["reconstruction_timestamp"] = w["change"]["created"]
-            new_hash = hashlib.md5(json.dumps(s, sort_keys=True).encode()).hexdigest()
-            if new_hash != last_hash:           # ← only append if state changed
-                out.append(json.loads(json.dumps(s)))
-                last_hash = new_hash
-        return out
-    
-    def _timeline_with_stats(self, cur: Dict[str, Any], chgs: List[Any]) -> tuple[List[Any], int]:
-        """Timeline reconstruction with statistics tracking"""
-        # ============================================================================
-        # 🚨 CRITICAL FIX - DUPLICATE PREVENTION 🚨
-        # ============================================================================
-        # This method was also creating duplicate timeline states. Applied same
-        # hash-based deduplication fix as _timeline() method.
-        # 
-        # ⚠️  WARNING: THIS FIX HAS NOT BEEN TESTED DUE TO TIME CONSTRAINTS
-        # ⚠️  VALIDATE THOROUGHLY BEFORE PRODUCTION USE
-        # ============================================================================
-        
-        s = json.loads(json.dumps(cur))
-        out = [s]
-        last_hash = hashlib.md5(json.dumps(s, sort_keys=True).encode()).hexdigest()
-        total_skipped = 0
-        
-        for w in reversed(chgs):
-            s, skipped = self._undo_with_stats(s, w["change"]["details"])
-            total_skipped += skipped
-            s["reconstruction_timestamp"] = w["change"]["created"]
-            new_hash = hashlib.md5(json.dumps(s, sort_keys=True).encode()).hexdigest()
-            if new_hash != last_hash:           # ← only append if state changed
-                out.append(json.loads(json.dumps(s)))
-                last_hash = new_hash
-        return out, total_skipped
+
+    def _timeline(self, cur: dict[str, Any], chgs: list[Any]) -> list[Any]:
+        today_copy = json.loads(json.dumps(cur))
+        h_today    = self._state_hash(today_copy)
+
+        # 1. newest → oldest
+        changes = sorted(chgs, key=lambda w: w["change"]["created"], reverse=True)
+
+        seen_days: set[str] = set()
+        states: list[dict[str, Any]] = []
+        cur_state = json.loads(json.dumps(cur))
+
+        for w in changes:                                 # newest → oldest
+            cur_state = self._undo(cur_state, w["change"]["details"])
+            ts   = w["change"]["created"]
+            day  = ts[:10]
+            if day in seen_days:                      # keep only **last** change of the day
+                continue
+            seen_days.add(day)
+
+            cur_state["reconstruction_timestamp"] = ts
+            if not states or self._state_hash(cur_state) != self._state_hash(states[-1]):
+                states.append(json.loads(json.dumps(cur_state)))
+
+        # 2. inject / reuse today snapshot ------------------------------------
+        if SNAPSHOT_DATE in seen_days:
+            if states and self._state_hash(states[0]) == h_today:
+                states[0]["reconstruction_timestamp"] = SNAPSHOT_TS
+            else:
+                today_copy["reconstruction_timestamp"] = SNAPSHOT_TS
+                states.insert(0, today_copy)
+        else:
+            today_copy["reconstruction_timestamp"] = SNAPSHOT_TS
+            states.insert(0, today_copy)
+
+        return states
+
+
+    def _timeline_with_stats(
+        self, cur: dict[str, Any], chgs: list[Any]
+    ) -> tuple[list[Any], int]:
+        """Identical to _timeline() but also counts skipped change-details."""
+        today_copy = json.loads(json.dumps(cur))
+        h_today    = self._state_hash(today_copy)
+
+        changes = sorted(chgs, key=lambda w: w["change"]["created"], reverse=True)
+
+        seen_days: set[str] = set()
+        states: list[dict[str, Any]] = []
+        cur_state = json.loads(json.dumps(cur))
+        skipped_total = 0
+
+        for w in changes:
+            cur_state, skipped = self._undo_with_stats(cur_state, w["change"]["details"])
+            skipped_total += skipped
+            ts, day = w["change"]["created"], w["change"]["created"][:10]
+            if day in seen_days:
+                continue
+            seen_days.add(day)
+
+            cur_state["reconstruction_timestamp"] = ts
+            if not states or self._state_hash(cur_state) != self._state_hash(states[-1]):
+                states.append(json.loads(json.dumps(cur_state)))
+
+        # today snapshot ------------------------------------------------------
+        if SNAPSHOT_DATE in seen_days:
+            if states and self._state_hash(states[0]) == h_today:
+                states[0]["reconstruction_timestamp"] = SNAPSHOT_TS
+            else:
+                today_copy["reconstruction_timestamp"] = SNAPSHOT_TS
+                states.insert(0, today_copy)
+        else:
+            today_copy["reconstruction_timestamp"] = SNAPSHOT_TS
+            states.insert(0, today_copy)
+
+        return states, skipped_total
+
+
 
     def _undo(self, s: Dict[str, Any], ds: List[Dict[str, str]]) -> Dict[str, Any]:
         fmap = {

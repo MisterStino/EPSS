@@ -109,7 +109,7 @@ def generate_full_database_parquet(modules=['epss'], download_epss=False):
     # # just making sure we have spark session after long run..
     # spark = get_spark_session()
     # List all modules here; 'epss' is the base module
-    modules = ['epss', 'epss_features', 'github']  # Add more modules like 'reddit', 'github', etc. 
+    modules = ['epss', 'epss_features',]  # Add more modules like 'reddit', 'github', etc. 
     base_module = 'epss'
     
     # Build the path to the base module's Parquet file
@@ -174,7 +174,7 @@ def generate_full_database_parquet(modules=['epss'], download_epss=False):
     print(f"Final full dataset (Parquet) has been saved to: {final_parquet_dir}")
     
     # Sanity check for comforts
-    modules_features = ['epss', 'age_epss_pub', 'github']
+    modules_features = ['epss', 'age_epss_pub']
     # Columns (from the additional modules) which are numeric and should be normalized & plotted.
     numeric_features = ['age_epss_pub', 'commit_count']  # You can add more column names if needed.
     quick_viz(modules_features, numeric_features)

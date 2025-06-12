@@ -63,7 +63,8 @@ class ZeroDayZipper:
         spark_session: Optional[Any] = None,
         verbose: bool = True,
         fun_mode: bool = True,
-        auto_fill_nulls: bool = False
+        auto_fill_nulls: bool = False,
+        enable_caching: bool = False
     ):
         """
         Initialize the ZeroDayZipper.
@@ -78,18 +79,21 @@ class ZeroDayZipper:
             verbose: Whether to print progress information
             fun_mode: Whether to show battle cries and ASCII art
             auto_fill_nulls: Whether to automatically fill nulls (default: False, shows in red)
+            enable_caching: Enable DataFrame persistence for performance (default: False)
+                          ⚠️  Consumes memory - disable for large datasets with limited RAM
         """
         self.verbose = verbose
         self.fun_mode = fun_mode
         self.auto_fill_nulls = auto_fill_nulls
+        self.enable_caching = enable_caching
         self.start_time = time.time()
         self.spark = spark_session or get_spark_session("ZeroDayZipper")
         
         if self.fun_mode:
             self._show_banner()
         
-        # Initialize EPSS data with persistence
-        self.epss_df = self._load_epss_data(epss_path, epss_df).persist()
+        # Initialize EPSS data with conditional persistence
+        self.epss_df = self._conditional_persist(self._load_epss_data(epss_path, epss_df))
         self.epss_rows = self.epss_df.count()  # Cache the count
         
         # Initialize feature data if provided
@@ -144,6 +148,13 @@ class ZeroDayZipper:
             return tqdm(total=total, desc=description, bar_format='{desc}: {percentage:3.0f}%|{bar}| {elapsed}')
         else:
             return tqdm()  # Fallback no-op
+    
+    def _conditional_persist(self, df: DataFrame) -> DataFrame:
+        """Apply persistence only if caching is enabled."""
+        if self.enable_caching:
+            return df.persist()
+        else:
+            return df
     
     def _load_epss_data(self, epss_path: Optional[str], epss_df: Optional[DataFrame]) -> DataFrame:
         """Load and prepare EPSS data."""
@@ -215,8 +226,8 @@ class ZeroDayZipper:
         self._battle_cry("🕵️‍♂️ Clone patrol engaged… EXECUTING ORDER 66!")
         self._fast_duplicate_check(prepared_df, source_name)
         
-        # Return with persistence and deduplication
-        return prepared_df.dropDuplicates(["cve", "date"]).persist()
+        # Return with conditional persistence and deduplication
+        return self._conditional_persist(prepared_df.dropDuplicates(["cve", "date"]))
     
     def _fast_duplicate_check(self, df: DataFrame, source_name: str) -> None:
         """Fast duplicate check using count comparison instead of expensive groupBy."""
@@ -312,10 +323,10 @@ class ZeroDayZipper:
             # Handle nulls based on auto_fill_nulls setting
             if self.auto_fill_nulls:
                 self._battle_cry("👻 Ghost-busting NULLs—no spooky gaps allowed.")
-                self.merged_df = joined_df.fillna(fill_value, subset=new_feature_cols).persist()
+                self.merged_df = self._conditional_persist(joined_df.fillna(fill_value, subset=new_feature_cols))
             else:
                 self._battle_cry("🔍 Preserving NULLs for inspection—check the red warnings!")
-                self.merged_df = joined_df.persist()
+                self.merged_df = self._conditional_persist(joined_df)
                 # Show null summary in red
                 self._show_null_summary(self.merged_df, new_feature_cols)
             

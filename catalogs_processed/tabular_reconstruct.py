@@ -218,8 +218,9 @@ def main(recon_dir, snapshot_date, out_path):
     print(f"✅ finished. rows_written={rows_written:,} → {out_path}")
 
 if __name__ == "__main__":
-
+    import datetime as dt
+    
     recon_dir = Path("catalogs_processed/reconstructions")
-    snapshot_date = "2025-06-10"
-    out_path = Path("master_cve_timeseries_20250610.csv")
+    snapshot_date = dt.date.today().isoformat()  # Use current date dynamically
+    out_path = Path("catalogs_processed/master_cve_timeseries_dedup.csv")
     main(recon_dir, snapshot_date, out_path)
