@@ -367,6 +367,15 @@ output_path.parent.mkdir(parents=True, exist_ok=True)
 
 # Save as parquet with compression
 print(f"  💾 Saving to {CSAF_PROCESSED}...")
+
+# Convert nanosecond timestamps to millisecond for Spark compatibility
+print("  🔧 Converting timestamps to millisecond precision for Spark compatibility...")
+timestamp_cols = ['date', 'date_parsed']
+for col in timestamp_cols:
+    if col in processed.columns:
+        # Convert to millisecond precision to avoid Spark compatibility issues
+        processed[col] = processed[col].dt.floor('ms')
+
 processed.to_parquet(
     CSAF_PROCESSED,
     compression='snappy',

@@ -1,0 +1,11 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+When you use spark or are going to analyze, always use:
+from t3_spark.session import get_spark_session
+spark = get_spark_session()
+
+
+This is a battle tested way of working with these technologies in my system. 

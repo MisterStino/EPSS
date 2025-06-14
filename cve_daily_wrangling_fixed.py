@@ -491,6 +491,16 @@ def main():
     df = pd.read_csv(MASTER_CSV, low_memory=False)
     
     print(f"   📊 Loaded {len(df):,} rows, {len(df.columns)} columns")
+    
+    # Remove exact duplicates
+    print("   🧹 Removing duplicate (cve_id, timestamp) pairs...")
+    df_before = len(df)
+    df = df.drop_duplicates(subset=['cve_id', 'reconstruction_timestamp'], keep='first')
+    df_after = len(df)
+    duplicates_removed = df_before - df_after
+    
+    print(f"   ✅ Removed {duplicates_removed:,} duplicate rows ({duplicates_removed/df_before*100:.1f}%)")
+    print(f"   📊 Clean dataset: {len(df):,} rows, {len(df.columns)} columns")
     print(f"   📊 Unique CVEs: {df['cve_id'].nunique():,}")
     print(f"   📊 Date range: {df['reconstruction_timestamp'].min()} to {df['reconstruction_timestamp'].max()}")
     
@@ -542,13 +552,70 @@ def main():
     print("   🔄 Resampling to daily frequency...")
     
     resampled_groups = []
+    chunked_cves = []
     
     for cve_id, group in tqdm(df_indexed.groupby('cve_id'), desc="Daily Resampling"):
-        # Resample to daily frequency and forward fill
-        daily_group = group.resample('1D').ffill()
-        resampled_groups.append(daily_group)
+        # Calculate potential timeline length
+        min_date = group.index.min()
+        max_date = group.index.max()
+        timeline_days = (max_date - min_date).days + 1
+        
+        # For extremely long timelines, use chunked processing
+        if timeline_days > 1095:  # >3 years
+            chunked_cves.append((cve_id, timeline_days, len(group)))
+            print(f"   🔄 Chunked processing for {cve_id}: {timeline_days} days timeline")
+            
+            # Process in 1-year chunks to avoid memory issues
+            chunk_size_days = 365
+            current_date = min_date
+            cve_chunks = []
+            
+            while current_date <= max_date:
+                chunk_end = min(current_date + pd.Timedelta(days=chunk_size_days), max_date)
+                
+                # Get data for this chunk
+                chunk_mask = (group.index >= current_date) & (group.index <= chunk_end)
+                chunk_data = group[chunk_mask]
+                
+                if len(chunk_data) > 0:
+                    try:
+                        # Resample this chunk
+                        chunk_resampled = chunk_data.resample('1D').ffill()
+                        cve_chunks.append(chunk_resampled)
+                    except (MemoryError, np.core._exceptions._ArrayMemoryError):
+                        # If even a chunk fails, use original data points only
+                        cve_chunks.append(chunk_data)
+                
+                current_date = chunk_end + pd.Timedelta(days=1)
+            
+            # Combine all chunks for this CVE
+            if cve_chunks:
+                combined_cve = pd.concat(cve_chunks)
+                # Remove any duplicate dates that might occur at chunk boundaries
+                combined_cve = combined_cve[~combined_cve.index.duplicated(keep='last')]
+                resampled_groups.append(combined_cve)
+        else:
+            # Normal processing for reasonable timeline lengths
+            try:
+                daily_group = group.resample('1D').ffill()
+                resampled_groups.append(daily_group)
+            except (MemoryError, np.core._exceptions._ArrayMemoryError):
+                # Fallback: use original data without resampling
+                print(f"   ⚠️  Memory error for {cve_id}, using original data points")
+                resampled_groups.append(group)
+    
+    # Report on chunked processing
+    if chunked_cves:
+        print(f"\n   🔄 Used chunked processing for {len(chunked_cves)} long-timeline CVEs:")
+        for cve_id, days, states in chunked_cves[:10]:  # Show first 10
+            print(f"      {cve_id}: {days} days, {states} states")
+        if len(chunked_cves) > 10:
+            print(f"      ... and {len(chunked_cves) - 10} more")
     
     # Combine all resampled groups
+    if not resampled_groups:
+        raise ValueError("No CVEs could be processed - unexpected error")
+    
     df_daily = pd.concat(resampled_groups)
     
     # Reset index and create date column

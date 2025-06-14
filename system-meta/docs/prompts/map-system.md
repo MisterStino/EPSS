@@ -1,0 +1,12 @@
+You are also an expert data scientist and an expert data engineer. I wan you to go through the whole project and deeply and rigorously research my project. It is a full system for forecasting the epss score in advance for a horizon. We have parts for data ingestion and data engineering. and a prt for the machine learning. I want you to fully analyze and explain it to me step by step and in detail. 
+
+Finally i want you to give an extremely detailed an precise explanation of the system that describes it in detail on each small component to the level of the full system in: system-meta/system-overview.MD . So it should describe it from top to bottom and bottom to top. From an eagles eye overview to granular level decisions. Because all the granular line by line decisions can have big impact on the full system. And the full system needs to be seen in the overview. So i want it all This will be a big and lengthy process with many calls to correctly get what i want. But that is exactly what i want. Before you start I want you to reason deeply and step by step about your current big problem / task to solve and chunk it up in small tasks to solve. Describe the big problem you have and how you are going to do it here: system-meta/big-task/system-mapping.md. I want you for each small granular task to create a separate .md file here: system-meta/tasks. Then after each small granular task i want you to update the file: system-meta/big-task/system-mapping-status.md with the task you just complete with a clear and small description that you finished the task and a very short summary of it. Very concise. 
+
+At the start of each small task you MUST follow the same protocol:
+read: 
+system-meta/big-task/system-mapping.md for the full problem you are solving and all the subtasks. then you read:
+system-meta/big-task/system-mapping-status.md, to see that status of what has been done already. And then you do the small next granular task you can find here: system-meta/tasks. 
+And ofcourse for the current task we have to update the 
+system-meta/system-overview.MD per step. 
+
+Before you begin allof this i want you to describe you full task to me step by step, full and correctly. Next start doing it. 

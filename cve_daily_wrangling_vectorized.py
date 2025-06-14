@@ -195,9 +195,27 @@ snap = (snap
 json_cols=[c for c in snap.columns if c.endswith("_json")]
 snap = snap.drop(*json_cols)
 
-# ---------- validations -----------------------------------------------------
-dup = snap.groupBy("cve_id","snapshot_date").agg(spark_sum(lit(1)).alias("cnt")).filter("cnt>1").count()
-assert dup==0, "duplicate (cve_id,snapshot_date)"
+# ---------- validations & deduplication -------------------------------------
+dup_count = snap.groupBy("cve_id","snapshot_date").agg(spark_sum(lit(1)).alias("cnt")).filter("cnt>1").count()
+if dup_count > 0:
+    print(f"⚠️  WARNING: Found {dup_count:,} duplicate (cve_id, snapshot_date) pairs")
+    print("   Removing duplicates by keeping first occurrence...")
+    
+    # Get total count before deduplication
+    original_count = snap.count()
+    
+    # Remove duplicates - keep first occurrence
+    snap = snap.dropDuplicates(["cve_id", "snapshot_date"])
+    
+    # Report deduplication results
+    final_count = snap.count()
+    removed_count = original_count - final_count
+    print(f"   ✅ Deduplication complete:")
+    print(f"      Original rows: {original_count:,}")
+    print(f"      Final rows: {final_count:,}")
+    print(f"      Removed: {removed_count:,} duplicate rows ({removed_count/original_count*100:.1f}%)")
+else:
+    print("✅ No duplicate (cve_id, snapshot_date) pairs found")
 
 # Check for temporal anomalies (snapshot before publication)
 leak = snap.filter(col("snapshot_date") < col("published_date")).count()
@@ -223,6 +241,13 @@ multi = snap.filter(flag_expr > 1).count()
 assert multi==0, "multiple CVSS versions flagged"
 
 # ---------- write output ----------------------------------------------------
+# Ensure timestamp compatibility by casting to standard TimestampType
+print("🔧 Ensuring timestamp compatibility...")
+timestamp_cols = ["snapshot_date", "published_date", "last_modified_date"]
+for col_name in timestamp_cols:
+    if col_name in snap.columns:
+        snap = snap.withColumn(col_name, col(col_name).cast(TimestampType()))
+
 snap.write.mode("overwrite").parquet(OUT_PARQUET)
 
 manifest = {

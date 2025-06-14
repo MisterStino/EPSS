@@ -60,9 +60,9 @@ nvd_day = (nvd
 key_cols  = {"cve", "date"}
 nvd_feats = [c for c in nvd_day.columns if c not in key_cols]
 
-# Join then window-fill last known value
+# Join then window-fill with backward propagation (newest to oldest)
 joined = epss.join(nvd_day, on=["cve", "date"], how="left")
-w_fill = Window.partitionBy("cve").orderBy("date") \
+w_fill = Window.partitionBy("cve").orderBy(F.desc("date")) \
                .rowsBetween(Window.unboundedPreceding, 0)
 
 for c in nvd_feats:

@@ -237,7 +237,9 @@ class NVDHelper:
                 yield json.loads(ln)
 
     def _state_hash(self, obj: dict[str, Any]) -> str:
-        return hashlib.md5(json.dumps(obj, sort_keys=True).encode()).hexdigest()
+        # Create a copy without reconstruction_timestamp for consistent hashing
+        obj_copy = {k: v for k, v in obj.items() if k != "reconstruction_timestamp"}
+        return hashlib.md5(json.dumps(obj_copy, sort_keys=True).encode()).hexdigest()
 
 
     def _timeline(self, cur: dict[str, Any], chgs: list[Any]) -> list[Any]:
@@ -263,16 +265,27 @@ class NVDHelper:
             if not states or self._state_hash(cur_state) != self._state_hash(states[-1]):
                 states.append(json.loads(json.dumps(cur_state)))
 
-        # 2. inject / reuse today snapshot ------------------------------------
-        if SNAPSHOT_DATE in seen_days:
+        # 2. FIXED: Preserve real current snapshot with actual timestamp -----
+        # Use the real lastModified timestamp from NVD, not artificial SNAPSHOT_TS
+        real_current_ts = cur.get("lastModified", SNAPSHOT_TS)
+        current_day = real_current_ts[:10] if real_current_ts else SNAPSHOT_DATE
+        
+        if current_day in seen_days:
+            # Current day had historical changes - check if we need to add current state
             if states and self._state_hash(states[0]) == h_today:
-                states[0]["reconstruction_timestamp"] = SNAPSHOT_TS
+                # Current state already exists as first historical state - preserve real timestamp
+                states[0]["reconstruction_timestamp"] = real_current_ts
+                logging.debug("Preserved current state with real timestamp: %s", real_current_ts)
             else:
-                today_copy["reconstruction_timestamp"] = SNAPSHOT_TS
+                # Current state differs from first historical state - insert it
+                today_copy["reconstruction_timestamp"] = real_current_ts
                 states.insert(0, today_copy)
+                logging.debug("Inserted current state with real timestamp: %s", real_current_ts)
         else:
-            today_copy["reconstruction_timestamp"] = SNAPSHOT_TS
+            # No changes on current day - always include current snapshot
+            today_copy["reconstruction_timestamp"] = real_current_ts
             states.insert(0, today_copy)
+            logging.debug("Added current snapshot with real timestamp: %s", real_current_ts)
 
         return states
 
@@ -303,16 +316,27 @@ class NVDHelper:
             if not states or self._state_hash(cur_state) != self._state_hash(states[-1]):
                 states.append(json.loads(json.dumps(cur_state)))
 
-        # today snapshot ------------------------------------------------------
-        if SNAPSHOT_DATE in seen_days:
+        # FIXED: Preserve real current snapshot with actual timestamp ---------
+        # Use the real lastModified timestamp from NVD, not artificial SNAPSHOT_TS
+        real_current_ts = cur.get("lastModified", SNAPSHOT_TS)
+        current_day = real_current_ts[:10] if real_current_ts else SNAPSHOT_DATE
+        
+        if current_day in seen_days:
+            # Current day had historical changes - check if we need to add current state
             if states and self._state_hash(states[0]) == h_today:
-                states[0]["reconstruction_timestamp"] = SNAPSHOT_TS
+                # Current state already exists as first historical state - preserve real timestamp
+                states[0]["reconstruction_timestamp"] = real_current_ts
+                logging.debug("Preserved current state with real timestamp: %s", real_current_ts)
             else:
-                today_copy["reconstruction_timestamp"] = SNAPSHOT_TS
+                # Current state differs from first historical state - insert it
+                today_copy["reconstruction_timestamp"] = real_current_ts
                 states.insert(0, today_copy)
+                logging.debug("Inserted current state with real timestamp: %s", real_current_ts)
         else:
-            today_copy["reconstruction_timestamp"] = SNAPSHOT_TS
+            # No changes on current day - always include current snapshot
+            today_copy["reconstruction_timestamp"] = real_current_ts
             states.insert(0, today_copy)
+            logging.debug("Added current snapshot with real timestamp: %s", real_current_ts)
 
         return states, skipped_total
 

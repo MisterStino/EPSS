@@ -1,0 +1,14 @@
+[project]
+name = "lstm_window"
+version = "0.1.0"
+description = "lstm_window"
+readme = "README.md"
+requires-python = ">=3.9, <4.0"
+
+[tool.nonebot]
+adapters = [
+    
+]
+plugins = []
+plugin_dirs = []
+builtin_plugins = []

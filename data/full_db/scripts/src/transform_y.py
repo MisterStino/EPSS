@@ -61,14 +61,29 @@ def transform_epss(input_path: str, output_path: str, transform: str = "inverted
 
 if __name__ == "__main__":
     # hard-coded paths for this run
-    input_path = "data/full_db/sampled/final_full_data_sampled.parquet"
-    # generate three sets
+    
+    # COMMENTED OUT: Sampled dataset transformations
+    # input_path = "data/full_db/sampled/final_full_data_sampled.parquet"
+    # # generate three sets
+    # transform_epss(input_path,
+    #                "data/full_db/ml-sets-sampled/log-scaled/full",       
+    #                transform="inverted_log")
+    # transform_epss(input_path,
+    #                "data/full_db/ml-sets-sampled/cloglog-scaled/full",
+    #                transform="cloglog")
+    # transform_epss(input_path,
+    #                "data/full_db/ml-sets-sampled/logit-scaled/full",
+    #                transform="logit")
+    
+    # FULL DATABASE transformations
+    input_path = "data/full_db/processed/final_full_data.parquet"
+    # generate three sets for full database
     transform_epss(input_path,
-                   "data/full_db/ml-sets-sampled/log-scaled/full",       
+                   "data/full_db/ml-sets/inverted-log-scaled/full",       
                    transform="inverted_log")
     transform_epss(input_path,
-                   "data/full_db/ml-sets-sampled/cloglog-scaled/full",
+                   "data/full_db/ml-sets/cloglog-scaled/full",
                    transform="cloglog")
     transform_epss(input_path,
-                   "data/full_db/ml-sets-sampled/logit-scaled/full",
+                   "data/full_db/ml-sets/logit-scaled/full",
                    transform="logit")

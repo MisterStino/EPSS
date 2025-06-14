@@ -6,7 +6,7 @@ Usage
 -----
 python -u tabular_reconstruct.py
 """
-import csv, gzip, json, sys
+import csv, gzip, json, sys, logging
 from datetime import datetime
 from pathlib import Path
 from tqdm import tqdm
@@ -97,8 +97,14 @@ def main(recon_dir, snapshot_date, out_path):
         for jf in tqdm(jsonl_files, desc="Processing CVE files", unit="file"):
             for obj in iter_jsonl(jf):
                 cve_id = obj["id"]
-                ts_raw = obj.get("reconstruction_timestamp") \
-                         or f"{snapshot_date}T00:00:00.000"
+                ts_raw = obj.get("reconstruction_timestamp")
+                
+                # FIXED: Handle missing timestamps more intelligently
+                if not ts_raw:
+                    # Try to use lastModified from the CVE data itself
+                    ts_raw = obj.get("lastModified") or f"{snapshot_date}T00:00:00.000"
+                    logging.warning("Missing reconstruction_timestamp for %s, using: %s", cve_id, ts_raw)
+                
                 # ISO to unix-safe sort key
                 ts_iso = datetime.fromisoformat(ts_raw.rstrip("Z")).isoformat(timespec="milliseconds")
 

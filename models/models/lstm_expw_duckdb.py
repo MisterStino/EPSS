@@ -4,7 +4,7 @@
 Feature-rich, leakage-proof EPSS forecaster
 
 • loads the full Spark-generated Parquet (≈68 cols, one row per (cve, date))
-• converts all timestamps to non-leaking "age" deltas
+• converts all timestamps to non-leaking “age” deltas
 • builds numerics, booleans, categoricals with train-only statistics
 • keeps full history in every split (warm-up) but masks the loss accordingly
 • trains a mixed-type Seq-to-Seq LSTM that predicts the next 30-day EPSS path
@@ -66,40 +66,12 @@ EMB_DIM   = 8          # per-categorical embedding size
 SENTINEL  = -10.0      # ≥ |10σ| after standardisation
 
 # ───────────────────────────── 1  load parquet ──────────────────────────────
-from pathlib import Path
-
-# Resolve path relative to this script, not to CWD
-PROJECT_ROOT = Path(__file__).resolve().parents[2]  # models/models/script -> go up 2 levels
-PARQUET_DIR = PROJECT_ROOT / "data" / "full_db" / "v1" / "data" / "minimal_v1_timeseries.parquet"
-
-if not PARQUET_DIR.exists():
-    raise FileNotFoundError(f"Parquet path not found: {PARQUET_DIR}")
-
-# DuckDB needs parquet_scan() for multi-file datasets
-parquet_glob = str(PARQUET_DIR / "*.parquet") if PARQUET_DIR.is_dir() else str(PARQUET_DIR)
-
-# Probe schema using LIMIT 0 instead of DESCRIBE
-schema_df = duckdb.sql(f"SELECT * FROM parquet_scan('{parquet_glob}') LIMIT 0").df()
-probe_cols = schema_df.columns.tolist()
-
-# Build EXCLUDE clause
-drop_real = [c for c in DROP_COLS if c in probe_cols]
-quote_cols = ", ".join(f'"{c}"' for c in drop_real)
-exclude = f" EXCLUDE ({quote_cols})" if drop_real else ""
-
-BIG = duckdb.sql(f"SELECT *{exclude} FROM parquet_scan('{parquet_glob}')").df()
+FILE = "data/full_db/processed/final_full_data.parquet"
+DROP_SET = ", ".join(f'"{c}"' for c in DROP_COLS)
+duckdb_query = f"SELECT * EXCLUDE ({DROP_SET}) FROM '{FILE}'"
+BIG = duckdb.sql(duckdb_query).df()
 BIG["date"] = pd.to_datetime(BIG["date"])
 print(f"[INFO] loaded {len(BIG):,} rows × {BIG.shape[1]} columns (DuckDB)")
-
-# ───────────────────────────── 1.1  dynamic column filtering ────────────────
-# Filter hardcoded lists to only include columns that actually exist
-TS_SAFE   = [c for c in TS_SAFE  if c in BIG.columns]
-TS_LEAKY  = [c for c in TS_LEAKY if c in BIG.columns]
-CAT_COLS  = [c for c in CAT_COLS if c in BIG.columns]
-
-print(f"[INFO] Available TS_SAFE: {TS_SAFE}")
-print(f"[INFO] Available TS_LEAKY: {TS_LEAKY}")
-print(f"[INFO] Available CAT_COLS: {CAT_COLS}")
 
 # ───────────────────────────── 2  timestamp deltas ──────────────────────────
 for col in TS_SAFE:
@@ -112,8 +84,7 @@ for col in TS_LEAKY:
     BIG[f"{col}_delta"] = d
 
 BIG.drop(columns=TS_SAFE + TS_LEAKY, inplace=True)
-if TS_SAFE + TS_LEAKY:  # Only check if we have timestamp columns
-    assert (BIG.filter(regex="_delta$") < 0).stack().sum() == 0
+assert (BIG.filter(regex="_delta$") < 0).stack().sum() == 0
 
 # ───────────────────────────── 3  calendar split ────────────────────────────
 days     = np.sort(BIG["date"].unique())
@@ -131,10 +102,7 @@ BIG["epss"] = transform_epss(BIG["epss"].values, mode="logit", eps=1e-6)
 
 # booleans ───────────────────────────────────────────────────────────────────
 for col in BOOL_COLS(BIG):
-    if BIG[col].dtype == 'bool':
-        BIG[col] = BIG[col].fillna(False).astype("uint8")
-    else:
-        BIG[col] = BIG[col].fillna(0).astype("uint8")
+    BIG[col] = BIG[col].fillna(0).astype("uint8")
 
 # categoricals (vocab from *true* training rows only) ────────────────────────
 train_mask = BIG["flag_train"] == 1           # warm-up excluded
@@ -152,7 +120,7 @@ NUM_COLS = [c for c, t in BIG.dtypes.items()
             and c not in BOOL_COLS(BIG) + ["flag_train", "flag_val", "flag_test"]]
 
 scaler = StandardScaler().fit(BIG.loc[train_mask, NUM_COLS])
-BIG[NUM_COLS] = scaler.transform(BIG[NUM_COLS]).astype('float32')
+BIG[NUM_COLS] = scaler.transform(BIG[NUM_COLS])
 
 for col in NUM_COLS:
     miss = BIG[col].isna()
@@ -163,19 +131,14 @@ for col in NUM_COLS:
 class CVEDataset(Dataset):
     """One item = a zero-padded full history for a CVE + all masks."""
     def __init__(self, df: pd.DataFrame, L_max: int,
-                 horizon: int, flag_col: str, cat_cols: list):
+                 horizon: int, flag_col: str):
 
         self.num, self.boo, self.cat = [], [], []
         self.Y, self.m_t, self.m_h, self.m_eval = [], [], [], []
-        self.cat_cols = cat_cols
 
         num = df[NUM_COLS].to_numpy("float32")
         boo = df[BOOL_COLS(df)].to_numpy("uint8")
-        # Handle case where no categorical columns exist
-        cat = (
-            df[cat_cols].to_numpy("int64").astype("int64")  # torch.long later
-            if cat_cols else np.empty((len(df), 0), dtype="int64")
-        )
+        cat = df[CAT_COLS]        .to_numpy("int16")
         epss= df["epss"].to_numpy("float32").reshape(-1, 1)
         flag= df[flag_col].to_numpy("float32")
 
@@ -186,11 +149,7 @@ class CVEDataset(Dataset):
 
             self.num.append(torch.from_numpy(np.pad(num[idx], ((0, pad), (0, 0)))))
             self.boo.append(torch.from_numpy(np.pad(boo[idx], ((0, pad), (0, 0)))))
-            # Handle empty categorical case
-            if cat_cols:
-                self.cat.append(torch.from_numpy(np.pad(cat[idx], ((0, pad), (0, 0)))))
-            else:
-                self.cat.append(torch.zeros((L_max, 0), dtype=torch.int64))
+            self.cat.append(torch.from_numpy(np.pad(cat[idx], ((0, pad), (0, 0)))))
 
             self.m_t   .append(torch.from_numpy(np.r_[np.ones(T), np.zeros(pad)]))
             self.m_eval.append(torch.from_numpy(np.r_[flag[idx], np.zeros(pad)]))
@@ -221,7 +180,6 @@ class Seq2SeqLSTM(nn.Module):
                  layers: int = 3, emb_dim: int = EMB_DIM,
                  dropout: float = 0.3):
         super().__init__()
-        # Handle case where no categorical columns exist
         self.emb = nn.ModuleList([nn.Embedding(s, emb_dim) for s in cat_sizes])
         in_dim   = n_num + n_bool + emb_dim * len(cat_sizes)
 
@@ -230,13 +188,8 @@ class Seq2SeqLSTM(nn.Module):
         self.head = nn.Linear(hidden, horizon)
 
     def forward(self, num, boo, cat):
-        # Handle case where no categorical embeddings exist
-        if len(self.emb):                           # tiny micro-perf
-            cat = cat.long()                        # ⚠ NEW: ensure correct dtype
-            e = torch.cat([emb(cat[..., i]) for i, emb in enumerate(self.emb)], dim=-1)
-            x = torch.cat([num, boo.float(), e], dim=-1)
-        else:
-            x = torch.cat([num, boo.float()], dim=-1)
+        e = torch.cat([emb(cat[..., i]) for i, emb in enumerate(self.emb)], dim=-1)
+        x = torch.cat([num, boo.float(), e], dim=-1)
         h, _ = self.lstm(x)
         return self.head(h)
 
@@ -254,9 +207,9 @@ if __name__ == "__main__":
     HORIZON, BATCH, EPOCHS, LR = 30, 512, 12, 1e-3
     L_max = BIG.groupby("cve", observed=True).size().max()
 
-    tr_ds = CVEDataset(BIG, L_max, HORIZON, "flag_train", CAT_COLS)
-    va_ds = CVEDataset(BIG, L_max, HORIZON, "flag_val", CAT_COLS)
-    te_ds = CVEDataset(BIG, L_max, HORIZON, "flag_test", CAT_COLS)
+    tr_ds = CVEDataset(BIG, L_max, HORIZON, "flag_train")
+    va_ds = CVEDataset(BIG, L_max, HORIZON, "flag_val")
+    te_ds = CVEDataset(BIG, L_max, HORIZON, "flag_test")
 
     tr_ld = DataLoader(tr_ds, BATCH, True,  collate_fn=collate, pin_memory=True)
     va_ld = DataLoader(va_ds, BATCH, False, collate_fn=collate, pin_memory=True)
