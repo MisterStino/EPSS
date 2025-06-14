@@ -77,8 +77,8 @@ def scrape_cve(output_csv=f"{OUTPUT_DIR}/cve_catalog.csv"):
                             for pt in cna.get("problemTypes", [])
                             for d in pt.get("descriptions", [])
                             if d.get("lang") == "en"
-                        ),
-                        "references": "; ".join(ref.get("url", "") for ref in cna.get("references", [])),
+                        )
+                        #"references": "; ".join(ref.get("url", "") for ref in cna.get("references", [])),
                     }
 
             except Exception as e:
@@ -202,7 +202,7 @@ def merge_and_enrich_catalogs(
     zdi_df = pd.read_csv(zdi_csv)
 
     # Clean and deduplicate
-    cve_df = cve_df[cve_df["state"] == "PUBLISHED"].drop_duplicates("CVE_ID")
+    #cve_df = cve_df[cve_df["state"] == "PUBLISHED"].drop_duplicates("CVE_ID")
     exploit_df = exploit_df.drop_duplicates("CVE_ID").rename(columns={col: f"exploitDB_{col}" for col in exploit_df.columns if col != "CVE_ID"})
     kev_df = kev_df.drop_duplicates("CVE_ID").rename(columns={col: f"KEV_{col}" for col in kev_df.columns if col != "CVE_ID"})
     zdi_df = zdi_df.drop_duplicates("CVE_ID").rename(columns={col: f"ZDI_{col}" for col in zdi_df.columns if col != "CVE_ID"})
@@ -228,10 +228,10 @@ def merge_and_enrich_catalogs(
 
 # --- Pipeline Runner ---
 if __name__ == "__main__":
-    clone_or_update_repos(REPOS)
-    scrape_zdi()
-    scrape_cve()
-    extract_git_history()
-    scrape_exploitdb()
-    scrape_kev()
+    #clone_or_update_repos(REPOS)
+    #scrape_zdi()
+    #scrape_cve()
+    #extract_git_history()
+    #scrape_exploitdb()
+    #scrape_kev()
     merge_and_enrich_catalogs()
