@@ -1,3 +1,4 @@
+# %%
 #!/usr/bin/env python
 # lstm_epss_fullsequence_cuda_v3.py
 """
@@ -10,7 +11,7 @@ Feature-rich, leakage-proof EPSS forecaster
 • trains a mixed-type Seq-to-Seq LSTM that predicts the next 30-day EPSS path
 """
 
-# ───────────────────────────── imports ───────────────────────────────────────
+# ───────────────────────────── CELL 1: IMPORTS & SETUP ──────────────────────
 import json, numpy as np, pandas as pd, torch, torch.nn as nn, duckdb
 from torch.utils.data import DataLoader, Dataset
 from sklearn.preprocessing import StandardScaler
@@ -65,12 +66,12 @@ CAT_COLS  = [
 EMB_DIM   = 8          # per-categorical embedding size
 SENTINEL  = -10.0      # ≥ |10σ| after standardisation
 
-# ───────────────────────────── 1  load parquet ──────────────────────────────
+# %%
+# ───────────────────────────── CELL 2: DATA LOADING ─────────────────────────
 from pathlib import Path
 
-# Resolve path relative to this script, not to CWD
-PROJECT_ROOT = Path(__file__).resolve().parents[2]  # models/models/script -> go up 2 levels
-PARQUET_DIR = PROJECT_ROOT / "data" / "full_db" / "v1" / "data" / "minimal_v1_timeseries.parquet"
+# Use simple path relative to current working directory (works on Paperspace)
+PARQUET_DIR = Path("data/minimal_v1_timeseries.parquet")
 
 if not PARQUET_DIR.exists():
     raise FileNotFoundError(f"Parquet path not found: {PARQUET_DIR}")
@@ -101,7 +102,8 @@ print(f"[INFO] Available TS_SAFE: {TS_SAFE}")
 print(f"[INFO] Available TS_LEAKY: {TS_LEAKY}")
 print(f"[INFO] Available CAT_COLS: {CAT_COLS}")
 
-# ───────────────────────────── 2  timestamp deltas ──────────────────────────
+# %%
+# ───────────────────────────── CELL 3: DATA PREPROCESSING ───────────────────
 for col in TS_SAFE:
     BIG[f"{col}_delta"] = (BIG["date"]
                            - pd.to_datetime(BIG[col])).dt.days.astype("float32")
@@ -126,12 +128,13 @@ BIG["flag_test"]  = (BIG["date"] >= TEST_CUT).astype("uint8")
 
 print(f"[INFO] VAL from {VAL_CUT.date()} | TEST from {TEST_CUT.date()}")
 
-# ───────────────────────────── 4  base transforms ──────────────────────────
+# %%
+# ───────────────────────────── CELL 4: FEATURE ENGINEERING ──────────────────
 BIG["epss"] = transform_epss(BIG["epss"].values, mode="logit", eps=1e-6)
 
 # booleans ───────────────────────────────────────────────────────────────────
 for col in BOOL_COLS(BIG):
-    if BIG[col].dtype == 'bool':
+    if pd.api.types.is_bool_dtype(BIG[col]):
         BIG[col] = BIG[col].fillna(False).astype("uint8")
     else:
         BIG[col] = BIG[col].fillna(0).astype("uint8")
@@ -159,7 +162,8 @@ for col in NUM_COLS:
     BIG[f"{col}_missing"] = miss.astype("uint8")
     BIG.loc[miss, col] = SENTINEL
 
-# ───────────────────────────── 5  dataset class ─────────────────────────────
+# %%
+# ───────────────────────────── CELL 5: DATASET PREPARATION ──────────────────
 class CVEDataset(Dataset):
     """One item = a zero-padded full history for a CVE + all masks."""
     def __init__(self, df: pd.DataFrame, L_max: int,
@@ -246,66 +250,114 @@ def masked_mse(pred, true, m_t, m_h, m_eval):
     err  = (pred - true) ** 2                  # [B,L,H]
     return (err * mask.unsqueeze(-1) * m_h).sum() / m_h.sum()
 
-# ───────────────────────────── 8  main routine ──────────────────────────────
-if __name__ == "__main__":
-    torch.manual_seed(0)
-    dev = get_device()
+# %%
+# ───────────────────────────── CELL 6: MODEL TRAINING & EVALUATION ──────────
+# Main training routine - optimized for notebook execution
+import time
 
-    HORIZON, BATCH, EPOCHS, LR = 30, 512, 12, 1e-3
-    L_max = BIG.groupby("cve", observed=True).size().max()
+print("🚀 STARTING MODEL TRAINING PIPELINE")
+print("=" * 50)
 
-    tr_ds = CVEDataset(BIG, L_max, HORIZON, "flag_train", CAT_COLS)
-    va_ds = CVEDataset(BIG, L_max, HORIZON, "flag_val", CAT_COLS)
-    te_ds = CVEDataset(BIG, L_max, HORIZON, "flag_test", CAT_COLS)
+torch.manual_seed(0)
+dev = get_device()
 
-    tr_ld = DataLoader(tr_ds, BATCH, True,  collate_fn=collate, pin_memory=True)
-    va_ld = DataLoader(va_ds, BATCH, False, collate_fn=collate, pin_memory=True)
-    te_ld = DataLoader(te_ds, BATCH, False, collate_fn=collate, pin_memory=True)
+HORIZON, BATCH, EPOCHS, LR = 30, 512, 12, 1e-3
 
-    model = Seq2SeqLSTM(
-                n_num   = len(NUM_COLS),
-                n_bool  = len(BOOL_COLS(BIG)),
-                cat_sizes=[len(VOCAB[c]) for c in CAT_COLS],
-                horizon = HORIZON).to(dev)
-    if hasattr(torch, "compile") and dev.type == "cuda":
-        model = torch.compile(model)
+# ──────────────────────── STEP 1: Dataset Preparation ───────────────────────
+print(f"\n[STEP 1/5] Computing sequence lengths...")
+start_time = time.time()
+L_max = BIG.groupby("cve", observed=True).size().max()
+elapsed = time.time() - start_time
+print(f"✓ Max sequence length: {L_max} (computed in {elapsed:.1f}s)")
 
-    opt = torch.optim.Adam(model.parameters(), lr=LR)
+print(f"\n[STEP 2/5] Creating datasets (this may take several minutes)...")
+start_time = time.time()
 
-    # ──────────────────────── 8·1  training loop ────────────────────────────
-    for ep in range(1, EPOCHS + 1):
-        model.train(); tr_loss = 0.0
-        for num, boo, cat, Y, mt, mh, me in tqdm(tr_ld, desc=f"train {ep}/{EPOCHS}"):
-            num, boo, cat, Y, mt, mh, me = (z.to(dev, non_blocking=True)
-                                            for z in (num, boo, cat, Y, mt, mh, me))
-            opt.zero_grad()
-            loss = masked_mse(model(num, boo, cat), Y, mt, mh, me)
-            loss.backward()
-            nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            opt.step()
-            tr_loss += loss.item()
-        tr_loss /= len(tr_ld)
+print("  → Training dataset...")
+tr_ds = CVEDataset(BIG, L_max, HORIZON, "flag_train", CAT_COLS)
+print(f"    ✓ {len(tr_ds):,} training sequences")
 
-        model.eval(); va_loss = 0.0
-        with torch.no_grad():
-            for num, boo, cat, Y, mt, mh, me in va_ld:
-                num, boo, cat, Y, mt, mh, me = (z.to(dev, non_blocking=True)
-                                                for z in (num, boo, cat, Y, mt, mh, me))
-                va_loss += masked_mse(model(num, boo, cat), Y, mt, mh, me).item()
-        va_loss /= len(va_ld)
-        print(f"epoch {ep:02d}  train {tr_loss:.4f}  val {va_loss:.4f}")
+print("  → Validation dataset...")
+va_ds = CVEDataset(BIG, L_max, HORIZON, "flag_val", CAT_COLS)
+print(f"    ✓ {len(va_ds):,} validation sequences")
 
-    # ─────────────────────────── 8·2  test metric ───────────────────────────
-    model.eval(); tot_mse = tot_mae = tot_n = 0.0
+print("  → Test dataset...")
+te_ds = CVEDataset(BIG, L_max, HORIZON, "flag_test", CAT_COLS)
+print(f"    ✓ {len(te_ds):,} test sequences")
+
+elapsed = time.time() - start_time
+print(f"✓ All datasets created in {elapsed:.1f}s")
+
+# ──────────────────────── STEP 3: DataLoader Creation ───────────────────────
+print(f"\n[STEP 3/5] Creating data loaders...")
+start_time = time.time()
+
+tr_ld = DataLoader(tr_ds, BATCH, True,  collate_fn=collate, pin_memory=True)
+va_ld = DataLoader(va_ds, BATCH, False, collate_fn=collate, pin_memory=True)
+te_ld = DataLoader(te_ds, BATCH, False, collate_fn=collate, pin_memory=True)
+
+elapsed = time.time() - start_time
+print(f"✓ Data loaders ready: {len(tr_ld)} train, {len(va_ld)} val, {len(te_ld)} test batches ({elapsed:.1f}s)")
+
+# ──────────────────────── STEP 4: Model Setup ───────────────────────────────
+print(f"\n[STEP 4/5] Setting up model...")
+start_time = time.time()
+
+model = Seq2SeqLSTM(
+            n_num   = len(NUM_COLS),
+            n_bool  = len(BOOL_COLS(BIG)),
+            cat_sizes=[len(VOCAB[c]) for c in CAT_COLS],
+            horizon = HORIZON).to(dev)
+
+if hasattr(torch, "compile") and dev.type == "cuda":
+    print("  → Compiling model for GPU optimization...")
+    model = torch.compile(model)
+
+total_params = sum(p.numel() for p in model.parameters())
+trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+elapsed = time.time() - start_time
+print(f"✓ Model ready: {total_params:,} total params, {trainable_params:,} trainable ({elapsed:.1f}s)")
+
+opt = torch.optim.Adam(model.parameters(), lr=LR)
+
+# ──────────────────────── STEP 5: Training ──────────────────────────────────
+print(f"\n[STEP 5/5] Training for {EPOCHS} epochs...")
+print("=" * 50)
+for ep in range(1, EPOCHS + 1):
+    model.train(); tr_loss = 0.0
+    for num, boo, cat, Y, mt, mh, me in tqdm(tr_ld, desc=f"train {ep}/{EPOCHS}"):
+        num, boo, cat, Y, mt, mh, me = (z.to(dev, non_blocking=True)
+                                        for z in (num, boo, cat, Y, mt, mh, me))
+        opt.zero_grad()
+        loss = masked_mse(model(num, boo, cat), Y, mt, mh, me)
+        loss.backward()
+        nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        opt.step()
+        tr_loss += loss.item()
+    tr_loss /= len(tr_ld)
+
+    model.eval(); va_loss = 0.0
     with torch.no_grad():
-        for num, boo, cat, Y, mt, mh, me in te_ld:
+        for num, boo, cat, Y, mt, mh, me in va_ld:
             num, boo, cat, Y, mt, mh, me = (z.to(dev, non_blocking=True)
                                             for z in (num, boo, cat, Y, mt, mh, me))
-            P = model(num, boo, cat)
-            m = mh * me.unsqueeze(-1)
-            err = P - Y
-            tot_mse += (err.pow(2) * m).sum().item()
-            tot_mae += (err.abs() * m).sum().item()
-            tot_n   += m.sum().item()
+            va_loss += masked_mse(model(num, boo, cat), Y, mt, mh, me).item()
+    va_loss /= len(va_ld)
+    print(f"epoch {ep:02d}  train {tr_loss:.4f}  val {va_loss:.4f}")
 
-    print(f"[RESULT] test MSE {tot_mse / tot_n:.4f} | MAE {tot_mae / tot_n:.4f}")
+print("\n" + "=" * 50)
+print("🎯 FINAL EVALUATION")
+print("=" * 50)
+model.eval(); tot_mse = tot_mae = tot_n = 0.0
+with torch.no_grad():
+    for num, boo, cat, Y, mt, mh, me in te_ld:
+        num, boo, cat, Y, mt, mh, me = (z.to(dev, non_blocking=True)
+                                        for z in (num, boo, cat, Y, mt, mh, me))
+        P = model(num, boo, cat)
+        m = mh * me.unsqueeze(-1)
+        err = P - Y
+        tot_mse += (err.pow(2) * m).sum().item()
+        tot_mae += (err.abs() * m).sum().item()
+        tot_n   += m.sum().item()
+
+print(f"[RESULT] test MSE {tot_mse / tot_n:.4f} | MAE {tot_mae / tot_n:.4f}")
