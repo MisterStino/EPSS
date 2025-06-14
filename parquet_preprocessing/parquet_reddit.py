@@ -43,14 +43,14 @@ print("\n=== STEP 3: Performing join (without broadcast) ===")
 # "right" = ALL EPSS CVEs + matching Reddit data (NULLs where no Reddit match)
 # "outer" = ALL CVEs from both sources (NULLs where no match on either side)
 
-# Current: LEFT JOIN - keeps ALL Reddit rows, adds EPSS where available
+# Current: RIGHT JOIN - keeps ALL EPSS rows, adds Reddit data where available
 # Use regular join instead of broadcast - EPSS data is too large to broadcast
 merged_df = catalog_df.join(
     epss_df,
     catalog_df.CVE_ID == epss_df.cve,
-    "left"  # LEFT JOIN: All Reddit CVEs + EPSS data where available
+    "right"  # RIGHT JOIN: All EPSS rows + Reddit data where available
 ).select(
-    col("catalog.CVE_ID").alias("cve_id"),
+    col("epss.cve").alias("cve_id"),  # Use EPSS CVE since it's always present
     col("catalog.date_published"),
     col("catalog.date_updated"),
     col("catalog.cvss_score"),
