@@ -1,4 +1,4 @@
-Score;Date;Post ID;CVE ID
+Score;reddit_date;Post ID;CVE ID
 2;18/01/2013;16syfp;CVE-2012-2122
 3;16/09/2013;1mijdv;CVE-2011-1256
 0;14/10/2013;1ofth5;CVE-2013-4332
