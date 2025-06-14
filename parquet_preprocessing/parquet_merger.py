@@ -5,8 +5,8 @@ def merge_social_media_with_catalog(
     cve_catalog_path='processed_data/enriched_catalog.csv',
     mastodon_path='processed_data/mastodon_catalog.csv',
     reddit_path='processed_data/reddit_catalog.csv',
-    mastodon_output_path='features/merged_mastodon.csv',
-    reddit_output_path='features/merged_reddit.csv'
+    mastodon_output_path='parquet_preprocessing/merged_mastodon.csv',
+    reddit_output_path='parquet_preprocessing/merged_reddit.csv'
 ):
 
     # Load CSV files
