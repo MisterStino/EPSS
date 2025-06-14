@@ -37,11 +37,18 @@ catalog_df = catalog_df.alias("catalog")
 epss_df = epss_df.alias("epss")
 
 print("\n=== STEP 3: Performing join (without broadcast) ===")
+# JOIN TYPE EXPLANATION:
+# "inner" = Only CVEs that exist in BOTH Reddit AND EPSS data
+# "left"  = ALL Reddit CVEs + matching EPSS data (NULLs where no EPSS match)
+# "right" = ALL EPSS CVEs + matching Reddit data (NULLs where no Reddit match)
+# "outer" = ALL CVEs from both sources (NULLs where no match on either side)
+
+# Current: LEFT JOIN - keeps ALL Reddit rows, adds EPSS where available
 # Use regular join instead of broadcast - EPSS data is too large to broadcast
 merged_df = catalog_df.join(
     epss_df,
     catalog_df.CVE_ID == epss_df.cve,
-    "inner"
+    "left"  # LEFT JOIN: All Reddit CVEs + EPSS data where available
 ).select(
     col("catalog.CVE_ID").alias("cve_id"),
     col("catalog.date_published"),
