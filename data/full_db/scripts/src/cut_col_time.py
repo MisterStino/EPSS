@@ -33,11 +33,9 @@ def create_minimal_dataset():
     feature_columns = [
         'age_epss_pub',          # numeric - EPSS-features
         'primary_cvss_score',    # numeric - NVD
-        'days_since_last_event', # numeric - CSAF
-        'has_threat',            # boolean - CSAF
+        'days_since_last_event', # numeric - CSAF          
         'is_windows',            # boolean - NVD
         'primary_cvss_sev',      # categorical - NVD
-        'dominant_event_type'    # categorical - CSAF
     ]
     
     # Combine all required columns (keys + target + features)

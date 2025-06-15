@@ -17,6 +17,30 @@ from torch.utils.data import DataLoader, Dataset
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
+
+# Define if local or paperspace:
+local_execution  = True
+
+# Hardware-specific configurations
+LOCAL_CONFIG = {
+    'batch_size': 64,      # 4GB GPU limit
+    'hidden_size': 256,    # Reduced model capacity
+    'lstm_layers': 3,      # Keep same depth
+    'emb_dim': 8,          # Keep same embedding size
+}
+
+CLOUD_CONFIG = {
+    'batch_size': 512,     # 90GB GPU capacity
+    'hidden_size': 512,    # Full model capacity  
+    'lstm_layers': 3,      # Same depth
+    'emb_dim': 8,          # Same embedding size
+}
+
+# Select configuration based on execution environment
+CONFIG = LOCAL_CONFIG if local_execution else CLOUD_CONFIG
+print(f"[INFO] Using {'LOCAL' if local_execution else 'CLOUD'} configuration:")
+print(f"[INFO] Batch: {CONFIG['batch_size']}, Hidden: {CONFIG['hidden_size']}")
+
 # ──────────────────────────── helpers ───────────────────────────────────────
 def get_device() -> torch.device:
     if torch.cuda.is_available():
@@ -63,7 +87,7 @@ CAT_COLS  = [
     "vuln_status", "source_identifier",
 ]
 
-EMB_DIM   = 8          # per-categorical embedding size
+EMB_DIM   = CONFIG['emb_dim']  # per-categorical embedding size
 SENTINEL  = -10.0      # ≥ |10σ| after standardisation
 
 # %%
@@ -71,7 +95,13 @@ SENTINEL  = -10.0      # ≥ |10σ| after standardisation
 from pathlib import Path
 
 # Use simple path relative to current working directory (works on Paperspace)
-PARQUET_DIR = Path("data/minimal_v1_timeseries.parquet")
+# local path: data/full_db/v1/data/minimal_v1_timeseries_sample.parquet
+if local_execution:
+    PARQUET_DIR = Path("data/full_db/v1/data/minimal_v1_timeseries_sample.parquet")
+else:
+    PARQUET_DIR = Path("data/minimal_v1_timeseries.parquet")
+    
+    
 
 if not PARQUET_DIR.exists():
     raise FileNotFoundError(f"Parquet path not found: {PARQUET_DIR}")
@@ -144,9 +174,16 @@ train_mask = BIG["flag_train"] == 1           # warm-up excluded
 VOCAB = {}
 for col in CAT_COLS:
     cats = BIG.loc[train_mask, col].dropna().unique()
-    VOCAB[col] = {"UNK": 0,
-                  **{c: i + 1 for i, c in enumerate(sorted(cats))}}
-    BIG[col] = BIG[col].map(VOCAB[col]).fillna(0).astype("int16")
+    
+    # 1️⃣ Remove accidental UNK coming from the raw data
+    cats = [c for c in cats if c != "UNK"]
+    
+    # 2️⃣ First build normal ids, then add the real UNK = 0
+    mapping = {c: i + 1 for i, c in enumerate(sorted(cats))}
+    mapping["UNK"] = 0
+    
+    VOCAB[col] = mapping
+    BIG[col] = BIG[col].map(VOCAB[col]).fillna(0).astype("int32")
 json.dump(VOCAB, open("vocab.json", "w"))
 
 # numerics (everything that is number-typed *and* not bool flag) ─────────────
@@ -226,7 +263,8 @@ class Seq2SeqLSTM(nn.Module):
                  dropout: float = 0.3):
         super().__init__()
         # Handle case where no categorical columns exist
-        self.emb = nn.ModuleList([nn.Embedding(s, emb_dim) for s in cat_sizes])
+        # Build the embedding with the real required size, not len(dict)
+        self.emb = nn.ModuleList([nn.Embedding(s, emb_dim, padding_idx=0) for s in cat_sizes])
         in_dim   = n_num + n_bool + emb_dim * len(cat_sizes)
 
         self.lstm = nn.LSTM(in_dim, hidden, layers,
@@ -237,6 +275,14 @@ class Seq2SeqLSTM(nn.Module):
         # Handle case where no categorical embeddings exist
         if len(self.emb):                           # tiny micro-perf
             cat = cat.long()                        # ⚠ NEW: ensure correct dtype
+            # Safety check: clamp any out-of-bounds indices to UNK (0)
+            cat_sizes = [emb.num_embeddings for emb in self.emb]
+            for i, vocab_size in enumerate(cat_sizes):
+                # Clamp out-of-bounds indices to 0 (UNK)
+                out_of_bounds = cat[..., i] >= vocab_size
+                if out_of_bounds.any():
+                    print(f"WARNING: Found {out_of_bounds.sum()} out-of-bounds indices in column {i}, clamping to UNK")
+                    cat[..., i] = torch.clamp(cat[..., i], 0, vocab_size - 1)
             e = torch.cat([emb(cat[..., i]) for i, emb in enumerate(self.emb)], dim=-1)
             x = torch.cat([num, boo.float(), e], dim=-1)
         else:
@@ -261,7 +307,7 @@ print("=" * 50)
 torch.manual_seed(0)
 dev = get_device()
 
-HORIZON, BATCH, EPOCHS, LR = 30, 512, 12, 1e-3
+HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 1e-3
 
 # ──────────────────────── STEP 1: Dataset Preparation ───────────────────────
 print(f"\n[STEP 1/5] Computing sequence lengths...")
@@ -307,11 +353,15 @@ model = Seq2SeqLSTM(
             n_num   = len(NUM_COLS),
             n_bool  = len(BOOL_COLS(BIG)),
             cat_sizes=[len(VOCAB[c]) for c in CAT_COLS],
-            horizon = HORIZON).to(dev)
+            horizon = HORIZON,
+            hidden  = CONFIG['hidden_size'],
+            layers  = CONFIG['lstm_layers']).to(dev)
 
-if hasattr(torch, "compile") and dev.type == "cuda":
+if hasattr(torch, "compile") and dev.type == "cuda" and not local_execution:
     print("  → Compiling model for GPU optimization...")
     model = torch.compile(model)
+elif local_execution:
+    print("  → Skipping model compilation for local execution")
 
 total_params = sum(p.numel() for p in model.parameters())
 trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
