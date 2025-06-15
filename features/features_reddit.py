@@ -13,7 +13,7 @@ spark = get_spark_session()
 df = spark.read.parquet("parquet_preprocessing/input_reddit.parquet")
 
 # Ensure proper types
-df = df.withColumn("reddit_data", to_date(col("reddit_data")))
+df = df.withColumn("reddit_date", to_date(col("reddit_date")))
 df = df.withColumn("date_published", to_date(col("date_published")))
 df = df.withColumn("date_updated", to_date(col("date_updated")))
 df = df.withColumn("reddit_date", to_date(col("reddit_date")))
@@ -32,8 +32,8 @@ static_cols = [
 
 # ========== TEMPORAL FEATURES ==========
 # 1. Time since publication and update
-df = df.withColumn("days_since_pub", datediff(col("reddit_data"), col("date_published")))
-df = df.withColumn("days_since_update", datediff(col("reddit_data"), col("date_updated")))
+df = df.withColumn("days_since_pub", datediff(col("reddit_date"), col("date_published")))
+df = df.withColumn("days_since_update", datediff(col("reddit_date"), col("date_updated")))
 
 # 2. Historical EPSS stats (7-day window BEFORE reddit event)
 epss_window_7d = Window.partitionBy("cve_id").orderBy(col("date").cast("long")).rangeBetween(-7 * 86400, -1)
@@ -42,16 +42,16 @@ df = df.withColumn("epss_mean_past7", avg("epss_score").over(epss_window_7d))
 df = df.withColumn("epss_std_past7", stddev("epss_score").over(epss_window_7d))
 
 # 3. reddit CVE mention frequency (before current mention)
-reddit_window = Window.partitionBy("cve_id").orderBy("reddit_data")
-df = df.withColumn("prev_reddit_date", lag("reddit_data", 1).over(reddit_window))
-df = df.withColumn("delta_days_prev_mention", datediff(col("reddit_data"), col("prev_reddit_date")))
+reddit_window = Window.partitionBy("cve_id").orderBy("reddit_date")
+df = df.withColumn("prev_reddit_date", lag("reddit_date", 1).over(reddit_window))
+df = df.withColumn("delta_days_prev_mention", datediff(col("reddit_date"), col("prev_reddit_date")))
 
 # 4. Daily reddit CVE mentions (all CVEs)
-activity_window_1d = Window.partitionBy("reddit_data")
+activity_window_1d = Window.partitionBy("reddit_date")
 df = df.withColumn("total_mentions_all_CVEs_past1", count("cve_id").over(activity_window_1d))
 
 # 5. Historical CVE mentions (per CVE)
-mention_count_window_7d = Window.partitionBy("cve_id").orderBy("reddit_data").rangeBetween(-7 * 86400, -1)
+mention_count_window_7d = Window.partitionBy("cve_id").orderBy("reddit_date").rangeBetween(-7 * 86400, -1)
 df = df.withColumn("count_mentions_past7", count("cve_id").over(mention_count_window_7d))
 
 # 6. Global EPSS trend (average score of all CVEs on same day)
@@ -60,7 +60,7 @@ df = df.withColumn("mean_epss_all_CVEs_past_day", avg("epss_score").over(global_
 
 # Select features for model training
 selected_cols = [
-    "cve_id", "reddit_data", "epss_score",  # label
+    "cve_id", "reddit_date", "epss_score",  # label
     "days_since_pub", "days_since_update", "epss_mean_past7", "epss_std_past7",
     "delta_days_prev_mention", "count_mentions_past7", "total_mentions_all_CVEs_past1",
     "mean_epss_all_CVEs_past_day"
