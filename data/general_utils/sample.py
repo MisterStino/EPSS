@@ -135,8 +135,10 @@ def sample_9000_cve_timeseries(
 if __name__ == "__main__":
     # sample_9000_cve_timeseries()
     # Sample 30k CVEs from your minimal dataset
-    sample_9000_cve_timeseries(
-        input_path="data/full_db/v1/data/minimal_v1_timeseries.parquet",
-        output_path="data/full_db/v1/data/minimal_v1_timeseries_sample.parquet",
-        num_cve=10000
-    )
+    # sample_9000_cve_timeseries(
+    #     input_path="data/full_db/v1/data/minimal_v1_timeseries.parquet",
+    #     output_path="data/full_db/v1/data/minimal_v1_timeseries_sample.parquet",
+    #     num_cve=10000
+    # )
+
+    sample_1000_cve_timeseries(num_cve=50000)
