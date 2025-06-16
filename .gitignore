@@ -28,9 +28,12 @@ __pycache__/
 *.csv.xz
 *.tsv
 
-
-
-
+.zip
+.pkl
+.arrow
+.tmp
+.nc
+.pt
 data/epss/raw/
 
 data/epss/cve-time-series/
