@@ -117,7 +117,6 @@ def sample_9000_cve_timeseries(
         )
 
     # 6) random sample (remove fixed seed if you want fresh draws each run)
-    random.seed(42)
     sampledB = random.sample(listB, nB)
     sampledC = random.sample(listC, nC)
 
@@ -132,71 +131,82 @@ def sample_9000_cve_timeseries(
     spark.stop()
 
 
+from typing import Dict
+from pathlib import Path
+import pyspark.sql.functions as F
+from t3_spark.session import get_spark_session
+
+
 def truncate_time_series_by_date(
-    input_path: str = "data/full_db/processed/final_full_data.parquet",
-    output_path: str = "data/full_db/processed/final_full_data_truncated.parquet", 
-    start_date: str = "2021-01-01",
-    end_date: str = "2023-12-31"
-):
+    input_path : str | Path = "data/full_db/processed/final_full_data.parquet",
+    output_path: str | Path = "data/full_db/processed/final_full_data_truncated.parquet",
+    start_date : str        = "2021-01-01",
+    end_date   : str        = "2023-12-31",
+    stop_session: bool      = True,          # set False if caller re-uses Spark
+) -> Dict[str, str | int]:
     """
-    Truncates the time series for each CVE to only include dates within [start_date, end_date].
-    Each CVE's time series will be clipped to the specified date range.
-    
-    Parameters:
-    -----------
-    input_path : str
-        Path to the input parquet file containing CVE time series data
-    output_path : str  
-        Path to write the temporally truncated dataset
-    start_date : str
-        Start date in 'YYYY-MM-DD' format (inclusive)
-    end_date : str
-        End date in 'YYYY-MM-DD' format (inclusive)
+    Keep only rows whose *date* lies in the inclusive interval
+    [start_date … end_date].  CVEs with zero rows in that window
+    disappear – that is unavoidable with a strict slice.
+
+    Returns a small dict with before/after statistics.
     """
     spark = get_spark_session()
-    
-    print(f"[INFO] Truncating time series to date range: {start_date} to {end_date}")
-    
-    # 1. Load the full dataset
+    input_path  = str(input_path)
+    output_path = str(output_path)
+
+    print(f"[INFO] Truncating to {start_date} → {end_date}")
+
     df = spark.read.parquet(input_path)
-    original_count = df.count()
+
+    # make sure 'date' is of type DATE (avoids implicit cast surprises)
+    if dict(df.dtypes)["date"] != "date":
+        df = df.withColumn("date", F.to_date("date"))
+
+    original_rows = df.count()
     original_cves = df.select("cve").distinct().count()
-    
-    print(f"[INFO] Original dataset: {original_count:,} rows, {original_cves:,} CVEs")
-    
-    # 2. Apply date range filter
-    df_filtered = df.filter(
-        (F.col("date") >= F.lit(start_date)) & 
-        (F.col("date") <= F.lit(end_date))
+    print(f"[INFO] original : {original_rows:,} rows  | {original_cves:,} CVEs")
+
+    # filter + cache so we scan the data only once afterwards
+    df_filt = (
+        df.filter(F.col("date").between(start_date, end_date))
+          .cache()
     )
-    
-    # 3. Get statistics on filtered data
-    filtered_count = df_filtered.count()
-    filtered_cves = df_filtered.select("cve").distinct().count()
-    
-    # 4. Get actual date range in filtered data
-    date_stats = df_filtered.agg(
+
+    filtered_rows = df_filt.count()
+    filtered_cves = df_filt.select("cve").distinct().count()
+
+    rng = df_filt.agg(
         F.min("date").alias("actual_start"),
         F.max("date").alias("actual_end")
-    ).collect()[0]
-    
-    print(f"[INFO] Filtered dataset: {filtered_count:,} rows, {filtered_cves:,} CVEs")
-    print(f"[INFO] Actual date range: {date_stats['actual_start']} to {date_stats['actual_end']}")
-    print(f"[INFO] Retention: {filtered_count/original_count:.2%} rows, {filtered_cves/original_cves:.2%} CVEs")
-    
-    # 5. Write the truncated dataset
-    df_filtered.write.mode("overwrite").parquet(output_path)
-    print(f"[INFO] Truncated dataset written to: {output_path}")
-    
-    spark.stop()
-    return {
-        "original_rows": original_count,
-        "original_cves": original_cves, 
-        "filtered_rows": filtered_count,
-        "filtered_cves": filtered_cves,
-        "actual_start": str(date_stats['actual_start']),
-        "actual_end": str(date_stats['actual_end'])
-    }
+    ).first()
+
+    print(
+        f"[INFO] filtered  : {filtered_rows:,} rows  | {filtered_cves:,} CVEs\n"
+        f"[INFO] real range: {rng.actual_start} … {rng.actual_end}\n"
+        f"[INFO] retention : {filtered_rows/original_rows:6.2%} rows  | "
+        f"{filtered_cves/original_cves:6.2%} CVEs"
+    )
+
+    # write
+    (df_filt
+         .write
+         .mode("overwrite")
+         .parquet(output_path))
+    print(f"[INFO] written   : {output_path}")
+
+    if stop_session:
+        spark.stop()
+
+    return dict(
+        original_rows  = original_rows,
+        original_cves  = original_cves,
+        filtered_rows  = filtered_rows,
+        filtered_cves  = filtered_cves,
+        actual_start   = str(rng.actual_start),
+        actual_end     = str(rng.actual_end),
+    )
+
 
 
 if __name__ == "__main__":
@@ -209,9 +219,10 @@ if __name__ == "__main__":
     # )
 
     truncate_time_series_by_date(
-        input_path="data/full_db/sampled/final_full_data_sampled.parquet",
-        output_path="data/full_db/sampled/final_full_data_sampled_truncated.parquet",
-        start_date="2023-03-20",
-        end_date="2024-03-20"
+        input_path="data/full_db/processed/final_full_data.parquet",
+        output_path="data/prod/final_full_data_v3_v4truncated.parquet",
+        start_date="2023-03-08",
+        end_date="2025-03-17"
     )
-    # sample_1000_cve_timeseries(num_cve=50000)
+
+    # sample_1000_cve_timeseries(num_cve=80000)

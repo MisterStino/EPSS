@@ -44,7 +44,7 @@ local_execution  = True
 LOCAL_CONFIG = {
     'batch_size': 64,      # 4GB GPU limit
     'hidden_size': 256,    # Reduced model capacity
-    'lstm_layers': 3,      # Keep same depth
+    'lstm_layers': 2,      # Keep same depth
     'emb_dim': 8,          # Keep same embedding size
     'num_workers': 0,      # Windows multiprocessing fix
 }
@@ -72,14 +72,15 @@ def get_device() -> torch.device:
     return torch.device("cpu")
 
 def transform_epss(arr: np.ndarray,
-                   mode: str = "logit",
+                   mode: str = "log",
                    eps : float = 1e-6) -> np.ndarray:
     """
     Stabilised transforms to map [0,1] → ℝ (helps optimisation).
-    Choose one of: "inverted_log" | "cloglog" | "logit"
+    Choose one of: "log" | "inverted_log" | "cloglog" | "logit"
     """
     p = np.clip(arr.astype("float64"), eps, 1.0 - eps)
-    if   mode == "inverted_log": out = -np.log(p)
+    if   mode == "log":          out = np.log(p)
+    elif mode == "inverted_log": out = -np.log(p)
     elif mode == "cloglog":      out = np.log(-np.log(1.0 - p))
     elif mode == "logit":        out = np.log(p / (1.0 - p))
     else: raise ValueError(mode)
@@ -453,7 +454,7 @@ ds = xr.Dataset(
 )
 
 # Save to NetCDF with compression
-netcdf_path = "predictions_stream.nc"
+netcdf_path = "ml_pipeline/results/predictions/predictions_stream.nc"
 encoding = {var: {"zlib": True, "complevel": 3} for var in ds.data_vars}
 ds.to_netcdf(netcdf_path, encoding=encoding)
 

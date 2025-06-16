@@ -17,7 +17,7 @@ spark = (SparkSession.builder
          .config("spark.sql.execution.arrow.pyspark.enabled", "true")
          .getOrCreate())
 
-RAW     = "data/full_db/sampled/final_full_data_sampled_truncated.parquet"
+RAW     = "data/prod/final_full_data_v3_v4truncated.parquet"
 OUTDIR  = Path("ml_pipeline/data_prep/work")
 OUTDIR.mkdir(parents=True, exist_ok=True)
 
@@ -61,6 +61,8 @@ DROP_COLS = [
     "reference_count",  # Same as n_refs
 ]
 
+
+
 # Check which columns actually exist and drop them
 existing_cols = set(df.columns)
 cols_to_drop = [col for col in DROP_COLS if col in existing_cols]
@@ -94,7 +96,7 @@ for t in ["published_date","last_modified_date","snapshot_date"]:
         df = df.withColumn(f"{t}_delta", delta.cast("int"))
 
 # 1·4 EPSS
-df = df.withColumn("epss", -F.log(F.col("epss") + 1e-6))
+df = df.withColumn("epss", F.log(F.col("epss") + 1e-6))
 
 # 1·5 vocab + stats
 CAT_COLS = ["cwe_id","source_identifier","vuln_status","canon_severity","primary_cvss_sev","prev_event_type"]
