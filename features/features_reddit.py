@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
-    col, to_date, trim, lower, datediff, count, lag, avg, stddev, lead
+    col, to_date, trim, lower, datediff, count, lag, avg, stddev, lead, unix_date
 )
 from pyspark.sql.window import Window
 from pyspark import StorageLevel
@@ -9,25 +9,12 @@ from pyspark import StorageLevel
 from t3_spark.session import get_spark_session
 spark = get_spark_session()
 
-# 🧹 Utility: Keep only the first occurrence of base column names
-def deduplicate_columns(df):
-    seen = set()
-    unique_cols = []
-    for c in df.columns:
-        base = c.split("#")[0]
-        if base not in seen:
-            seen.add(base)
-            unique_cols.append(c)
-    return df.select(*unique_cols)
-
-# Load the reddit-EPSS merged dataset
-df = spark.read.parquet("parquet_preprocessing/input_reddit.parquet")
-df = deduplicate_columns(df)
+# Step 2: Load the reddit-EPSS merged dataset
+df = spark.read.parquet("")
 
 # Ensure proper types
 df = df.withColumn("reddit_date", to_date(col("reddit_date")))
 df = df.withColumn("date_published", to_date(col("date_published")))
-df = df.withColumn("date_updated", to_date(col("date_updated")))
 df = df.withColumn("date", to_date(col("date")))  # EPSS date
 
 # Filter out records with null CVE or reddit date
@@ -41,12 +28,14 @@ static_cols = [
 ]
 
 # ========== TEMPORAL FEATURES ==========
-# 1. Time since publication and update
+# 1. Time since publication
 df = df.withColumn("days_since_pub", datediff(col("reddit_date"), col("date_published")))
-df = df.withColumn("days_since_update", datediff(col("reddit_date"), col("date_updated")))
 
 # 2. Historical EPSS stats (7-day window BEFORE reddit event)
-epss_window_7d = Window.partitionBy("cve_id").orderBy(col("date").cast("long")).rangeBetween(-7 * 86400, -1)
+epss_window_7d = Window.partitionBy("cve_id") \
+    .orderBy(unix_date(col("date"))) \
+    .rangeBetween(-7, -1)
+
 df = df.withColumn("epss_mean_past7", avg("epss").over(epss_window_7d))
 df = df.withColumn("epss_std_past7", stddev("epss").over(epss_window_7d))
 
@@ -60,7 +49,9 @@ activity_window_1d = Window.partitionBy("reddit_date")
 df = df.withColumn("total_mentions_all_CVEs_past1", count("cve_id").over(activity_window_1d))
 
 # 5. Historical CVE mentions (per CVE)
-mention_count_window_7d = Window.partitionBy("cve_id").orderBy("reddit_date").rangeBetween(-7 * 86400, -1)
+mention_count_window_7d = Window.partitionBy("cve_id") \
+    .orderBy(unix_date(col("reddit_date"))) \
+    .rangeBetween(-7, -1)
 df = df.withColumn("count_mentions_past7", count("cve_id").over(mention_count_window_7d))
 
 # 6. Global EPSS trend (average score of all CVEs on same day)
@@ -70,12 +61,12 @@ df = df.withColumn("mean_epss_all_CVEs_past_day", avg("epss").over(global_epss_w
 # Select features for model training
 selected_cols = [
     "cve_id", "reddit_date", "epss",  # label
-    "days_since_pub", "days_since_update", "epss_mean_past7", "epss_std_past7",
+    "days_since_pub", "epss_mean_past7", "epss_std_past7",
     "delta_days_prev_mention", "count_mentions_past7", "total_mentions_all_CVEs_past1",
     "mean_epss_all_CVEs_past_day"
 ] + static_cols
 
-features_df = df.select(*selected_cols)
+features_df = df.select(*[col for col in selected_cols if col in df.columns])
 
 # Save feature set
 features_df.write.mode("overwrite").parquet("features/features_reddit.parquet")

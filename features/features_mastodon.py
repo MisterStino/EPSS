@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
-    col, to_date, trim, lower, datediff, count, lag, avg, stddev, lead
+    col, to_date, trim, lower, datediff, count, lag, avg, stddev, lead, unix_date
 )
 from pyspark.sql.window import Window
 from pyspark import StorageLevel
@@ -29,44 +29,47 @@ static_cols = [
 ]
 
 # ========== TEMPORAL FEATURES ==========
-# 1. Time since publication and update
+# 1. Time since publication
 df = df.withColumn("days_since_pub", datediff(col("date_mastodon"), col("date_published")))
-df = df.withColumn("days_since_update", datediff(col("date_mastodon"), col("date_updated")))
 
 # 2. Historical EPSS stats (7-day window BEFORE mastodon event)
-epss_window_7d = Window.partitionBy("cve_id").orderBy(col("date").cast("long")).rangeBetween(-7 * 86400, -1)
+epss_window_7d = Window.partitionBy("cve_id") \
+    .orderBy(unix_date(col("date"))) \
+    .rangeBetween(-7, -1)
 
-df = df.withColumn("epss_mean_past7", avg("epss_score").over(epss_window_7d))
-df = df.withColumn("epss_std_past7", stddev("epss_score").over(epss_window_7d))
+df = df.withColumn("epss_mean_past7", avg("epss").over(epss_window_7d))
+df = df.withColumn("epss_std_past7", stddev("epss").over(epss_window_7d))
 
-# 3. Mastodon CVE mention frequency (before current mention)
-mastodon_window = Window.partitionBy("cve_id").orderBy("date_mastodon")
-df = df.withColumn("prev_mastodon_date", lag("date_mastodon", 1).over(mastodon_window))
-df = df.withColumn("delta_days_prev_mention", datediff(col("date_mastodon"), col("prev_mastodon_date")))
+# 3. Reddit CVE mention frequency (before current mention)
+reddit_window = Window.partitionBy("cve_id").orderBy("date_mastodon")
+df = df.withColumn("prev_date_mastodon", lag("date_mastodon", 1).over(reddit_window))
+df = df.withColumn("delta_days_prev_mention", datediff(col("date_mastodon"), col("prev_date_mastodon")))
 
-# 4. Daily Mastodon CVE mentions (all CVEs)
+# 4. Daily Reddit CVE mentions (all CVEs)
 activity_window_1d = Window.partitionBy("date_mastodon")
 df = df.withColumn("total_mentions_all_CVEs_past1", count("cve_id").over(activity_window_1d))
 
 # 5. Historical CVE mentions (per CVE)
-mention_count_window_7d = Window.partitionBy("cve_id").orderBy("date_mastodon").rangeBetween(-7 * 86400, -1)
+mention_count_window_7d = Window.partitionBy("cve_id") \
+    .orderBy(unix_date(col("date_mastodon"))) \
+    .rangeBetween(-7, -1)
 df = df.withColumn("count_mentions_past7", count("cve_id").over(mention_count_window_7d))
 
 # 6. Global EPSS trend (average score of all CVEs on same day)
 global_epss_window = Window.partitionBy("date")
-df = df.withColumn("mean_epss_all_CVEs_past_day", avg("epss_score").over(global_epss_window))
+df = df.withColumn("mean_epss_all_CVEs_past_day", avg("epss").over(global_epss_window))
 
 # Select features for model training
 selected_cols = [
-    "cve_id", "date_mastodon", "epss_score",  # label
-    "days_since_pub", "days_since_update", "epss_mean_past7", "epss_std_past7",
+    "cve_id", "date_mastodon", "epss",  # label
+    "days_since_pub", "epss_mean_past7", "epss_std_past7",
     "delta_days_prev_mention", "count_mentions_past7", "total_mentions_all_CVEs_past1",
     "mean_epss_all_CVEs_past_day"
 ] + static_cols
 
-features_df = df.select(*selected_cols)
+features_df = df.select(*[col for col in selected_cols if col in df.columns])
 
 # Save feature set
-features_df.write.mode("overwrite").parquet("features/features_mastodon.parquet")
+features_df.write.mode("overwrite").parquet("features/features_reddit.parquet")
 
 print("✅ Feature extraction complete.")
