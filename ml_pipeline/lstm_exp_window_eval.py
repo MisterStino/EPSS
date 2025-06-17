@@ -355,7 +355,7 @@ print("=" * 50)
 # Save training history to CSV
 import pandas as pd
 history_df = pd.DataFrame(history)
-history_path = "loss_history.csv"
+history_path = "ml_pipeline/results/loss_history.csv"
 history_df.to_csv(history_path, index=False)
 print(f"✓ Training history saved: {history_path}")
 
@@ -366,7 +366,7 @@ checkpoint = {
     "final_test_mse": tot_mse / tot_n,
     "final_test_mae": tot_mae / tot_n
 }
-checkpoint_path = "checkpoint.pt"
+checkpoint_path = "ml_pipeline/results/checkpoint.pt"
 torch.save(checkpoint, checkpoint_path)
 print(f"✓ Model checkpoint saved: {checkpoint_path}")
 print(f"✓ Checkpoint includes: config, weights, final test metrics")

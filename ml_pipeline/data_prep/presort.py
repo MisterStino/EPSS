@@ -24,7 +24,11 @@ spark = (SparkSession.builder
          .config("spark.sql.execution.arrow.pyspark.enabled", "true")
          .getOrCreate())
 
-RAW = norm("data/full_db/v1/data/minimal_v1_timeseries_sample.parquet")  
+# Use environment variable for data path, with fallback to default
+import os
+DEFAULT_DATA_PATH = "data/full_db/v1/data/minimal_v1_timeseries_sample.parquet"
+RAW = norm(os.getenv("EPSS_DATA_PATH", DEFAULT_DATA_PATH))
+print(f"[INPUT] Using data from: {RAW}")  
 OUTDIR  = Path("ml_pipeline/data_prep/work")
 OUTDIR.mkdir(parents=True, exist_ok=True)
 

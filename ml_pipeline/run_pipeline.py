@@ -37,7 +37,7 @@ class PipelineRunner:
     
     def __init__(self):
         self.steps_completed = 0
-        self.total_steps = 3
+        self.total_steps = 4
         
     def log(self, message: str) -> None:
         """Log a message with timestamp"""
@@ -127,6 +127,7 @@ class PipelineRunner:
         """
         self.log(f"{Colors.CYAN}🚀 Starting ML Pipeline Execution{Colors.NC}")
         self.log("Pipeline will run the following steps in sequence:")
+        self.log("0. Cleanup Stale Files")
         self.log("1. Data Preprocessing and Sorting")
         self.log("2. Arrow File Conversion")
         self.log("3. LSTM Model Training and Evaluation")
@@ -139,6 +140,11 @@ class PipelineRunner:
         
         # Define pipeline steps
         pipeline_steps = [
+            {
+                "name": "0-CLEANUP",
+                "module": "ml_pipeline.cleanup_stale_files",
+                "description": "Cleaning up stale files to ensure fresh pipeline run with latest data"
+            },
             {
                 "name": "1-PRESORT",
                 "module": "ml_pipeline.data_prep.presort",
