@@ -10,10 +10,10 @@ from t3_spark.session import get_spark_session
 spark = get_spark_session()
 
 # Step 2: Load the reddit-EPSS merged dataset
-df = spark.read.parquet("")
+df = spark.read.parquet("parquet_preprocessing\input_reddit_parquet")
 
 # Ensure proper types
-df = df.withColumn("reddit_data", to_date(col("reddit_data")))
+df = df.withColumn("reddit_data", to_date(col("reddit_date")))
 df = df.withColumn("date_published", to_date(col("date_published")))
 df = df.withColumn("date", to_date(col("date")))  # EPSS date
 
@@ -40,7 +40,7 @@ df = df.withColumn("epss_mean_past7", avg("epss").over(epss_window_7d))
 df = df.withColumn("epss_std_past7", stddev("epss").over(epss_window_7d))
 
 # 3. reddit CVE mention frequency (before current mention)
-reddit_window = Window.partitionBy("cve_id").orderBy("reddit_data")
+reddit_window = Window.partitionBy("cve_id").orderBy("reddit_date")
 df = df.withColumn("prev_reddit_date", lag("reddit_data", 1).over(reddit_window))
 df = df.withColumn("delta_days_prev_mention", datediff(col("reddit_data"), col("prev_reddit_date")))
 
@@ -50,7 +50,7 @@ df = df.withColumn("total_mentions_all_CVEs_past1", count("cve_id").over(activit
 
 # 5. Historical CVE mentions (per CVE)
 mention_count_window_7d = Window.partitionBy("cve_id") \
-    .orderBy(unix_date(col("reddit_date"))) \
+    .orderBy(unix_date(col("reddit_data"))) \
     .rangeBetween(-7, -1)
 df = df.withColumn("count_mentions_past7", count("cve_id").over(mention_count_window_7d))
 
