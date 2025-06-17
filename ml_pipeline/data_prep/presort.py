@@ -17,7 +17,7 @@ spark = (SparkSession.builder
          .config("spark.sql.execution.arrow.pyspark.enabled", "true")
          .getOrCreate())
 
-RAW     = "data/prod/final_full_data_v3_v4truncated.parquet"
+RAW     = "data\full_db\v1\data\minimal_v1_timeseries_sample.parquet"
 OUTDIR  = Path("ml_pipeline/data_prep/work")
 OUTDIR.mkdir(parents=True, exist_ok=True)
 
