@@ -12,7 +12,7 @@ def merge_social_media_with_catalog(
     # Load CSV files
     df1 = pd.read_csv(cve_catalog_path)
     df2 = pd.read_csv(mastodon_path)
-    df3 = pd.read_csv(reddit_path, delimiter=';')  # Reddit is semicolon-delimited
+    df3 = pd.read_csv(reddit_path) 
 
     #df1.drop(columns=['vendor'], inplace=True)
 
@@ -27,8 +27,8 @@ def merge_social_media_with_catalog(
     merged_mastodon.drop(columns=['cve_ids'], inplace=True)
 
     # Merge CVE catalog with Reddit data
-    merged_reddit = pd.merge(df1, df3, left_on='CVE_ID', right_on='CVE ID', how='inner')
-    merged_reddit.drop(columns=['CVE ID'], inplace=True)
+    merged_reddit = pd.merge(df1, df3, left_on='CVE_ID', right_on='CVE_ID', how='inner')
+    #merged_reddit.drop(columns=['CVE_ID'], inplace=True)
 
     # Save the merged data
     merged_mastodon.to_csv(mastodon_output_path, index=False)

@@ -75,7 +75,7 @@ df = df.withColumn("mean_epss_all_CVEs_past_day", avg("epss").over(global_epss_w
 
 # Select features for model training
 selected_cols = [
-    "cve_id", "date_mastodon", "epss",  # label
+    "cve_id", "date", "epss",  # label
     "days_since_pub", "epss_mean_past7", "epss_std_past7",
     "delta_days_prev_mention", "count_mentions_past7", "total_mentions_all_CVEs_past1",
     "mean_epss_all_CVEs_past_day"
@@ -84,6 +84,6 @@ selected_cols = [
 features_df = df.select(*[col for col in selected_cols if col in df.columns])
 
 # Save feature set
-features_df.write.mode("overwrite").parquet("features/features_reddit.parquet")
+features_df.write.mode("overwrite").parquet("features/features_mastodon.parquet")
 
 print("✅ Feature extraction complete.")
