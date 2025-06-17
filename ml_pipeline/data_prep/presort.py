@@ -17,7 +17,7 @@ spark = (SparkSession.builder
          .config("spark.sql.execution.arrow.pyspark.enabled", "true")
          .getOrCreate())
 
-RAW     = "data\full_db\v1\data\minimal_v1_timeseries_sample.parquet"
+RAW = "/notebooks/EPSS/ml_pipeline/data_prep/data/null_db/1/data/minimal_v1_timeseries_sample.parquet"
 OUTDIR  = Path("ml_pipeline/data_prep/work")
 OUTDIR.mkdir(parents=True, exist_ok=True)
 
