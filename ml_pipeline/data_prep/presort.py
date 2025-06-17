@@ -6,6 +6,13 @@ import pandas as pd, re
 import os
 import sys
 
+import os
+from pathlib import Path
+
+def norm(p):
+    # absolute + POSIX‐style
+    return Path(os.path.abspath(p)).as_posix()
+
 os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 spark = (SparkSession.builder
@@ -17,7 +24,7 @@ spark = (SparkSession.builder
          .config("spark.sql.execution.arrow.pyspark.enabled", "true")
          .getOrCreate())
 
-RAW = "data/full_db/v1/data/minimal_v1_timeseries_sample.parquet"  
+RAW = norm("data/full_db/v1/data/minimal_v1_timeseries_sample.parquet")  
 OUTDIR  = Path("ml_pipeline/data_prep/work")
 OUTDIR.mkdir(parents=True, exist_ok=True)
 
