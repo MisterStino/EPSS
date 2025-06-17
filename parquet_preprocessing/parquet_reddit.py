@@ -6,8 +6,20 @@ from pyspark.sql.window import Window
 from pyspark import StorageLevel
 
 # Step 1: Start Spark session with tuned configs
-from t3_spark.session import get_spark_session
-spark = get_spark_session()
+# from t3_spark.session import get_spark_session
+# spark = get_spark_session()
+
+spark = SparkSession.builder \
+    .appName("OptimizedEPSSPipeline") \
+    .master("local[*]") \
+    .config("spark.driver.memory", "6g") \
+    .config("spark.executor.memory", "6g") \
+    .config("spark.sql.shuffle.partitions", "50") \
+    .config("spark.sql.adaptive.enabled", "true") \
+    .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
+    .config("spark.sql.broadcastTimeout", "3600") \
+    .config("spark.local.dir", "D:/spark-temp") \
+    .getOrCreate()
 
 print("=== STEP 1: Loading and cleaning Reddit data ===")
 catalog_df = spark.read.option("header", True).csv("parquet_preprocessing/merged_reddit.csv") \
@@ -20,7 +32,7 @@ print("REDDIT COLUMNS:", catalog_df.columns)
 print("REDDIT ROW COUNT:", catalog_df.count())
 
 print("\n=== STEP 2: Loading and cleaning EPSS data ===")
-epss_df = spark.read.parquet("data/epss/processed/epss_processed.parquet") \
+epss_df = spark.read.parquet("final_full_data_sampled_truncated.parquet") \
     .filter(col("cve").isNotNull()) \
     .withColumn("cve", trim(lower(col("cve")))) \
     .withColumn("date", to_date(col("date")))
@@ -70,7 +82,8 @@ print("MERGED ROW COUNT:", merged_df.count())
 print("\n=== STEP 4: Saving to parquet ===")
 output_path = "parquet_preprocessing/input_reddit.parquet"
 
-merged_df.write.mode("overwrite").parquet(output_path)
+#merged_df.write.mode("overwrite").parquet(output_path)
+merged_df.coalesce(1).write.mode("overwrite").parquet(output_path)
 
 print(f"✅ Successfully saved merged dataframe to: {output_path}")
 

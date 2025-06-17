@@ -5,9 +5,21 @@ from pyspark.sql.functions import (
 from pyspark.sql.window import Window
 from pyspark import StorageLevel
 
-# Step 1: Start Spark session with tuned configs
-from t3_spark.session import get_spark_session
-spark = get_spark_session()
+# # Step 1: Start Spark session with tuned configs
+# from t3_spark.session import get_spark_session
+# spark = get_spark_session()
+
+spark = SparkSession.builder \
+    .appName("OptimizedEPSSPipeline") \
+    .master("local[*]") \
+    .config("spark.driver.memory", "6g") \
+    .config("spark.executor.memory", "6g") \
+    .config("spark.sql.shuffle.partitions", "50") \
+    .config("spark.sql.adaptive.enabled", "true") \
+    .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
+    .config("spark.sql.broadcastTimeout", "3600") \
+    .config("spark.local.dir", "D:/spark-temp") \
+    .getOrCreate()
 
 print("=== STEP 1: Loading and cleaning Mastodon data ===")
 catalog_df = spark.read.option("header", True).csv("parquet_preprocessing/merged_mastodon.csv") \
@@ -20,7 +32,7 @@ print("MASTODON COLUMNS:", catalog_df.columns)
 print("MASTODON ROW COUNT:", catalog_df.count())
 
 print("\n=== STEP 2: Loading and cleaning EPSS data ===")
-epss_df = spark.read.parquet("data/epss/processed/epss_processed.parquet") \
+epss_df = spark.read.parquet("C:/Users/andre/Desktop/repos/EPSS/final_full_data_sampled_truncated.parquet") \
     .filter(col("cve").isNotNull()) \
     .withColumn("cve", trim(lower(col("cve")))) \
     .withColumn("date", to_date(col("date")))
@@ -45,31 +57,23 @@ print("\n=== STEP 3: Performing join (without broadcast) ===")
 
 # Current: RIGHT JOIN - keeps ALL EPSS rows, adds Reddit data where available
 # Use regular join instead of broadcast - EPSS data is too large to broadcast
+
 merged_df = catalog_df.join(
     epss_df,
     catalog_df.CVE_ID == epss_df.cve,
-    "right"  # RIGHT JOIN: All EPSS rows + Reddit data where available
+    "right"  # All EPSS rows + Reddit data where available
 ).select(
-    col("epss.cve").alias("cve_id"),  # Use EPSS CVE since it's always present
-    col("catalog.date_published"),
-    col("catalog.date_updated"),
-    col("catalog.cvss_score"),
-    col("catalog.cvss_version"),
-    col("catalog.cwes"),
-    col("catalog.exploitDB_type"),
-    col("catalog.exploitDB_platform"),
-    col("catalog.KEV_product"),
-    col("catalog.id"),
-    col("catalog.date_mastodon"), 
-    *[col(f"epss.{c}") for c in epss_df.columns if c != "cve"]
-).repartition(200, "cve_id")  # Increase partitions for better parallelism
+    *[col(f"catalog.{c}") for c in catalog_df.columns],
+    *[col(f"epss.{c}") for c in epss_df.columns]
+).repartition(200, "cve")
 
 print("MERGED ROW COUNT:", merged_df.count())
 
 print("\n=== STEP 4: Saving to parquet ===")
 output_path = "parquet_preprocessing/input_mastodon.parquet"
 
-merged_df.write.mode("overwrite").parquet(output_path)
+#merged_df.write.mode("overwrite").parquet(output_path)
+merged_df.coalesce(1).write.mode("overwrite").parquet(output_path)
 
 print(f"✅ Successfully saved merged dataframe to: {output_path}")
 

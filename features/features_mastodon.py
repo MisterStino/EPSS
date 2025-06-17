@@ -5,9 +5,23 @@ from pyspark.sql.functions import (
 from pyspark.sql.window import Window
 from pyspark import StorageLevel
 
+# # Step 1: Start Spark session with tuned configs
+# from t3_spark.session import get_spark_session
+# spark = get_spark_session()
+
+
+
 # Step 1: Start Spark session with tuned configs
-from t3_spark.session import get_spark_session
-spark = get_spark_session()
+spark = SparkSession.builder \
+    .appName("OptimizedEPSSPipeline") \
+    .master("local[*]") \
+    .config("spark.driver.memory", "6g") \
+    .config("spark.executor.memory", "6g") \
+    .config("spark.sql.shuffle.partitions", "50") \
+    .config("spark.sql.adaptive.enabled", "true") \
+    .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
+    .config("spark.sql.broadcastTimeout", "3600") \
+    .getOrCreate()
 
 # Load the Mastodon-EPSS merged dataset
 df = spark.read.parquet("parquet_preprocessing/input_mastodon.parquet")

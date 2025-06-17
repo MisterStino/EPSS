@@ -14,7 +14,7 @@ def merge_social_media_with_catalog(
     df2 = pd.read_csv(mastodon_path)
     df3 = pd.read_csv(reddit_path, delimiter=';')  # Reddit is semicolon-delimited
 
-    df1.drop(columns=['vendor'], inplace=True)
+    #df1.drop(columns=['vendor'], inplace=True)
 
     # Clean column names (strip any leading/trailing whitespace)
     df1.columns = df1.columns.str.strip()
