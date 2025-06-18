@@ -38,7 +38,7 @@ from ml_pipeline.training.dataset_iterable import CVEIterableDataset, pad_and_ma
 # - sklearn.preprocessing.StandardScaler (preprocessing done offline)
 
 # Define if local or paperspace:
-local_execution  = False
+local_execution  = True
 
 # Hardware-specific configurations
 LOCAL_CONFIG = {
