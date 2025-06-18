@@ -1,14 +1,11 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
-    col, to_date, trim, lower, datediff, count, lag, avg, stddev, lead
+    col, to_date, trim, lower, first, count as spark_count
 )
-from pyspark.sql.window import Window
-from pyspark import StorageLevel
 
-# # Step 1: Start Spark session with tuned configs
-# from t3_spark.session import get_spark_session
-# spark = get_spark_session()
-
+# ----------------------------------------------------------------------
+# STEP 1: Spark session
+# ----------------------------------------------------------------------
 spark = SparkSession.builder \
     .appName("OptimizedEPSSPipeline") \
     .master("local[*]") \
@@ -21,62 +18,97 @@ spark = SparkSession.builder \
     .config("spark.local.dir", "D:/spark-temp") \
     .getOrCreate()
 
-print("=== STEP 1: Loading and cleaning Mastodon data ===")
-catalog_df = spark.read.option("header", True).csv("parquet_preprocessing/merged_mastodon.csv") \
-    .filter(col("CVE_ID").isNotNull()) \
-    .withColumn("CVE_ID", trim(lower(col("CVE_ID")))) \
-    .withColumnRenamed("Date", "mastodon_date") \
-    .drop("vendor")
+# ----------------------------------------------------------------------
+# STEP 2: Load & clean Mastodon data
+# ----------------------------------------------------------------------
+print("=== STEP 2: Loading and cleaning Mastodon data ===")
+raw_mastodon = (
+    spark.read
+         .option("header", True)
+         .csv("parquet_preprocessing/merged_mastodon.csv")
+         .filter(col("CVE_ID").isNotNull())
+)
 
-print("MASTODON COLUMNS:", catalog_df.columns)
-print("MASTODON ROW COUNT:", catalog_df.count())
+catalog_df = (
+    raw_mastodon
+      .withColumnRenamed("CVE_ID", "cve_id")
+      .withColumn("cve_id", lower(trim(col("cve_id"))))
+      .withColumnRenamed("date_mastodon", "orig_mastodon_date")
+      .withColumn("mastodon_date", col("orig_mastodon_date").cast("timestamp"))
+      .drop("orig_mastodon_date", "vendor")
+)
 
-print("\n=== STEP 2: Loading and cleaning EPSS data ===")
-epss_df = spark.read.parquet("C:/Users/andre/Desktop/repos/EPSS/final_full_data_sampled_truncated.parquet") \
-    .filter(col("cve").isNotNull()) \
-    .withColumn("cve", trim(lower(col("cve")))) \
-    .withColumn("date", to_date(col("date")))
+cve_metadata = (
+    catalog_df
+      .groupBy("cve_id")
+      .agg(
+          first("date_published",    ignorenulls=True).alias("date_published"),
+          first("date_updated",      ignorenulls=True).alias("date_updated"),
+          first("cvss_score",        ignorenulls=True).alias("cvss_score"),
+          first("cvss_version",      ignorenulls=True).alias("cvss_version"),
+          first("cwes",              ignorenulls=True).alias("cwes"),
+          first("exploitDB_type",    ignorenulls=True).alias("exploitDB_type"),
+          first("exploitDB_platform",ignorenulls=True).alias("exploitDB_platform"),
+          first("KEV_product",       ignorenulls=True).alias("KEV_product")
+      )
+)
 
-print("EPSS ROW COUNT:", epss_df.count())
-print("EPSS COLUMNS:", len(epss_df.columns))
+mastodon_summary = (
+    catalog_df
+      .withColumn("mastodon_day", to_date("mastodon_date"))
+      .groupBy("cve_id", "mastodon_day")
+      .agg(
+          first("mastodon_date", ignorenulls=True).alias("mastodon_date"),
+          spark_count("*").alias("mastodon_day_count")
+      )
+      .withColumnRenamed("cve_id", "rs_cve_id")
+)
 
-# Check data sizes before join
-reddit_distinct_cves = catalog_df.select("CVE_ID").distinct().count()
-epss_distinct_cves = epss_df.select("cve").distinct().count()
-print(f"\nDistinct CVEs - Reddit: {reddit_distinct_cves}, EPSS: {epss_distinct_cves}")
+print(f"Distinct CVEs in Mastodon: {catalog_df.select('cve_id').distinct().count()}")
+print(f"Rows in cve_metadata:      {cve_metadata.count()}")
+print(f"Rows in mastodon_summary:  {mastodon_summary.count()}")
 
-catalog_df = catalog_df.alias("catalog")
-epss_df = epss_df.alias("epss")
+# ----------------------------------------------------------------------
+# STEP 3: Load & clean EPSS data
+# ----------------------------------------------------------------------
+print("\n=== STEP 3: Loading and cleaning EPSS data ===")
+epss_df = (
+    spark.read
+         .parquet("minimal_v1_timeseries_sample_checked.parquet")
+         .filter(col("cve").isNotNull())
+         .withColumnRenamed("cve", "cve_id")
+         .withColumn("cve_id", lower(trim(col("cve_id"))))
+         .withColumn("date", to_date(col("date")))
+)
 
-print("\n=== STEP 3: Performing join (without broadcast) ===")
-# JOIN TYPE EXPLANATION:
-# "inner" = Only CVEs that exist in BOTH Reddit AND EPSS data
-# "left"  = ALL Reddit CVEs + matching EPSS data (NULLs where no EPSS match)
-# "right" = ALL EPSS CVEs + matching Reddit data (NULLs where no Reddit match)
-# "outer" = ALL CVEs from both sources (NULLs where no match on either side)
+print(f"EPSS ROW COUNT: {epss_df.count():,}")
+print(f"EPSS COLUMNS   : {len(epss_df.columns)}")
 
-# Current: RIGHT JOIN - keeps ALL EPSS rows, adds Reddit data where available
-# Use regular join instead of broadcast - EPSS data is too large to broadcast
+# ----------------------------------------------------------------------
+# STEP 4: Join EPSS with metadata and Mastodon summary
+# ----------------------------------------------------------------------
+print("\n=== STEP 4: Joining EPSS with metadata and Mastodon aggregates ===")
+augmented = (
+    epss_df
+      .join(cve_metadata.hint("broadcast"), on="cve_id", how="left")
+      .join(
+          mastodon_summary,
+          (epss_df["cve_id"] == mastodon_summary["rs_cve_id"]) &
+          (epss_df["date"] == mastodon_summary["mastodon_day"]),
+          how="left"
+      )
+      .drop("rs_cve_id", "mastodon_day")
+)
 
-merged_df = catalog_df.join(
-    epss_df,
-    catalog_df.CVE_ID == epss_df.cve,
-    "right"  # All EPSS rows + Reddit data where available
-).select(
-    *[col(f"catalog.{c}") for c in catalog_df.columns],
-    *[col(f"epss.{c}") for c in epss_df.columns]
-).repartition(200, "cve")
+print(f"FINAL ROW COUNT: {augmented.count():,}")  # should match EPSS row count
 
-print("MERGED ROW COUNT:", merged_df.count())
-
-print("\n=== STEP 4: Saving to parquet ===")
+# ----------------------------------------------------------------------
+# STEP 5: Save output
+# ----------------------------------------------------------------------
+print("\n=== STEP 5: Saving to Parquet ===")
 output_path = "parquet_preprocessing/input_mastodon.parquet"
+augmented.coalesce(1).write.mode("overwrite").parquet(output_path)
+print(f"✅ Saved to {output_path}")
 
-#merged_df.write.mode("overwrite").parquet(output_path)
-merged_df.coalesce(1).write.mode("overwrite").parquet(output_path)
-
-print(f"✅ Successfully saved merged dataframe to: {output_path}")
-
-# Clean up
 spark.catalog.clearCache()
-print("✅ Cleared Spark cache")
+print("✅ Spark cache cleared")
