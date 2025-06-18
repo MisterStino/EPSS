@@ -18,7 +18,7 @@ REPOS = [
     ("https://github.com/cisagov/kev-data.git", "kev-data"),
 ]
 CVE_DIR = "cvelistV5"
-OUTPUT_DIR = "catalogs_raw"
+OUTPUT_DIR = "catalogs_processed"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # --- Repo Cloner ---
@@ -228,10 +228,10 @@ def merge_and_enrich_catalogs(
 
 # --- Pipeline Runner ---
 if __name__ == "__main__":
-    #clone_or_update_repos(REPOS)
-    #scrape_zdi()
-    #scrape_cve()
-    #extract_git_history()
-    #scrape_exploitdb()
-    #scrape_kev()
+    clone_or_update_repos(REPOS)
+    scrape_zdi()
+    scrape_cve()
+    extract_git_history()
+    scrape_exploitdb()
+    scrape_kev()
     merge_and_enrich_catalogs()
