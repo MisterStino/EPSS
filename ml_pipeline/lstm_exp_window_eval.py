@@ -54,7 +54,7 @@ CLOUD_CONFIG = {
     'hidden_size': 512,    # Full model capacity  
     'lstm_layers': 3,      # Same depth
     'emb_dim': 8,          # Same embedding size
-    'num_workers': 4,      # Linux multiprocessing optimization
+    'num_workers': 100,      # Linux multiprocessing optimization
 }
 
 # Select configuration based on execution environment

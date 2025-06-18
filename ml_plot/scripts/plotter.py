@@ -80,7 +80,6 @@ class EPSSPredictionPlotter:
         *,
         preds_path: str = "ml_pipeline/results/predictions/predictions_stream.nc",
         epss_path: str = "data/epss/processed/epss_processed.parquet",
-        max_cves: int = 10,  # Increased from 3 to get more examples
     ):
         self.preds_path = Path(preds_path)
         self.epss_path = Path(epss_path)
@@ -113,16 +112,15 @@ class EPSSPredictionPlotter:
         time_data_fixed = epoch + days_since_epoch.astype('timedelta64[D]')
         self.ds["time"] = (self.ds.time.dims, time_data_fixed)
 
-        # Choose CVEs (more for better validation)
-        all_cves = list(self.ds.cve.values)
-        self.cves = all_cves[:max_cves]
-
-        # Load full EPSS time-series once; subset per CVE later.
+        # Load full EPSS time-series first (needed for CVE selection)
         # Only required columns: cve, date, epss
         self.epss_df = (
             pd.read_parquet(self.epss_path, columns=["cve", "date", "epss"])
             .assign(date=lambda df: pd.to_datetime(df["date"]))
         )
+
+        # Choose CVEs based on EPSS variability patterns
+        self.cves = self._select_cves_by_stats()
 
     # ---------------------------------------------------------------------
     # Public API
@@ -137,6 +135,209 @@ class EPSSPredictionPlotter:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _select_cves_by_stats(self) -> list[str]:
+        """
+        Select CVEs based on EPSS variability patterns in test data.
+        
+        Returns up to 18 CVEs total:
+        - 12 high-variability "big jump" (min < 0.3 AND max > 0.7) - stratified by year
+        - 2 low & flat (mean ≤ 0.3 AND range < 0.05)
+        - 2 high & flat (mean ≥ 0.7 AND range < 0.05) 
+        - 2 medium, high variability (0.3 < mean < 0.7, max ≤ 0.7, range > 0.3)
+        """
+        print("[INFO] Analyzing CVEs for variability-based selection...")
+        
+        # Convert true data to probability space (create copy to avoid in-place modification)
+        true_data_copy = self.ds.true.values.copy()  # [CVE, time, horizon]
+        true_prob = _log_to_prob(true_data_copy)
+        eval_mask = self.ds.eval_mask.values.astype(bool)  # [CVE, time]
+        
+        # Initialize category lists
+        big_jump_candidates = []  # Will stratify this by year
+        low_flat_cves = []        # Target: 2
+        high_flat_cves = []       # Target: 2
+        medium_var_cves = []      # Target: 2
+        
+        all_cves = list(self.ds.cve.values)
+        
+        # Get time coordinates and fix the malformed datetime64 values
+        time_coord = self.ds.time.values
+        # Fix malformed time coordinates (they store days as nanoseconds)
+        time_ints = time_coord.view('int64')  # Extract raw nanosecond values (actually days)
+        epoch = np.datetime64('1970-01-01')
+        time_data_fixed = epoch + time_ints.astype('timedelta64[D]')
+        
+        # First pass: categorize all CVEs based on REAL EPSS data from parquet file
+        for i, cve in enumerate(all_cves):
+            # Get test timestamps for this CVE
+            test_mask = eval_mask[i]  # [time]
+            if not test_mask.any():
+                continue  # Skip CVEs with no test data
+            
+            # Get the actual test dates (convert indices to dates)
+            test_indices = np.where(test_mask)[0]
+            test_dates = time_data_fixed[test_indices]
+            
+            # Query the parquet file for actual EPSS scores during test dates
+            cve_epss_data = self.epss_df[self.epss_df.cve == cve].copy()
+            if cve_epss_data.empty:
+                continue  # Skip CVEs with no EPSS data
+            
+            # Convert dates and filter to test period
+            cve_epss_data['date'] = pd.to_datetime(cve_epss_data['date'])
+            test_dates_pd = pd.to_datetime(test_dates)
+            
+            # Get EPSS values for test dates (allow some tolerance for date matching)
+            min_test_date = test_dates_pd.min()
+            max_test_date = test_dates_pd.max()
+            
+            test_period_epss = cve_epss_data[
+                (cve_epss_data['date'] >= min_test_date) & 
+                (cve_epss_data['date'] <= max_test_date)
+            ]
+            
+            if len(test_period_epss) == 0:
+                continue  # Skip if no EPSS data in test period
+            
+            # Use actual EPSS scores from parquet file for variability analysis
+            valid_values = test_period_epss['epss'].values
+            valid_values = valid_values[np.isfinite(valid_values)]
+            
+            if len(valid_values) == 0:
+                continue
+            
+            # Compute statistics on REAL EPSS data
+            p_min = np.min(valid_values)
+            p_max = np.max(valid_values)
+            p_mean = np.mean(valid_values)
+            p_range = p_max - p_min
+            
+            # Extract year from CVE ID
+            import re
+            year_match = re.match(r'CVE-(\d{4})-\d+', cve)
+            year = int(year_match.group(1)) if year_match else None
+            
+            # Debug info for first few CVEs
+            if i < 5:
+                print(f"  [DEBUG] {cve}: test period {min_test_date.date()} to {max_test_date.date()}")
+                print(f"    EPSS data points: {len(test_period_epss)}, range: {p_min:.4f}-{p_max:.4f}")
+            
+            # Categorize based on criteria
+            if p_min < 0.3 and p_max > 0.7:
+                big_jump_candidates.append((cve, year, p_min, p_max, p_range))
+                
+            elif len(low_flat_cves) < 2 and p_mean <= 0.3 and p_range < 0.05:
+                low_flat_cves.append(cve)
+                print(f"  Low flat: {cve} (mean={p_mean:.3f}, range={p_range:.3f})")
+                
+            elif len(high_flat_cves) < 2 and p_mean >= 0.7 and p_range < 0.05:
+                high_flat_cves.append(cve)
+                print(f"  High flat: {cve} (mean={p_mean:.3f}, range={p_range:.3f})")
+                
+            elif (len(medium_var_cves) < 2 and 
+                  0.3 < p_mean < 0.7 and p_max <= 0.7 and p_range > 0.3):
+                medium_var_cves.append(cve)
+                print(f"  Medium var: {cve} (mean={p_mean:.3f}, max={p_max:.3f}, range={p_range:.3f})")
+        
+        # Stratified selection for big jump CVEs
+        big_jump_cves = self._stratify_big_jump_cves(big_jump_candidates)
+        
+        # Combine all selected CVEs
+        selected_cves = big_jump_cves + low_flat_cves + high_flat_cves + medium_var_cves
+        
+        print(f"[INFO] Selected {len(selected_cves)} CVEs:")
+        print(f"  - Big jump (stratified): {len(big_jump_cves)}/12")
+        print(f"  - Low & flat: {len(low_flat_cves)}/2") 
+        print(f"  - High & flat: {len(high_flat_cves)}/2")
+        print(f"  - Medium variability: {len(medium_var_cves)}/2")
+        
+        if len(selected_cves) == 0:
+            print("[WARN] No CVEs found matching criteria, falling back to first 3")
+            return all_cves[:3]
+            
+        return selected_cves
+    
+    def _stratify_big_jump_cves(self, candidates: list) -> list[str]:
+        """
+        Stratify big jump CVEs by year: 2 old + 6 recent + 4 random.
+        
+        Args:
+            candidates: List of (cve, year, p_min, p_max, p_range) tuples
+        
+        Returns:
+            List of up to 12 selected CVE IDs
+        """
+        if not candidates:
+            return []
+        
+        # Group by year
+        import random
+        from collections import defaultdict
+        
+        year_groups = defaultdict(list)
+        for cve, year, p_min, p_max, p_range in candidates:
+            if year is not None:
+                year_groups[year].append((cve, p_min, p_max, p_range))
+        
+        if not year_groups:
+            return []
+        
+        # Get sorted years
+        sorted_years = sorted(year_groups.keys())
+        min_year, max_year = sorted_years[0], sorted_years[-1]
+        
+        print(f"[INFO] Big jump CVEs span {min_year}-{max_year} ({len(sorted_years)} years)")
+        
+        # Define old and recent years dynamically
+        old_years = sorted_years[:2]  # First 2 years
+        recent_years = sorted_years[-3:] if len(sorted_years) >= 3 else sorted_years[-1:]  # Last 3 years
+        
+        selected_cves = []
+        
+        # Select 2 from old years
+        old_candidates = []
+        for year in old_years:
+            old_candidates.extend(year_groups[year])
+        
+        if old_candidates:
+            old_selected = random.sample(old_candidates, min(2, len(old_candidates)))
+            for cve, p_min, p_max, p_range in old_selected:
+                selected_cves.append(cve)
+                print(f"  Big jump (old): {cve} (min={p_min:.3f}, max={p_max:.3f}, range={p_range:.3f})")
+        
+        # Select up to 6 from recent years
+        recent_candidates = []
+        for year in recent_years:
+            recent_candidates.extend(year_groups[year])
+        
+        # Remove already selected CVEs
+        recent_candidates = [c for c in recent_candidates if c[0] not in selected_cves]
+        
+        if recent_candidates:
+            num_recent = min(6, len(recent_candidates))
+            recent_selected = random.sample(recent_candidates, num_recent)
+            for cve, p_min, p_max, p_range in recent_selected:
+                selected_cves.append(cve)
+                print(f"  Big jump (recent): {cve} (min={p_min:.3f}, max={p_max:.3f}, range={p_range:.3f})")
+        
+        # Fill remaining slots randomly from all candidates
+        remaining_slots = 12 - len(selected_cves)
+        if remaining_slots > 0:
+            all_candidates = [c for c in candidates if c[0] not in selected_cves]
+            if all_candidates:
+                num_random = min(remaining_slots, len(all_candidates))
+                random_selected = random.sample(all_candidates, num_random)
+                for cve, year, p_min, p_max, p_range in random_selected:
+                    selected_cves.append(cve)
+                    print(f"  Big jump (random): {cve} (min={p_min:.3f}, max={p_max:.3f}, range={p_range:.3f})")
+        
+        print(f"[INFO] Stratified selection: {len(selected_cves)} big jump CVEs")
+        print(f"  - Old years ({old_years}): {len([c for c in selected_cves[:2]])}")
+        print(f"  - Recent years ({recent_years}): {len([c for c in selected_cves[2:2+min(6, len(recent_candidates))]])}")
+        print(f"  - Random: {len(selected_cves) - len([c for c in selected_cves[:2]]) - len([c for c in selected_cves[2:2+min(6, len(recent_candidates) if recent_candidates else 0)]])}")
+        
+        return selected_cves
 
     def _plot_cve(self, cve: str) -> None:
         """Generate all plots for one CVE."""
@@ -256,7 +457,6 @@ if __name__ == "__main__":
 
     plotter = EPSSPredictionPlotter(
         preds_path=str(default_preds), 
-        epss_path=str(default_epss),
-        max_cves=10
+        epss_path=str(default_epss)
     )
     plotter.plot_all()
