@@ -29,7 +29,7 @@ __pycache__/
 *.csv.tar
 *.csv.xz
 *.tsv
-
+.arrow
 .zip
 .pkl
 .arrow

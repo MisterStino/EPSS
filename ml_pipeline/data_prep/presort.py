@@ -26,7 +26,7 @@ spark = (SparkSession.builder
 
 # Use environment variable for data path, with fallback to default
 import os
-DEFAULT_DATA_PATH = "data/full_db/v1/data/minimal_v1_timeseries_sample.parquet"
+DEFAULT_DATA_PATH = "data/prod/final_full_data_v3_v4truncated_plot.parquet"
 RAW = norm(os.getenv("EPSS_DATA_PATH", DEFAULT_DATA_PATH))
 print(f"[INPUT] Using data from: {RAW}")  
 OUTDIR  = Path("ml_pipeline/data_prep/work")
@@ -120,7 +120,7 @@ for c in CAT_COLS:
         vocab[c] = {k:i+1 for i,k in enumerate(keys)} | {"UNK":0}
 
 NUMERIC = [f.name for f in df.schema
-           if f.name not in {"cve","date"}|set(CAT_COLS)
+           if f.name not in {"cve","date","epss"}|set(CAT_COLS)
            and not f.name.startswith("flag_")
            and f.dataType.simpleString() in {"double","float","int","bigint"}]
 

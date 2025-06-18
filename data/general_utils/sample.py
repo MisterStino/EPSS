@@ -212,17 +212,17 @@ def truncate_time_series_by_date(
 if __name__ == "__main__":
     # sample_9000_cve_timeseries()
     # Sample 30k CVEs from your minimal dataset
-    # sample_9000_cve_timeseries(
-    #     input_path="data/full_db/v1/data/minimal_v1_timeseries.parquet",
-    #     output_path="data/full_db/v1/data/minimal_v1_timeseries_sample.parquet",
-    #     num_cve=10000
-    # )
+    sample_9000_cve_timeseries(
+        input_path="data/full_db/processed/final_full_data.parquet",
+        output_path="data/full_db/v1/data/minimal_v1_timeseries_sample_checked.parquet",
+        num_cve=7000
+    )
 
     truncate_time_series_by_date(
-        input_path="data/full_db/processed/final_full_data.parquet",
-        output_path="data/prod/final_full_data_v3_v4truncated.parquet",
+        input_path="data/full_db/v1/data/minimal_v1_timeseries_sample_checked.parquet",
+        output_path="data/prod/final_full_data_v3_v4truncated_plot.parquet",
         start_date="2023-03-08",
-        end_date="2025-03-17"
+        end_date="2024-04-17"
     )
 
     # sample_1000_cve_timeseries(num_cve=80000)

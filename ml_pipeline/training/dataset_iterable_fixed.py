@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: MIT
 """
-cve_iter_dataset.py – streaming IterableDataset + pad/mask collate
+FIXED: cve_iter_dataset.py – streaming IterableDataset + pad/mask collate
 for the Arrow file written by 00_build_arrow.py.
+
+FIX: Properly handles date32[day] format from Arrow files.
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ from torch.nn.utils.rnn import pad_sequence
 import pyarrow as pa
 import pyarrow.ipc as ipc
 import pyarrow.types as patypes
+import numpy as np
 
 
 # ─────────────────────────── helpers ────────────────────────────
@@ -39,10 +42,12 @@ def _build_y_and_mh(eps: torch.Tensor, horizon: int
 
 
 # ─────────────────────────── dataset ────────────────────────────
-class CVEIterableDataset(IterableDataset):
+class CVEIterableDatasetFixed(IterableDataset):
     """
-    Memory-maps the Arrow IPC file and yields *unpadded* sequences,
+    FIXED VERSION: Memory-maps the Arrow IPC file and yields *unpadded* sequences,
     one per CVE.  Padding happens in the collate_fn.
+    
+    FIX: Properly handles date32[day] format by converting to nanoseconds.
     """
 
     BOOL_RE = re.compile(r"^(has_|is_)")
@@ -68,10 +73,8 @@ class CVEIterableDataset(IterableDataset):
 
         self.flag_cols = ["flag_train", "flag_val", "flag_test"]
 
-        # FIXED: Remove 'epss' from reserved set so it becomes an input feature
-        # EPSS will be both an input feature AND the target variable
         reserved = set(self.cat_cols + self.bool_cols +
-                       self.flag_cols + ["cve", "date"])
+                       self.flag_cols + ["cve", "date", "epss"])
         self.num_cols = [
             f.name for f in self._schema
             if f.name not in reserved and
@@ -82,8 +85,41 @@ class CVEIterableDataset(IterableDataset):
         self.col2idx = {f.name: i for i, f in enumerate(self._schema)}
         self.collected_cve_ids: List[str] = []
 
-        print(f"[CVEDataset] {len(self.num_cols)} numeric  |  "
+        # ── Check date column format ──────────────────────────────
+        date_field = None
+        for field in self._schema:
+            if field.name == "date":
+                date_field = field
+                break
+        
+        if date_field is None:
+            raise ValueError("No 'date' column found in Arrow schema")
+        
+        # Determine date conversion strategy
+        if str(date_field.type) == "date32[day]":
+            self.date_conversion = "days_since_epoch"
+            print(f"[CVEDatasetFixed] Date format: date32[day] - will convert to nanoseconds")
+        elif "timestamp" in str(date_field.type):
+            self.date_conversion = "timestamp"
+            print(f"[CVEDatasetFixed] Date format: {date_field.type} - using as-is")
+        else:
+            print(f"[CVEDatasetFixed] WARNING: Unknown date format {date_field.type}, assuming timestamp")
+            self.date_conversion = "timestamp"
+
+        print(f"[CVEDatasetFixed] {len(self.num_cols)} numeric  |  "
               f"{len(self.bool_cols)} boolean  |  {len(self.cat_cols)} categorical")
+
+    def _convert_date_value(self, arrow_scalar) -> int:
+        """Convert Arrow date scalar to nanoseconds since epoch"""
+        if self.date_conversion == "days_since_epoch":
+            # date32[day]: value is days since 1970-01-01
+            days_since_epoch = arrow_scalar.value
+            # Convert to nanoseconds: days * 24 * 3600 * 1e9
+            nanoseconds = days_since_epoch * 86400 * 1_000_000_000
+            return nanoseconds
+        else:
+            # Assume it's already a timestamp in nanoseconds
+            return arrow_scalar.value
 
     # ─────────────────────────── iterator ─────────────────────────
     def __iter__(self) -> Iterator[Tuple[torch.Tensor, ...]]:
@@ -143,18 +179,21 @@ class CVEIterableDataset(IterableDataset):
                 buf_eps .append(cols[self.col2idx["epss"]][r].as_py())
                 buf_flag.append([cols[self.col2idx[c]][r].as_py()
                                  for c in self.flag_cols])
-                # Arrow scalar: .value is int64 nanoseconds
-                buf_date.append(cols[self.col2idx["date"]][r].value)
+                
+                # ── FIXED DATE HANDLING ──────────────────────────────
+                date_scalar = cols[self.col2idx["date"]][r]
+                date_ns = self._convert_date_value(date_scalar)
+                buf_date.append(date_ns)
 
         yield from flush()                  # final CVE
 
 
 # ─────────────────────────── collate fn ──────────────────────────
-def pad_and_mask(batch: Sequence[Tuple[torch.Tensor, ...]],
-                 *,
-                 flag_kind: str,             # "train" | "val" | "test"
-                 horizon: int = 30):
-    """Pads ragged sequences and rebuilds Y, mT, mH, mE."""
+def pad_and_mask_fixed(batch: Sequence[Tuple[torch.Tensor, ...]],
+                       *,
+                       flag_kind: str,             # "train" | "val" | "test"
+                       horizon: int = 30):
+    """FIXED VERSION: Pads ragged sequences and rebuilds Y, mT, mH, mE."""
 
     split_idx = {"train": 0, "val": 1, "test": 2}[flag_kind]
 
@@ -178,6 +217,7 @@ def pad_and_mask(batch: Sequence[Tuple[torch.Tensor, ...]],
     mT_pad = pad([torch.ones(l, dtype=torch.float32) for l in lengths], 0.0)
     mE_pad = pad([f[:, split_idx].float() for f in flags], 0.0)
 
+    # Dates are already in nanoseconds, just pad them
     date_pad = pad(dates, 0)
 
     return num_pad, boo_pad, cat_pad, Y_pad, mT_pad, mH_pad, mE_pad, date_pad
@@ -189,17 +229,20 @@ if __name__ == "__main__":
     from functools import partial
 
     ARROW = Path(__file__).resolve().parent.parent / "work" / "epss_stage1.arrow"
-    ds = CVEIterableDataset(ARROW, horizon=30)
+    ds = CVEIterableDatasetFixed(ARROW, horizon=30)
 
     dl = DataLoader(
         ds,
         batch_size=4,
-        collate_fn=partial(pad_and_mask, flag_kind="train", horizon=30),
+        collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=30),
         num_workers=0,           # change to >0 if you like
         pin_memory=False
     )
 
     batch = next(iter(dl))
-    n, b, c, y, mt, mh, me, dt = batch
-    print("✓ loader OK  shapes:",
-          n.shape, b.shape, c.shape, y.shape, mt.shape, mh.shape, me.shape, dt.shape)
+    print(f"Batch shapes: {[t.shape for t in batch]}")
+    
+    # Check date conversion
+    dates = batch[-1]  # date_pad
+    print(f"Date sample (as nanoseconds): {dates[0, :5]}")
+    print(f"Date sample (as datetime): {dates[0, :5].numpy().view('datetime64[ns]')}") 
