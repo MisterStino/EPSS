@@ -112,15 +112,15 @@ class EPSSPredictionPlotter:
         time_data_fixed = epoch + days_since_epoch.astype('timedelta64[D]')
         self.ds["time"] = (self.ds.time.dims, time_data_fixed)
 
-        # Load full EPSS time-series first (needed for CVE selection)
+        # Choose CVEs based on EPSS variability patterns
+        self.cves = self._select_cves_by_stats()
+
+        # Load full EPSS time-series once; subset per CVE later.
         # Only required columns: cve, date, epss
         self.epss_df = (
             pd.read_parquet(self.epss_path, columns=["cve", "date", "epss"])
             .assign(date=lambda df: pd.to_datetime(df["date"]))
         )
-
-        # Choose CVEs based on EPSS variability patterns
-        self.cves = self._select_cves_by_stats()
 
     # ---------------------------------------------------------------------
     # Public API
@@ -161,53 +161,28 @@ class EPSSPredictionPlotter:
         
         all_cves = list(self.ds.cve.values)
         
-        # Get time coordinates and fix the malformed datetime64 values
-        time_coord = self.ds.time.values
-        # Fix malformed time coordinates (they store days as nanoseconds)
-        time_ints = time_coord.view('int64')  # Extract raw nanosecond values (actually days)
-        epoch = np.datetime64('1970-01-01')
-        time_data_fixed = epoch + time_ints.astype('timedelta64[D]')
-        
-        # First pass: categorize all CVEs based on REAL EPSS data from parquet file
+        # First pass: categorize all CVEs
         for i, cve in enumerate(all_cves):
             # Get test timestamps for this CVE
             test_mask = eval_mask[i]  # [time]
             if not test_mask.any():
                 continue  # Skip CVEs with no test data
             
-            # Get the actual test dates (convert indices to dates)
-            test_indices = np.where(test_mask)[0]
-            test_dates = time_data_fixed[test_indices]
+            # Extract true EPSS values from test timestamps ONLY (not their future horizons)
+            # We want the EPSS value ON the test date itself, not predictions FROM that date
+            cve_true = true_prob[i]  # [time, horizon]
+            test_true = cve_true[test_mask]  # [test_times, horizon]
             
-            # Query the parquet file for actual EPSS scores during test dates
-            cve_epss_data = self.epss_df[self.epss_df.cve == cve].copy()
-            if cve_epss_data.empty:
-                continue  # Skip CVEs with no EPSS data
+            # Use only horizon=0 (the anchor date itself) for variability analysis
+            # This gives us the actual EPSS score on each test timestamp
+            test_anchor_values = test_true[:, 0]  # [test_times] - EPSS on test dates only
             
-            # Convert dates and filter to test period
-            cve_epss_data['date'] = pd.to_datetime(cve_epss_data['date'])
-            test_dates_pd = pd.to_datetime(test_dates)
-            
-            # Get EPSS values for test dates (allow some tolerance for date matching)
-            min_test_date = test_dates_pd.min()
-            max_test_date = test_dates_pd.max()
-            
-            test_period_epss = cve_epss_data[
-                (cve_epss_data['date'] >= min_test_date) & 
-                (cve_epss_data['date'] <= max_test_date)
-            ]
-            
-            if len(test_period_epss) == 0:
-                continue  # Skip if no EPSS data in test period
-            
-            # Use actual EPSS scores from parquet file for variability analysis
-            valid_values = test_period_epss['epss'].values
-            valid_values = valid_values[np.isfinite(valid_values)]
-            
+            # Remove any invalid values (NaN, inf, etc.)
+            valid_values = test_anchor_values[np.isfinite(test_anchor_values)]
             if len(valid_values) == 0:
                 continue
             
-            # Compute statistics on REAL EPSS data
+            # Compute statistics
             p_min = np.min(valid_values)
             p_max = np.max(valid_values)
             p_mean = np.mean(valid_values)
@@ -217,11 +192,6 @@ class EPSSPredictionPlotter:
             import re
             year_match = re.match(r'CVE-(\d{4})-\d+', cve)
             year = int(year_match.group(1)) if year_match else None
-            
-            # Debug info for first few CVEs
-            if i < 5:
-                print(f"  [DEBUG] {cve}: test period {min_test_date.date()} to {max_test_date.date()}")
-                print(f"    EPSS data points: {len(test_period_epss)}, range: {p_min:.4f}-{p_max:.4f}")
             
             # Categorize based on criteria
             if p_min < 0.3 and p_max > 0.7:

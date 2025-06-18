@@ -38,7 +38,7 @@ from ml_pipeline.training.dataset_iterable import CVEIterableDataset, pad_and_ma
 # - sklearn.preprocessing.StandardScaler (preprocessing done offline)
 
 # Define if local or paperspace:
-local_execution  = True
+local_execution  = False
 
 # Hardware-specific configurations
 LOCAL_CONFIG = {
@@ -50,7 +50,7 @@ LOCAL_CONFIG = {
 }
 
 CLOUD_CONFIG = {
-    'batch_size': 512,     # 90GB GPU capacity
+    'batch_size': 1024,     # 90GB GPU capacity
     'hidden_size': 512,    # Full model capacity  
     'lstm_layers': 3,      # Same depth
     'emb_dim': 8,          # Same embedding size
