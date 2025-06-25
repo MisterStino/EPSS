@@ -208,10 +208,111 @@ def truncate_time_series_by_date(
     )
 
 
+<<<<<<< HEAD
+=======
+def sample_high_epss_and_jumps(
+    input_path: str = "data/full_db/processed/final_full_data.parquet",
+    output_path: str = "data/full_db/sampled/final_full_data_sampled.parquet",
+    num_cve: int = 9000,
+    high_epss_threshold: float = 0.7,
+    jump_threshold: float = 0.3
+):
+    """
+    Samples CVEs from the full time-series dataset according to:
+      • Group A: CVEs with max EPSS ≥ high_epss_threshold (take ALL of these)
+      • Group B: CVEs with max EPSS jump > jump_threshold (take ALL of these)  
+      • Group C: Random CVEs to fill remaining slots up to num_cve
+    
+    Parameters:
+    -----------
+    input_path : str
+        Path to the full dataset Parquet file
+    output_path : str  
+        Path to write the sampled dataset Parquet file
+    num_cve : int
+        Total number of CVEs to sample
+    high_epss_threshold : float
+        Threshold for high EPSS scores (default 0.7)
+    jump_threshold : float
+        Threshold for EPSS jumps (default 0.3)
+    """
+    spark = get_spark_session()
+    
+    print(f"[INFO] Sampling {num_cve} CVEs with high_epss≥{high_epss_threshold} and jumps>{jump_threshold}")
+    
+    # 1) Load the data
+    df = spark.read.parquet(input_path)
+    
+    # 2) Group A: CVEs with max EPSS ≥ threshold
+    df_max_epss = (
+        df.groupBy("cve")
+          .agg(F.max("epss").alias("max_epss"))
+    )
+    group_a = df_max_epss.filter(F.col("max_epss") >= high_epss_threshold).select("cve")
+    list_a = [r.cve for r in group_a.collect()]
+    n_a = len(list_a)
+    print(f"[INFO] |Group A| = {n_a} (max EPSS ≥ {high_epss_threshold})")
+    
+    # 3) Group B: CVEs with max EPSS jump > threshold
+    # Calculate consecutive EPSS differences for each CVE
+    window_spec = Window.partitionBy("cve").orderBy("date")
+    df_with_prev = df.withColumn("prev_epss", F.lag("epss").over(window_spec))
+    df_with_jump = df_with_prev.withColumn("epss_jump", 
+                                          F.col("epss") - F.col("prev_epss"))
+    
+    # Find max jump per CVE
+    df_max_jump = (
+        df_with_jump.groupBy("cve")
+                    .agg(F.max("epss_jump").alias("max_jump"))
+    )
+    group_b = df_max_jump.filter(F.col("max_jump") > jump_threshold).select("cve")
+    list_b = [r.cve for r in group_b.collect()]
+    n_b = len(list_b)  
+    print(f"[INFO] |Group B| = {n_b} (max EPSS jump > {jump_threshold})")
+    
+    # 4) Combine groups and remove duplicates
+    combined_cves = list(set(list_a + list_b))
+    n_combined = len(combined_cves)
+    print(f"[INFO] |Combined A∪B| = {n_combined} (after removing duplicates)")
+    
+    # 5) Check if we need more CVEs
+    if n_combined >= num_cve:
+        # We have enough, just take the first num_cve from combined
+        sampled_cves = combined_cves[:num_cve]
+        print(f"[INFO] Taking first {num_cve} from combined groups")
+    else:
+        # Need to fill remaining slots with random CVEs
+        remaining_needed = num_cve - n_combined
+        
+        # Get all CVEs not in combined groups
+        all_cves = [r.cve for r in df.select("cve").distinct().collect()]
+        remaining_cves = [cve for cve in all_cves if cve not in combined_cves]
+        
+        if len(remaining_cves) < remaining_needed:
+            raise ValueError(
+                f"Not enough CVEs to fill remaining {remaining_needed} slots. "
+                f"Only {len(remaining_cves)} CVEs available after groups A and B."
+            )
+        
+        # Random sample from remaining CVEs
+        random_sample = random.sample(remaining_cves, remaining_needed)
+        sampled_cves = combined_cves + random_sample
+        
+        print(f"[INFO] Sampling: {n_combined} from A∪B + {remaining_needed} random = {len(sampled_cves)} total")
+    
+    # 6) Filter full dataset and write
+    df_sampled = df.filter(F.col("cve").isin(sampled_cves))
+    df_sampled.write.mode("overwrite").parquet(output_path)
+    print(f"[INFO] Written sampled time-series ({len(sampled_cves)} CVEs) to:\n  {output_path}")
+    
+    spark.stop()
+
+>>>>>>> 52c4e693921fbdf19a151a99f9f5ba90ea274301
 
 if __name__ == "__main__":
     # sample_9000_cve_timeseries()
     # Sample 30k CVEs from your minimal dataset
+<<<<<<< HEAD
     # sample_9000_cve_timeseries(
     #     input_path="data/full_db/v1/data/minimal_v1_timeseries.parquet",
     #     output_path="data/full_db/v1/data/minimal_v1_timeseries_sample.parquet",
@@ -223,6 +324,19 @@ if __name__ == "__main__":
         output_path="data/prod/final_full_data_v3_v4truncated.parquet",
         start_date="2023-03-08",
         end_date="2025-03-17"
+=======
+    sample_9000_cve_timeseries(
+        input_path="data/full_db/processed/final_full_data.parquet",
+        output_path="data/full_db/v1/data/minimal_v1_timeseries_sample_checked.parquet",
+        num_cve=9000
+    )
+
+    truncate_time_series_by_date(
+        input_path="data/full_db/v1/data/minimal_v1_timeseries_sample_checked.parquet",
+        output_path="data/prod/final_full_data_v3_v4truncated_plot.parquet",
+        start_date="2023-03-08",
+        end_date="2025-04-17"
+>>>>>>> 52c4e693921fbdf19a151a99f9f5ba90ea274301
     )
 
     # sample_1000_cve_timeseries(num_cve=80000)

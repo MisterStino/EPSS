@@ -270,5 +270,9 @@ if __name__ == "__main__":
     extract_git_history()
     scrape_exploitdb()
     scrape_kev()
+<<<<<<< HEAD
     merge_and_enrich_catalogs()
     merge_social_media_with_catalog()
+=======
+    merge_and_enrich_catalogs()
+>>>>>>> 52c4e693921fbdf19a151a99f9f5ba90ea274301
