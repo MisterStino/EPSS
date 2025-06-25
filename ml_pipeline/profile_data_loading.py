@@ -19,7 +19,7 @@ import pyarrow as pa
 import pyarrow.ipc as ipc
 
 # Import your components
-from ml_pipeline.training.dataset_iterable import CVEIterableDataset, pad_and_mask
+from ml_pipeline.training.dataset_iterable_fixed import CVEIterableDatasetFixed, pad_and_mask_fixed
 
 
 class DataLoadingProfiler:
@@ -91,7 +91,7 @@ class DataLoadingProfiler:
         
         # Dataset creation
         def create_dataset():
-            return CVEIterableDataset(arrow_path, horizon=30)
+            return CVEIterableDatasetFixed(arrow_path, horizon=30)
         
         dataset = self.time_operation("Dataset creation", create_dataset)
         
@@ -138,13 +138,13 @@ class DataLoadingProfiler:
                 
                 def create_and_test_loader():
                     # Recreate dataset to reset iterator
-                    test_dataset = CVEIterableDataset(dataset.arrow_path, horizon=30)
+                    test_dataset = CVEIterableDatasetFixed(dataset.arrow_path, horizon=30)
                     
                     loader = DataLoader(
                         test_dataset,
                         batch_size=batch_size,
                         shuffle=False,
-                        collate_fn=partial(pad_and_mask, flag_kind="train", horizon=30),
+                        collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=30),
                         **config
                     )
                     
@@ -184,7 +184,7 @@ class DataLoadingProfiler:
             batch_samples = samples[:batch_size]
             
             def time_collate():
-                return pad_and_mask(batch_samples, flag_kind="train", horizon=30)
+                return pad_and_mask_fixed(batch_samples, flag_kind="train", horizon=30)
             
             result = self.time_operation(f"Collate batch_size={batch_size}", time_collate)
             

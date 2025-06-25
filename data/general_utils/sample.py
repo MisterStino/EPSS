@@ -208,8 +208,6 @@ def truncate_time_series_by_date(
     )
 
 
-<<<<<<< HEAD
-=======
 def sample_high_epss_and_jumps(
     input_path: str = "data/full_db/processed/final_full_data.parquet",
     output_path: str = "data/full_db/sampled/final_full_data_sampled.parquet",
@@ -307,23 +305,21 @@ def sample_high_epss_and_jumps(
     
     spark.stop()
 
->>>>>>> 52c4e693921fbdf19a151a99f9f5ba90ea274301
 
 if __name__ == "__main__":
     # sample_9000_cve_timeseries()
     # Sample 30k CVEs from your minimal dataset
     sample_high_epss_and_jumps(
         input_path="data/full_db/processed/final_full_data.parquet",
-        output_path="data/full_db/prod/prod_long.parquet",
-        num_cve=15000
+        output_path="data/full_db/prod/prod.parquet",
+        num_cve=20000
     )
 
     truncate_time_series_by_date(
-        input_path="data/full_db/prod/prod_long.parquet",
-        output_path="data/prod/prod.parquet",
+        input_path="data/full_db/prod/prod.parquet",
+        output_path="data/prod/final_full_data_v3_v4truncated_csaf_social.parquet",
         start_date="2023-03-08",
-        end_date="2025-04-17"
->>>>>>> 52c4e693921fbdf19a151a99f9f5ba90ea274301
+        end_date="2025-04-15"
     )
 
     # sample_1000_cve_timeseries(num_cve=80000)

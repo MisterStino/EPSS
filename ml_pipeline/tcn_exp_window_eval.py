@@ -30,7 +30,7 @@ else:
     # Running as module - direct path to training
     sys.path.append('training')
 
-from ml_pipeline.training.dataset_iterable import CVEIterableDataset, pad_and_mask
+from ml_pipeline.training.dataset_iterable_fixed import CVEIterableDatasetFixed, pad_and_mask_fixed
 
 # REMOVED DEPENDENCIES (no longer needed):
 # - pandas as pd (no DataFrame processing) 
@@ -210,13 +210,13 @@ start_time = time.time()
 
 # NEW: Create streaming datasets - no global padding, no DataFrame in memory
 print("  → Training dataset (streaming)...")
-tr_ds = CVEIterableDataset(ARROW_PATH, horizon=HORIZON)
+tr_ds = CVEIterableDatasetFixed(ARROW_PATH, horizon=HORIZON)
 
 print("  → Validation dataset (streaming)...")  
-va_ds = CVEIterableDataset(ARROW_PATH, horizon=HORIZON)
+va_ds = CVEIterableDatasetFixed(ARROW_PATH, horizon=HORIZON)
 
 print("  → Test dataset (streaming)...")
-te_ds = CVEIterableDataset(ARROW_PATH, horizon=HORIZON)
+te_ds = CVEIterableDatasetFixed(ARROW_PATH, horizon=HORIZON)
 
 elapsed = time.time() - start_time
 print(f"✓ All streaming datasets created in {elapsed:.1f}s")
@@ -228,17 +228,17 @@ start_time = time.time()
 # NEW: Use per-batch padding collate function instead of global padding
 # Note: IterableDataset doesn't support shuffle - randomness handled by worker sharding
 tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
-                   collate_fn=partial(pad_and_mask, flag_kind="train", horizon=HORIZON),
+                   collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON),
                    num_workers=CONFIG['num_workers'], pin_memory=True, 
                    persistent_workers=CONFIG['num_workers'] > 0)
 
 va_ld = DataLoader(va_ds, BATCH, shuffle=False,
-                   collate_fn=partial(pad_and_mask, flag_kind="val", horizon=HORIZON),
+                   collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
                    num_workers=CONFIG['num_workers'], pin_memory=True, 
                    persistent_workers=CONFIG['num_workers'] > 0)
 
 te_ld = DataLoader(te_ds, BATCH, shuffle=False,
-                   collate_fn=partial(pad_and_mask, flag_kind="test", horizon=HORIZON),
+                   collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
                    num_workers=CONFIG['num_workers'], pin_memory=True, 
                    persistent_workers=CONFIG['num_workers'] > 0)
 
@@ -382,7 +382,7 @@ te_ds.collected_cve_ids.clear()
 
 test_pred_loader = DataLoader(
     te_ds, batch_size=1, shuffle=False,
-    collate_fn=partial(pad_and_mask, flag_kind="test", horizon=HORIZON),
+    collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
     num_workers=0  # Single worker for deterministic CVE order
 )
 
