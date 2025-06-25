@@ -1,0 +1,102 @@
+
+Artificial Pattern Detection Report
+==================================
+Generated: 2025-06-25 03:35:20
+
+EXECUTIVE SUMMARY:
+================
+
+1. BOT ACTIVITY (Identical Patterns):
+   - Duplicate signature groups found: 5570
+   - Total CVEs with duplicate patterns: 103,925
+   - Largest duplicate group: 22018 CVEs
+   - Assessment: HIGH CONCERN
+
+2. BATCH PROCESSING (Mass Spikes):
+   - Suspicious spike dates identified: 66
+   - Multi-feature spike dates: 5
+   - CVEs affected by batch processing: 68,281
+   - Assessment: MODERATE CONCERN
+
+3. SCRAPING ARTIFACTS:
+   - Impossible repo counts: 42,287
+   - Negative values: 0
+   - Extreme outliers: 888
+   - Exact duplicates: 0
+   - Partial duplicates: 0
+   - Assessment: LOW CONCERN
+
+DETAILED FINDINGS:
+=================
+
+Bot Activity Analysis:
+---------------------
+
+Top 5 Duplicate Pattern Groups:
+1. 22,018 CVEs with identical patterns
+   Sample CVEs: CVE-2006-6137, CVE-2006-6204, CVE-2006-6305
+2. 4,148 CVEs with identical patterns
+   Sample CVEs: CVE-2020-0210, CVE-2020-0257, CVE-2020-0281
+3. 4,074 CVEs with identical patterns
+   Sample CVEs: CVE-2015-0238, CVE-2015-0269, CVE-2015-0281
+4. 3,840 CVEs with identical patterns
+   Sample CVEs: CVE-2007-0727, CVE-2007-0746, CVE-2007-0778
+5. 3,218 CVEs with identical patterns
+   Sample CVEs: CVE-2021-26735, CVE-2021-34567, CVE-2021-3774
+
+Batch Processing Analysis:
+-------------------------
+Date: 2024-06-25
+  Active CVEs: 30,879
+  Suspicious CVEs: 82
+  Suspicion Rate: 82.0%
+
+Date: 2024-09-09
+  Active CVEs: 10,501
+  Suspicious CVEs: 75
+  Suspicion Rate: 75.0%
+
+Date: 2024-09-10
+  Active CVEs: 10,483
+  Suspicious CVEs: 70
+  Suspicion Rate: 70.0%
+
+Date: 2024-09-08
+  Active CVEs: 9,386
+  Suspicious CVEs: 68
+  Suspicion Rate: 68.0%
+
+Date: 2024-09-07
+  Active CVEs: 7,032
+  Suspicious CVEs: 85
+  Suspicion Rate: 85.0%
+
+Scraping Artifacts Analysis:
+---------------------------
+commit_count: 25 records exceed limit of 100
+  Examples: [('CVE-2023-44487', '2023-10-12', 130), ('CVE-2023-44487', '2023-11-02', 113), ('CVE-2023-44487', '2023-10-16', 155)]
+issue_count: 100 records exceed limit of 50
+  Examples: [('CVE-2023-28756', '2024-04-01', 97), ('CVE-2023-28755', '2024-04-01', 97), ('CVE-2021-33621', '2024-04-01', 97)]
+repo_count: 763 records exceed limit of 20
+  Examples: [('CVE-2023-0465', '2023-04-07', 21), ('CVE-2023-0464', '2023-04-07', 22), ('CVE-2020-36518', '2022-04-04', 26)]
+
+
+RECOMMENDATIONS:
+===============
+
+1. Data Cleaning Priority:
+   - Remove CVEs with identical patterns (bot activity)
+   - Flag dates with batch processing artifacts
+   - Clean logical inconsistencies and extreme outliers
+
+2. Model Training Impact:
+   - Clean data expected to improve EPSS forecasting accuracy
+   - Artificial patterns would create false correlations
+   - Recommend using only high-quality CVEs for LSTM training
+
+3. Next Steps:
+   - Implement data cleaning based on these findings
+   - Validate cleaned dataset with sample plots
+   - Re-run analysis after cleaning to verify improvements
+
+Analysis completed with Spark for efficient big data processing.

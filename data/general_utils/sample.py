@@ -311,13 +311,13 @@ if __name__ == "__main__":
     # Sample 30k CVEs from your minimal dataset
     sample_high_epss_and_jumps(
         input_path="data/full_db/processed/final_full_data.parquet",
-        output_path="data/full_db/prod/prod.parquet",
-        num_cve=20000
+        output_path="data/full_db/prod/prod_long.parquet",
+        num_cve=15000
     )
 
     truncate_time_series_by_date(
-        input_path="data/full_db/v1/data/data/full_db/prod/prod.parquet",
-        output_path="data/prod/final_full_data_v3_v4truncated_plot.parquet",
+        input_path="data/full_db/prod/prod_long.parquet",
+        output_path="data/prod/prod.parquet",
         start_date="2023-03-08",
         end_date="2025-04-17"
     )

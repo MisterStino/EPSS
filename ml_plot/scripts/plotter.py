@@ -366,12 +366,30 @@ class EPSSPredictionPlotter:
         out_path: Path,
     ) -> None:
         """Render and save one figure for a single (CVE, time-step)."""
-        # Base line – full EPSS curve
+        # Base line – focused EPSS curve around test period
         fig, ax = plt.subplots(figsize=(12, 6))
         
+        # Define focused time window around test period
+        context_days = 60  # Days of context before anchor
+        horizon_end_date = pd.to_datetime(anchor_date) + pd.Timedelta(days=horizon)
+        context_start_date = pd.to_datetime(anchor_date) - pd.Timedelta(days=context_days)
+        
+        # Filter EPSS data to focused time window
+        focused_epss = cve_epss[
+            (cve_epss.date >= context_start_date) & 
+            (cve_epss.date <= horizon_end_date)
+        ].copy()
+        
         # Plot in correct z-order: background to foreground
-        # 1. Gold line (background) - EPSS truth
-        ax.plot(cve_epss.date, cve_epss.epss, color="gold", label="EPSS (truth)", linewidth=2, zorder=1)
+        if not focused_epss.empty:
+            # 1. Gold line (background) - EPSS truth (focused view)
+            ax.plot(focused_epss.date, focused_epss.epss, color="gold", label="EPSS (truth)", linewidth=2, zorder=1)
+        else:
+            print(f"   ⚠ No EPSS data in focused window ({context_start_date.date()} to {horizon_end_date.date()}) for {cve}")
+        
+        # 2. Vertical line at anchor date (model cutoff)
+        ax.axvline(x=pd.to_datetime(anchor_date), color='red', linestyle=':', alpha=0.7, 
+                   label='Anchor (model cutoff)', zorder=4)
 
         # Horizon dates relative to anchor
         horizon_days = np.arange(1, horizon + 1)
@@ -402,12 +420,16 @@ class EPSSPredictionPlotter:
 
         # Formatting
         anchor_date_str = pd.to_datetime(anchor_date).strftime('%Y-%m-%d')
-        ax.set_title(f"{cve}  |  anchor {anchor_date_str}  (next {horizon}-day forecast)")
+        ax.set_title(f"{cve} | anchor {anchor_date_str} | {context_days}-day context + {horizon}-day forecast")
         ax.set_xlabel("Calendar Date")
         ax.set_ylabel("EPSS probability")
         ax.set_ylim(0, 1)
         ax.grid(True, linestyle=":", linewidth=0.5)
         ax.legend()
+        
+        # Better date formatting for focused view
+        ax.tick_params(axis='x', rotation=45)
+        fig.autofmt_xdate()
         fig.tight_layout()
 
         _ensure_dir(out_path.parent)

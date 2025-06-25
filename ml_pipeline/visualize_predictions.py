@@ -26,7 +26,7 @@ def create_prediction_visualizations():
     """Create comprehensive visualizations of prediction results"""
     
     # Load data
-    netcdf_path = "ml_pipeline/results/predictions/predictions_stream.nc"
+    netcdf_path = "ml_plot/perf/files/predictions_stream.nc"
     if not Path(netcdf_path).exists():
         print(f"❌ Predictions file not found: {netcdf_path}")
         return
