@@ -68,10 +68,15 @@ class CVEIterableDataset(IterableDataset):
 
         self.flag_cols = ["flag_train", "flag_val", "flag_test"]
 
+<<<<<<< HEAD
+        reserved = set(self.cat_cols + self.bool_cols +
+                       self.flag_cols + ["cve", "date", "epss"])
+=======
         # FIXED: Remove 'epss' from reserved set so it becomes an input feature
         # EPSS will be both an input feature AND the target variable
         reserved = set(self.cat_cols + self.bool_cols +
                        self.flag_cols + ["cve", "date"])
+>>>>>>> 52c4e693921fbdf19a151a99f9f5ba90ea274301
         self.num_cols = [
             f.name for f in self._schema
             if f.name not in reserved and

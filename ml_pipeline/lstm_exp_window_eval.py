@@ -50,11 +50,19 @@ LOCAL_CONFIG = {
 }
 
 CLOUD_CONFIG = {
+<<<<<<< HEAD
+    'batch_size': 512,     # 90GB GPU capacity
+    'hidden_size': 512,    # Full model capacity  
+    'lstm_layers': 3,      # Same depth
+    'emb_dim': 8,          # Same embedding size
+    'num_workers': 4,      # Linux multiprocessing optimization
+=======
     'batch_size': 1024,     # 90GB GPU capacity
     'hidden_size': 512,    # Full model capacity  
     'lstm_layers': 3,      # Same depth
     'emb_dim': 8,          # Same embedding size
     'num_workers': 100,      # Linux multiprocessing optimization
+>>>>>>> 52c4e693921fbdf19a151a99f9f5ba90ea274301
 }
 
 # Select configuration based on execution environment
@@ -202,7 +210,11 @@ print("=" * 50)
 torch.manual_seed(0)
 dev = get_device()
 
+<<<<<<< HEAD
+HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 1e-3
+=======
 HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 7, 1e-3
+>>>>>>> 52c4e693921fbdf19a151a99f9f5ba90ea274301
 
 # ──────────────────────── STEP 1: Streaming Dataset Creation ─────────────────────────
 print(f"\n[STEP 1/5] Creating streaming datasets (memory-efficient)...")

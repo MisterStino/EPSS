@@ -1,0 +1,9 @@
+Rows evaluated: 12842
+Accuracy: 53.644%
+Precision/Recall/F1 per class:
+  LOW      P=0.05 R=0.00 F1=0.01  (n=597)
+  MEDIUM   P=0.55 R=0.81 F1=0.66  (n=4976)
+  HIGH     P=0.53 R=0.52 F1=0.52  (n=5218)
+  CRITICAL P=0.43 R=0.09 F1=0.14  (n=2051)
+
+Regression: MAE=1.36 RMSE=1.73 R²=0.079

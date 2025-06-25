@@ -120,7 +120,11 @@ for c in CAT_COLS:
         vocab[c] = {k:i+1 for i,k in enumerate(keys)} | {"UNK":0}
 
 NUMERIC = [f.name for f in df.schema
+<<<<<<< HEAD
+           if f.name not in {"cve","date"}|set(CAT_COLS)
+=======
            if f.name not in {"cve","date","epss"}|set(CAT_COLS)
+>>>>>>> 52c4e693921fbdf19a151a99f9f5ba90ea274301
            and not f.name.startswith("flag_")
            and f.dataType.simpleString() in {"double","float","int","bigint"}]
 
