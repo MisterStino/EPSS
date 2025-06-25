@@ -1,0 +1,19 @@
+VulnerabilitySeverityClassifier Evaluation Results
+============================================================
+
+Evaluation Date: 2025-06-08 12:13:19
+Total Records Evaluated: 13,059
+
+CLASSIFICATION METRICS (Severity Prediction)
+---------------------------------------------
+Overall Accuracy: 0.0000
+Weighted Precision: 0.0000
+Weighted Recall: 0.0000
+Weighted F1-Score: 0.0000
+
+REGRESSION METRICS (CVSS Score Prediction)
+------------------------------------------
+Mean Absolute Error: 1.3503
+Root Mean Squared Error: 1.7424
+R² Score: 0.0829
+Predictions within ±1.0: 49.2%
