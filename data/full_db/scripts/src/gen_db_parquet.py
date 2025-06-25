@@ -109,7 +109,7 @@ def generate_full_database_parquet(modules=['epss'], download_epss=False):
     # # just making sure we have spark session after long run..
     # spark = get_spark_session()
     # List all modules here; 'epss' is the base module
-    modules = ['epss', 'epss_features', 'csaf', 'nvd']  # Add your modules here
+    modules = ['epss', 'epss_features', 'csaf', 'nvd', 'reddit', 'mastodon']  # Add your modules here
     base_module = 'epss'
     
     # Build the path to the base module's Parquet file

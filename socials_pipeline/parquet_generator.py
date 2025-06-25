@@ -3,6 +3,8 @@ from pyspark.sql.functions import (
     col, to_date, trim, lower, first, count as spark_count
 )
 
+from t3_spark.session import get_spark_session
+
 # -----------------------------------------------------------------------------
 # SET THIS TO EITHER "reddit" OR "mastodon"
 # -----------------------------------------------------------------------------
@@ -11,17 +13,7 @@ platform = "reddit"  # or "mastodon"
 # -----------------------------------------------------------------------------
 # STEP 1: Spark session
 # -----------------------------------------------------------------------------
-spark = SparkSession.builder \
-    .appName("UnifiedEPSSPipeline") \
-    .master("local[*]") \
-    .config("spark.driver.memory", "6g") \
-    .config("spark.executor.memory", "6g") \
-    .config("spark.sql.shuffle.partitions", "50") \
-    .config("spark.sql.adaptive.enabled", "true") \
-    .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
-    .config("spark.sql.broadcastTimeout", "3600") \
-    .config("spark.local.dir", "D:/spark-temp") \
-    .getOrCreate()
+spark = get_spark_session()
 
 # -----------------------------------------------------------------------------
 # STEP 2: Load & clean platform-specific data
@@ -90,7 +82,7 @@ print("\n=== STEP 3: Loading and cleaning EPSS data ===")
 
 epss_df = (
     spark.read
-        .parquet("socials_pipeline/minimal_v1_timeseries_sample_checked.parquet")
+        .parquet("data/epss/processed/epss_processed.parquet")
         .filter(col("cve").isNotNull())
         .withColumnRenamed("cve", "cve_id")
         .withColumn("cve_id", lower(trim(col("cve_id"))))
@@ -122,86 +114,89 @@ print(f"FINAL ROW COUNT: {augmented.count():,}")
 # -----------------------------------------------------------------------------
 # STEP 5: Clean the data for model training
 # -----------------------------------------------------------------------------
-output_path = f"parquet_preprocessing/model_input_{platform}.parquet"
+output_path = f"data/reddit/processed/reddit_processed.parquet"
+
+
+# for the final parquet file we store i want to rename the cve_id to cve
 
 selected = [
     "cve_id",
     "date",
     "epss",
-    "age_epss_pub",
-    #"original_date",
-    #"date_parsed",
-    #"cve_date_key",
-    "has_discovery",
-    "has_release",
-    "has_threat",
-    "has_remediation",
-    "event_type_count",
-    #"event_types_list",
-    "dominant_event_type",
-    #"sources_list",
-    "source_count",
-    "primary_source",
-    "has_multi_source",
-    #"doc_ids",
-    #"details_combined",
-    #"details_longest",
-    "total_detail_length",
-    #"event_data_merged",
-    "event_sequence",
-    "days_since_last_event",
-    #"cumulative_source_count",
-    #"same_day_multi_source",
-    "total_events_so_far",
-    #"prev_event_type",
-    #"event_stage_num",
-    #"max_stage_reached",
-    #"reconstruction_timestamp",
-    #"reconstruction_timestamp_raw",
-    #"source_identifier",
-    #"published_date",
-    #"last_modified_date",
-    #"vuln_status",
-    #"cve_tags",
-    "weakness_count",
-    "reference_count",
-    "configuration_count",
-    "primary_cvss_ver",
-    #"primary_cvss_vec",
-    #"primary_cvss_score",
-    #"primary_cvss_sev",
-    #"snapshot_date",
-    "canon_base",
-    #"canon_severity",
-    #"has_v2",
-    #"has_v30",
-    #"has_v31",
-    #"has_v40",
-    "n_cpes",
-    "n_vendors",
-    "is_windows",
-    "is_linux",
-    "is_android",
-    "is_ios",
-    "is_macos",
-    "is_hardware",
-    "is_application",
-    "is_os",
-    "cwe_id",
-    "n_refs",
-   # "description_all",
-    "desc_len_all",
-   # "description_en",
-    #"desc_len_en",
-    #"date_published",
-    #"date_updated",
-    #"cvss_score",
-    #"cvss_version",
-    #"cwes",
-    #"exploitDB_type",
-    #"exploitDB_platform",
-    #"KEV_product",
-    date_col_out, 
+#     "age_epss_pub",
+#     #"original_date",
+#     #"date_parsed",
+#     #"cve_date_key",
+#     "has_discovery",
+#     "has_release",
+#     "has_threat",
+#     "has_remediation",
+#     "event_type_count",
+#     #"event_types_list",
+#     "dominant_event_type",
+#     #"sources_list",
+#     "source_count",
+#     "primary_source",
+#     "has_multi_source",
+#     #"doc_ids",
+#     #"details_combined",
+#     #"details_longest",
+#     "total_detail_length",
+#     #"event_data_merged",
+#     "event_sequence",
+#     "days_since_last_event",
+#     #"cumulative_source_count",
+#     #"same_day_multi_source",
+#     "total_events_so_far",
+#     #"prev_event_type",
+#     #"event_stage_num",
+#     #"max_stage_reached",
+#     #"reconstruction_timestamp",
+#     #"reconstruction_timestamp_raw",
+#     #"source_identifier",
+#     #"published_date",
+#     #"last_modified_date",
+#     #"vuln_status",
+#     #"cve_tags",
+#     "weakness_count",
+#     "reference_count",
+#     "configuration_count",
+#     "primary_cvss_ver",
+#     #"primary_cvss_vec",
+#     #"primary_cvss_score",
+#     #"primary_cvss_sev",
+#     #"snapshot_date",
+#     "canon_base",
+#     #"canon_severity",
+#     #"has_v2",
+#     #"has_v30",
+#     #"has_v31",
+#     #"has_v40",
+#     "n_cpes",
+#     "n_vendors",
+#     "is_windows",
+#     "is_linux",
+#     "is_android",
+#     "is_ios",
+#     "is_macos",
+#     "is_hardware",
+#     "is_application",
+#     "is_os",
+#     "cwe_id",
+#     "n_refs",
+#    # "description_all",
+#     "desc_len_all",
+#    # "description_en",
+#     #"desc_len_en",
+#     #"date_published",
+#     #"date_updated",
+#     #"cvss_score",
+#     #"cvss_version",
+#     #"cwes",
+#     #"exploitDB_type",
+#     #"exploitDB_platform",
+#     #"KEV_product",
+    # date_col_out, 
     day_count_col,
 ]
 
@@ -216,7 +211,7 @@ augmented = augmented.select(*[c for c in selected if c in augmented.columns])
 # STEP 7: Save output
 # -----------------------------------------------------------------------------
 print(f"\n=== STEP 5: Saving to Parquet ===")
-augmented.coalesce(1).write.mode("overwrite").parquet(output_path)
+augmented.withColumnRenamed("cve_id", "cve").write.mode("overwrite").parquet(output_path)
 print(f"✅ Saved to {output_path}")
 
 spark.catalog.clearCache()
