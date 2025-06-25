@@ -2,56 +2,56 @@ epss-env/
 __pycache__/
 
 
-# *.pyc
-# *.csv
-# *.gz
-# *.png
-# *.csv.gz
-# *.pdf
-# *mp4
+*.pyc
+*.csv
+*.gz
+*.png
+*.csv.gz
+*.pdf
+*mp4
 
-# .arrow
-# .pkl
-# *.json
-# *.jsonl
-# *.json.gz
-# *.json.bz2
-# *.json.zip
-# *.json.tar
-# *.json.xz
-# *.ndjson
-# *.geojson
-# *.topojson
-# *.csv
-# *.csv.gz
-# *.csv.bz2
-# *.csv.zip
-# *.csv.tar
-# *.csv.xz
-# *.tsv
+.arrow
+.pkl
+*.json
+*.jsonl
+*.json.gz
+*.json.bz2
+*.json.zip
+*.json.tar
+*.json.xz
+*.ndjson
+*.geojson
+*.topojson
+*.csv
+*.csv.gz
+*.csv.bz2
+*.csv.zip
+*.csv.tar
+*.csv.xz
+*.tsv
 
-# .zip
-# .pkl
-# .arrow
-# .tmp
-# .nc
-# .pt
-# data/epss/raw/
+.zip
+.pkl
+.arrow
+.tmp
+.nc
+.pt
+data/epss/raw/
 
-# data/epss/cve-time-series/
-# data/epss/processed/
+data/epss/cve-time-series/
+data/epss/processed/
 
-# !data/general_utils/files/*small*
+!data/general_utils/files/*small*
 
-# # Ignore all files with the .parquet extension
-# *.parquet
+# Ignore all files with the .parquet extension
+*.parquet
 
-# # Ignore any directory ending with _parquet
-# *_parquet/
-# *.parquet.crc
-# *.crc
-# *_SUCCESS
-# *_SUCCESS.crc
+# Ignore any directory ending with _parquet
+*_parquet/
+*.parquet.crc
+*.crc
+*_SUCCESS
+*_SUCCESS.crc
 
 # Ignore large prediction files
 predictions_fullseq.npz
