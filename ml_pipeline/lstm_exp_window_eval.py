@@ -50,11 +50,11 @@ LOCAL_CONFIG = {
 
 CLOUD_CONFIG = {
     'batch_size': 512,     # 90GB GPU capacity
-    'hidden_size': 768,    # Increased model capacity for better performance  
+    'hidden_size': 1024,   # Increased model capacity for larger node (90GB/80GB/12-core)
     'lstm_layers': 3,      # Same depth
     'emb_dim': 8,          # Same embedding size
-    'num_workers': 4,      # Reduced workers for better memory efficiency
-    'prefetch_factor': 1,  # Reduced queue depth for memory efficiency
+    'num_workers': 10,     # Optimized for 12-core system
+    'prefetch_factor': 2,  # Optimized queue depth for larger node
 }
 
 # Select configuration based on execution environment
@@ -184,7 +184,7 @@ print("=" * 50)
 torch.manual_seed(0)
 dev = get_device()
 
-HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 1e-3
+HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 2e-3  # LR scaled for batch_size=4096 (conservative sub-linear scaling)
 
 # ──────────────────────── STEP 1: Streaming Dataset Creation ─────────────────────────
 print(f"\n[STEP 1/6] Creating streaming datasets (memory-efficient)...")
@@ -319,7 +319,7 @@ tuning_start = time.time()
 # print(f"✓ Model moved back to GPU after Lightning tuning")
 
 # NEW: Set optimized batch size directly for mixed precision training
-MAX_BATCH = 2048  # Increased batch size for better GPU utilization with mixed precision
+MAX_BATCH = 4096  # Optimized batch size for larger node (90GB/80GB/12-core)
 optimal_batch_size = MAX_BATCH
 print(f"✓ Using optimized batch size: {optimal_batch_size} (was {CONFIG['batch_size']})")
 print("✓ Mixed precision training enabled - will use FP16 for better performance")
