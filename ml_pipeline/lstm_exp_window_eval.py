@@ -316,11 +316,13 @@ print(f"✓ Model moved back to GPU after Lightning tuning")
 CONFIG['batch_size'] = optimal_batch_size
 BATCH = optimal_batch_size
 
+# Skip torch.compile() to avoid kernel cache OOM with variable-length sequences
+# Eager mode is more stable for streaming, per-batch-padded RNNs
 if hasattr(torch, "compile") and dev.type == "cuda" and not local_execution:
-    print("  → Compiling model for GPU optimization...")
-    model = torch.compile(model)
+    print("  → Skipping model compilation (avoiding kernel cache OOM with variable lengths)")
+    # model = torch.compile(model)  # DISABLED: causes OOM with variable sequence lengths
 elif local_execution:
-    print("  → Skipping model compilation for local execution")
+    print("  → Running in eager mode (local execution)")
 
 total_params = sum(p.numel() for p in model.parameters())
 trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
