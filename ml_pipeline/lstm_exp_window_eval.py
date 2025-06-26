@@ -36,7 +36,7 @@ from ml_pipeline.training.dataset_iterable_fixed import CVEIterableDatasetFixed,
 
 
 # Define if local or paperspace:
-local_execution  = True
+local_execution  = False
 
 # Hardware-specific configurations
 LOCAL_CONFIG = {
