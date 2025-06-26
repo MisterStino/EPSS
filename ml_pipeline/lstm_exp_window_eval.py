@@ -17,10 +17,11 @@ from tqdm import tqdm
 from functools import partial
 from pathlib import Path
 import pytorch_lightning as pl
+import os
+from torch import amp
 
 # NEW: Import streaming components for memory-efficient training
 import sys
-import os
 
 # Detect execution context and adjust paths accordingly
 is_notebook_execution = os.path.basename(os.getcwd()) != "ml-pipeline"
@@ -33,7 +34,9 @@ else:
 
 from ml_pipeline.training.dataset_iterable_fixed import CVEIterableDatasetFixed, pad_and_mask_fixed
 
-
+# Configure CuDNN workspace limits to prevent OOM issues
+os.environ["CUDNN_WORKSPACE_LIMIT_IN_MB"] = "4096"  # Cap scratch at 4 GB
+torch.backends.cudnn.benchmark = False              # Obey the workspace cap
 
 # Define if local or paperspace:
 local_execution  = False
@@ -65,13 +68,14 @@ print(f"[INFO] Batch: {CONFIG['batch_size']}, Hidden: {CONFIG['hidden_size']}")
 # ──────────────────────────── helpers ───────────────────────────────────────
 def get_device() -> torch.device:
     if torch.cuda.is_available():
-        torch.backends.cudnn.benchmark = True
+        # Note: benchmark=False is set globally for workspace cap compliance
         
         # Tensor-Core optimization for better performance on modern NVIDIA GPUs
         torch.set_float32_matmul_precision("high")
         
         print("[INFO] GPU:", torch.cuda.get_device_name(0))
         print("[INFO] Tensor-Core optimization enabled")
+        print("[INFO] CuDNN workspace capped at 4GB for OOM prevention")
         return torch.device("cuda")
     print("[WARN] CUDA unavailable → CPU")
     return torch.device("cpu")
@@ -184,7 +188,7 @@ print("=" * 50)
 torch.manual_seed(0)
 dev = get_device()
 
-HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 1.6e-3  # LR scaled: 3e-4 × (3072/512) × (896/1024) = 1.6e-3
+HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 1.6e-3 * (4096/3072)  # LR scaled for increased batch size: 1.6e-3 * (4096/3072) ≈ 2.13e-3
 
 # ──────────────────────── STEP 1: Streaming Dataset Creation ─────────────────────────
 print(f"\n[STEP 1/6] Creating streaming datasets (memory-efficient)...")
@@ -319,7 +323,7 @@ tuning_start = time.time()
 # print(f"✓ Model moved back to GPU after Lightning tuning")
 
 # NEW: Set optimized batch size directly for mixed precision training
-MAX_BATCH = 3072  # Adjusted batch size for optimal memory utilization
+MAX_BATCH = 4096  # Increased batch size for better GPU utilization with workspace cap
 HIDDEN_SIZE = 896  # Adjusted hidden size for optimal performance
 optimal_batch_size = MAX_BATCH
 print(f"✓ Using optimized batch size: {optimal_batch_size} (was {CONFIG['batch_size']})")
@@ -397,7 +401,7 @@ for ep in range(1, EPOCHS + 1):
         me = me.to(dev, non_blocking=True)
         # date_pad stays on CPU - not needed for training
         opt.zero_grad()
-        with torch.cuda.amp.autocast():
+        with amp.autocast(device_type="cuda"):
             loss = masked_mse(model(num, boo, cat), Y, mt, mh, me)
         scaler.scale(loss).backward()
         scaler.unscale_(opt)  # Unscale gradients before clipping
@@ -420,7 +424,7 @@ for ep in range(1, EPOCHS + 1):
             mh = mh.to(dev, non_blocking=True)
             me = me.to(dev, non_blocking=True)
             # date_pad stays on CPU - not needed for validation
-            with torch.cuda.amp.autocast():
+            with amp.autocast(device_type="cuda"):
                 va_loss += masked_mse(model(num, boo, cat), Y, mt, mh, me).item()
             va_batches += 1
     va_loss /= va_batches
@@ -446,7 +450,7 @@ with torch.no_grad():
         mh = mh.to(dev, non_blocking=True)
         me = me.to(dev, non_blocking=True)
         # date_pad stays on CPU - not needed for evaluation metrics
-        with torch.cuda.amp.autocast():
+        with amp.autocast(device_type="cuda"):
             P = model(num, boo, cat)
         m = mh * me.unsqueeze(-1)
         err = P - Y
@@ -509,7 +513,7 @@ model.eval()
 with torch.no_grad():
     for num, boo, cat, Y, mt, mh, me, date_pad in tqdm(test_pred_loader, desc="collect preds"):
         # Forward pass with mixed precision
-        with torch.cuda.amp.autocast():
+        with amp.autocast(device_type="cuda"):
             P = model(num.to(dev), boo.to(dev), cat.to(dev)).cpu()
         
         # Store results (remove batch dimension since batch_size=1)
