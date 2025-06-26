@@ -16,6 +16,7 @@ from torch.utils.data import DataLoader  # Removed: Dataset (old approach)
 from tqdm import tqdm
 from functools import partial
 from pathlib import Path
+import pytorch_lightning as pl
 
 # NEW: Import streaming components for memory-efficient training
 import sys
@@ -32,17 +33,14 @@ else:
 
 from ml_pipeline.training.dataset_iterable_fixed import CVEIterableDatasetFixed, pad_and_mask_fixed
 
-# REMOVED DEPENDENCIES (no longer needed):
-# - pandas as pd (no DataFrame processing) 
-# - duckdb (no SQL queries)
-# - sklearn.preprocessing.StandardScaler (preprocessing done offline)
+
 
 # Define if local or paperspace:
 local_execution  = True
 
 # Hardware-specific configurations
 LOCAL_CONFIG = {
-    'batch_size': 64,      # 4GB GPU limit
+    'batch_size': 512,      # 4GB GPU limit
     'hidden_size': 256,    # Reduced model capacity
     'lstm_layers': 2,      # Keep same depth
     'emb_dim': 8,          # Keep same embedding size
@@ -54,7 +52,7 @@ CLOUD_CONFIG = {
     'hidden_size': 512,    # Full model capacity  
     'lstm_layers': 3,      # Same depth
     'emb_dim': 8,          # Same embedding size
-    'num_workers': 4,      # Linux multiprocessing optimization
+    'num_workers': 8,      # Linux multiprocessing optimization
 }
 
 # Select configuration based on execution environment
@@ -66,45 +64,18 @@ print(f"[INFO] Batch: {CONFIG['batch_size']}, Hidden: {CONFIG['hidden_size']}")
 def get_device() -> torch.device:
     if torch.cuda.is_available():
         torch.backends.cudnn.benchmark = True
+        
+        # Tensor-Core optimization for better performance on modern NVIDIA GPUs
+        torch.set_float32_matmul_precision("high")
+        
         print("[INFO] GPU:", torch.cuda.get_device_name(0))
+        print("[INFO] Tensor-Core optimization enabled")
         return torch.device("cuda")
     print("[WARN] CUDA unavailable → CPU")
     return torch.device("cpu")
 
-def transform_epss(arr: np.ndarray,
-                   mode: str = "log",
-                   eps : float = 1e-6) -> np.ndarray:
-    """
-    Stabilised transforms to map [0,1] → ℝ (helps optimisation).
-    Choose one of: "log" | "inverted_log" | "cloglog" | "logit"
-    """
-    p = np.clip(arr.astype("float64"), eps, 1.0 - eps)
-    if   mode == "log":          out = np.log(p)
-    elif mode == "inverted_log": out = -np.log(p)
-    elif mode == "cloglog":      out = np.log(-np.log(1.0 - p))
-    elif mode == "logit":        out = np.log(p / (1.0 - p))
-    else: raise ValueError(mode)
-    return out.astype("float32")
 
-# ───────────────────────── LEGACY COLUMN BOOKKEEPING REMOVED ────────────────
-# OLD APPROACH: Complex DataFrame column management during training
-# - DROP_COLS, TS_SAFE, TS_LEAKY, BOOL_COLS, CAT_COLS definitions
-# - Runtime column filtering and processing
-# 
-# NEW APPROACH: All column handling done offline by 00_build_arrow.py
-# - Preprocessing script handles all column categorization
-# - Training script streams clean, preprocessed data
-# - Vocabulary and dimensions detected dynamically from Arrow file
-# 
-# ELIMINATED: Complex runtime DataFrame schema management
 
-# %%  
-# ───────────────────────────── CELL 2: ARROW FILE STREAMING SETUP ──────────────────
-# NEW APPROACH: Stream from preprocessed Arrow file instead of loading massive DataFrame
-
-# Arrow file path (created by 00_build_arrow.py preprocessing step)
-# ✅ FIXED: Always use ml-pipeline/work/ directory regardless of execution context
-# This ensures consistency with 00_build_arrow.py output location
 WORK_DIR = Path("work") if not is_notebook_execution else Path("./work")
 ARROW_PATH = WORK_DIR / "epss_stage1.arrow"
 VOCAB_PATH = WORK_DIR / "vocab.json"
@@ -125,30 +96,6 @@ print(f"[INFO] Streaming from: {ARROW_PATH}")
 print(f"[INFO] Vocabulary loaded: {len(VOCAB)} categorical columns")
 print(f"[INFO] Memory-efficient streaming approach - no DataFrame loading!")
 
-# %%
-# ───────────────────────────── CELL 3: PREPROCESSING SKIPPED ──────────────────
-# ALL PREPROCESSING IS NOW DONE OFFLINE BY 00_build_arrow.py
-# - Timestamp delta computation 
-# - Calendar-based train/val/test splits
-# - EPSS logit transformation
-# - Boolean column processing
-# - Categorical vocabulary building (train-only)
-# - Numeric standardization (train-only) + missing value handling
-# 
-# This eliminates expensive DataFrame operations from training loop!
-print("[INFO] Preprocessing completed offline - Arrow file contains clean, numeric data")
-
-# %%
-# ───────────────────────────── CELL 5: OLD DATASET CODE REMOVED ──────────────────
-# OLD MEMORY-INTENSIVE APPROACH DELETED:
-# - CVEDataset class (used global padding to L_max=1160)  
-# - collate function (simple tensor stacking)
-# 
-# REPLACED WITH:
-# - CVEIterableDataset (streams from Arrow, per-batch padding)
-# - pad_and_mask collate function (dynamic padding + mask reconstruction)
-# 
-# MEMORY REDUCTION: ~10× less RAM usage (100MB vs 10GB+)
 
 # ───────────────────────────── 6  model ──────────────────────────────────────
 class Seq2SeqLSTM(nn.Module):
@@ -185,6 +132,39 @@ class Seq2SeqLSTM(nn.Module):
         h, _ = self.lstm(x)
         return self.head(h)
 
+# Lightning wrapper that can recreate its own DataLoader for batch size tuning
+class LightningWrapper(pl.LightningModule):
+    def __init__(self, model, dataset, collate_fn, num_workers, batch_size: int = 1024):
+        super().__init__()
+        self.model = model
+        self.dataset = dataset
+        self._collate = collate_fn
+        self._num_workers = num_workers
+        self.save_hyperparameters({"batch_size": batch_size})
+    
+    def forward(self, num, boo, cat):
+        return self.model(num, boo, cat)
+    
+    def training_step(self, batch, batch_idx):
+        num, boo, cat, Y, mt, mh, me, date_pad = batch
+        loss = masked_mse(self.model(num, boo, cat), Y, mt, mh, me)
+        return loss
+    
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=1e-3)
+    
+    # ← CRUCIAL: Lightning calls this to get fresh dataloaders during batch size probing
+    def train_dataloader(self):
+        return DataLoader(
+            self.dataset,
+            batch_size=self.hparams.batch_size,  # Lightning modifies this during tuning
+            shuffle=False,
+            collate_fn=self._collate,
+            num_workers=self._num_workers,
+            pin_memory=self._num_workers > 0,  # Only use pin_memory with multiprocessing
+            persistent_workers=self._num_workers > 0,
+        )
+
 # ───────────────────────────── 7  masked loss ───────────────────────────────
 def masked_mse(pred, true, m_t, m_h, m_eval):
     mask = m_t * m_eval                        # [B,L]
@@ -205,7 +185,7 @@ dev = get_device()
 HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 1e-3
 
 # ──────────────────────── STEP 1: Streaming Dataset Creation ─────────────────────────
-print(f"\n[STEP 1/5] Creating streaming datasets (memory-efficient)...")
+print(f"\n[STEP 1/6] Creating streaming datasets (memory-efficient)...")
 start_time = time.time()
 
 # NEW: Create streaming datasets - no global padding, no DataFrame in memory
@@ -222,24 +202,27 @@ elapsed = time.time() - start_time
 print(f"✓ All streaming datasets created in {elapsed:.1f}s")
 
 # ──────────────────────── STEP 2: DataLoader Creation (Per-Batch Padding) ─────────────────
-print(f"\n[STEP 2/5] Creating data loaders with per-batch padding...")
+print(f"\n[STEP 2/6] Creating data loaders with per-batch padding...")
 start_time = time.time()
 
 # NEW: Use per-batch padding collate function instead of global padding
 # Note: IterableDataset doesn't support shuffle - randomness handled by worker sharding
 tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
                    collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON),
-                   num_workers=CONFIG['num_workers'], pin_memory=True, 
+                   num_workers=CONFIG['num_workers'], 
+                   pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
                    persistent_workers=CONFIG['num_workers'] > 0)
 
 va_ld = DataLoader(va_ds, BATCH, shuffle=False,
                    collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
-                   num_workers=CONFIG['num_workers'], pin_memory=True, 
+                   num_workers=CONFIG['num_workers'], 
+                   pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
                    persistent_workers=CONFIG['num_workers'] > 0)
 
 te_ld = DataLoader(te_ds, BATCH, shuffle=False,
                    collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
-                   num_workers=CONFIG['num_workers'], pin_memory=True, 
+                   num_workers=CONFIG['num_workers'], 
+                   pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
                    persistent_workers=CONFIG['num_workers'] > 0)
 
 elapsed = time.time() - start_time
@@ -247,7 +230,7 @@ print(f"✓ Memory-efficient data loaders ready in {elapsed:.1f}s")
 print(f"✓ Per-batch padding (not global) - massive memory savings!")
 
 # ──────────────────────── STEP 3: Dynamic Model Dimension Detection ─────────────────
-print(f"\n[STEP 3/5] Detecting model dimensions from streaming data...")
+print(f"\n[STEP 3/6] Detecting model dimensions from streaming data...")
 start_time = time.time()
 
 # NEW: Get dimensions from actual streaming data sample (not DataFrame)
@@ -268,7 +251,7 @@ elapsed = time.time() - start_time
 print(f"✓ Dynamic dimensions detected in {elapsed:.1f}s")
 
 # ──────────────────────── STEP 4: Model Setup ───────────────────────────────
-print(f"\n[STEP 4/5] Setting up model with dynamic dimensions...")
+print(f"\n[STEP 4/6] Setting up model with dynamic dimensions...")
 start_time = time.time()
 
 model = Seq2SeqLSTM(
@@ -278,6 +261,50 @@ model = Seq2SeqLSTM(
             horizon   = HORIZON,
             hidden    = CONFIG['hidden_size'],
             layers    = CONFIG['lstm_layers']).to(dev)
+
+# ──────────────────────── STEP 5: Batch Size Tuning ──────────────────
+print(f"\n[STEP 5/6] Auto-tuning batch size for optimal GPU memory usage...")
+tuning_start = time.time()
+
+# ❶ Create Lightning wrapper that can rebuild its own dataloader
+lightning_model = LightningWrapper(
+    model,
+    dataset=tr_ds,  # Pass dataset, not pre-built dataloader
+    collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON),
+    num_workers=CONFIG['num_workers'],
+    batch_size=CONFIG['batch_size']
+)
+
+# ❂ Create plain trainer (no batch-size flag for Lightning 2.5+)
+trainer = pl.Trainer(
+    max_epochs=EPOCHS,  # Explicitly set to silence warning (real training is manual)
+    limit_train_batches=1,
+    logger=False,  # Disable logging for tuning
+    enable_checkpointing=False,  # Disable checkpointing for tuning
+    enable_progress_bar=False  # Disable progress bar for cleaner output
+)
+
+# ❸ Create tuner and scale batch size (NO train_dataloaders argument!)
+tuner = pl.tuner.Tuner(trainer)
+tuner.scale_batch_size(
+    lightning_model,
+    mode="power",              # Doubling strategy (2, 4, 8, 16, ...)
+    init_val=1024,
+)
+
+optimal_batch_size = lightning_model.hparams.batch_size
+print(f"✓ Optimal batch size found: {optimal_batch_size} (was {CONFIG['batch_size']})")
+tuning_elapsed = time.time() - tuning_start
+print(f"✓ Batch size tuning completed in {tuning_elapsed:.1f}s")
+
+# CRITICAL: Lightning moves model back to CPU after tuning - move it back to GPU
+model = lightning_model.model  # Extract the tuned model
+model.to(dev)                  # Move back to GPU for manual training
+print(f"✓ Model moved back to GPU after Lightning tuning")
+
+# Update CONFIG with optimal batch size
+CONFIG['batch_size'] = optimal_batch_size
+BATCH = optimal_batch_size
 
 if hasattr(torch, "compile") and dev.type == "cuda" and not local_execution:
     print("  → Compiling model for GPU optimization...")
@@ -290,10 +317,35 @@ trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 elapsed = time.time() - start_time
 print(f"✓ Model ready: {total_params:,} total params, {trainable_params:,} trainable ({elapsed:.1f}s)")
 
+# Recreate data loaders with optimal batch size
+print(f"\n[RECREATING DATALOADERS] Using optimal batch size: {BATCH}")
+recreate_start = time.time()
+
+tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
+                   collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON),
+                   num_workers=CONFIG['num_workers'], 
+                   pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
+                   persistent_workers=CONFIG['num_workers'] > 0)
+
+va_ld = DataLoader(va_ds, BATCH, shuffle=False,
+                   collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
+                   num_workers=CONFIG['num_workers'], 
+                   pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
+                   persistent_workers=CONFIG['num_workers'] > 0)
+
+te_ld = DataLoader(te_ds, BATCH, shuffle=False,
+                   collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
+                   num_workers=CONFIG['num_workers'], 
+                   pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
+                   persistent_workers=CONFIG['num_workers'] > 0)
+
+recreate_elapsed = time.time() - recreate_start
+print(f"✓ Data loaders recreated with optimal batch size in {recreate_elapsed:.1f}s")
+
 opt = torch.optim.Adam(model.parameters(), lr=LR)
 
-# ──────────────────────── STEP 5: Training ──────────────────────────────────
-print(f"\n[STEP 5/5] Training for {EPOCHS} epochs...")
+# ──────────────────────── STEP 6: Training ──────────────────────────────────
+print(f"\n[STEP 6/6] Training for {EPOCHS} epochs...")
 print("=" * 50)
 
 # Initialize training history tracking
@@ -301,8 +353,14 @@ history = {"epoch": [], "tr_loss": [], "va_loss": []}
 for ep in range(1, EPOCHS + 1):
     model.train(); tr_loss = 0.0; tr_batches = 0
     for num, boo, cat, Y, mt, mh, me, date_pad in tqdm(tr_ld, desc=f"train {ep}/{EPOCHS}"):
-        num, boo, cat, Y, mt, mh, me = (z.to(dev, non_blocking=True)
-                                        for z in (num, boo, cat, Y, mt, mh, me))
+        # Move tensors to device - cat synchronously to avoid embedding race conditions
+        num = num.to(dev, non_blocking=True)
+        boo = boo.to(dev, non_blocking=True)
+        cat = cat.to(dev, non_blocking=False)  # Synchronous for index tensor
+        Y = Y.to(dev, non_blocking=True)
+        mt = mt.to(dev, non_blocking=True)
+        mh = mh.to(dev, non_blocking=True)
+        me = me.to(dev, non_blocking=True)
         # date_pad stays on CPU - not needed for training
         opt.zero_grad()
         loss = masked_mse(model(num, boo, cat), Y, mt, mh, me)
@@ -316,8 +374,14 @@ for ep in range(1, EPOCHS + 1):
     model.eval(); va_loss = 0.0; va_batches = 0
     with torch.no_grad():
         for num, boo, cat, Y, mt, mh, me, date_pad in va_ld:
-            num, boo, cat, Y, mt, mh, me = (z.to(dev, non_blocking=True)
-                                            for z in (num, boo, cat, Y, mt, mh, me))
+            # Move tensors to device - cat synchronously to avoid embedding race conditions
+            num = num.to(dev, non_blocking=True)
+            boo = boo.to(dev, non_blocking=True)
+            cat = cat.to(dev, non_blocking=False)  # Synchronous for index tensor
+            Y = Y.to(dev, non_blocking=True)
+            mt = mt.to(dev, non_blocking=True)
+            mh = mh.to(dev, non_blocking=True)
+            me = me.to(dev, non_blocking=True)
             # date_pad stays on CPU - not needed for validation
             va_loss += masked_mse(model(num, boo, cat), Y, mt, mh, me).item()
             va_batches += 1
@@ -335,8 +399,14 @@ print("=" * 50)
 model.eval(); tot_mse = tot_mae = tot_n = 0.0
 with torch.no_grad():
     for num, boo, cat, Y, mt, mh, me, date_pad in te_ld:
-        num, boo, cat, Y, mt, mh, me = (z.to(dev, non_blocking=True)
-                                        for z in (num, boo, cat, Y, mt, mh, me))
+        # Move tensors to device - cat synchronously to avoid embedding race conditions
+        num = num.to(dev, non_blocking=True)
+        boo = boo.to(dev, non_blocking=True)
+        cat = cat.to(dev, non_blocking=False)  # Synchronous for index tensor
+        Y = Y.to(dev, non_blocking=True)
+        mt = mt.to(dev, non_blocking=True)
+        mh = mh.to(dev, non_blocking=True)
+        me = me.to(dev, non_blocking=True)
         # date_pad stays on CPU - not needed for evaluation metrics
         P = model(num, boo, cat)
         m = mh * me.unsqueeze(-1)

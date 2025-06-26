@@ -32,7 +32,7 @@ __pycache__/
 *.tsv
 
 .zip
-.pkl
+*.pkl
 .arrow
 .tmp
 .nc
