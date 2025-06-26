@@ -434,6 +434,11 @@ print("\n" + "=" * 50)
 print("💾 SAVING RESULTS")
 print("=" * 50)
 
+# CRITICAL FIX: Ensure directories exist before saving
+from pathlib import Path
+Path("ml_pipeline/results/predictions").mkdir(parents=True, exist_ok=True)
+print("✓ Results directories created/verified")
+
 # Save training history to CSV
 import pandas as pd
 history_df = pd.DataFrame(history)
