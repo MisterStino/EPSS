@@ -100,23 +100,6 @@ class PipelineRunner:
             self.error("Pipeline execution stopped")
             return False
     
-    def check_prerequisites(self) -> bool:
-        """Check if all prerequisites are met"""
-        # Check if we're in the right directory
-        presort_path = Path("ml_pipeline/data_prep/presort.py")
-        if not presort_path.exists():
-            self.error("Please run this script from the project root directory")
-            self.error(f"Expected to find: {presort_path}")
-            return False
-        
-        # Check if required data file exists
-        data_path = Path("data/full_db/v1/data/minimal_v1_timeseries_sample.parquet")
-        if not data_path.exists():
-            self.error(f"Required data file not found: {data_path}")
-            self.error("Please ensure the data file exists before running the pipeline")
-            return False
-        
-        return True
     
     def run_pipeline(self) -> bool:
         """
@@ -134,9 +117,6 @@ class PipelineRunner:
         print("=" * 40)
         print()
         
-        # Check prerequisites
-        if not self.check_prerequisites():
-            return False
         
         # Define pipeline steps
         pipeline_steps = [
