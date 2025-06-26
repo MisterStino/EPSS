@@ -52,7 +52,7 @@ CLOUD_CONFIG = {
     'hidden_size': 512,    # Full model capacity  
     'lstm_layers': 3,      # Same depth
     'emb_dim': 8,          # Same embedding size
-    'num_workers': 8,      # Linux multiprocessing optimization
+    'num_workers': 6,      # Linux multiprocessing optimization
 }
 
 # Select configuration based on execution environment
@@ -284,13 +284,23 @@ trainer = pl.Trainer(
     enable_progress_bar=False  # Disable progress bar for cleaner output
 )
 
-# ❸ Create tuner and scale batch size (NO train_dataloaders argument!)
+# ❸ Create tuner and scale batch size with controlled limits
+import math
+
+MAX_BATCH = 1024          # Upper limit for batch size
+INIT_VAL  = 512           # First value the tuner will try
+
 tuner = pl.tuner.Tuner(trainer)
 tuner.scale_batch_size(
     lightning_model,
-    mode="power",              # Doubling strategy (2, 4, 8, 16, ...)
-    init_val=1024,
+    mode="power",              # Doubling strategy (512 → 1024)
+    init_val=INIT_VAL,
+    # Stop after log2(MAX_BATCH / INIT_VAL) successful doublings
+    max_trials=int(math.log2(MAX_BATCH // INIT_VAL)),
 )
+
+# Just in case: never let the tuned value exceed the cap
+lightning_model.hparams.batch_size = min(lightning_model.hparams.batch_size, MAX_BATCH)
 
 optimal_batch_size = lightning_model.hparams.batch_size
 print(f"✓ Optimal batch size found: {optimal_batch_size} (was {CONFIG['batch_size']})")
