@@ -1,4 +1,3 @@
-# %%
 #!/usr/bin/env python
 # lstm_epss_fullsequence_cuda_v3.py
 """
@@ -11,16 +10,19 @@ Feature-rich, leakage-proof EPSS forecaster - STREAMING MEMORY-EFFICIENT VERSION
 """
 
 # ───────────────────────────── CELL 1: IMPORTS & SETUP ──────────────────────
+# Configure CuDNN workspace limits BEFORE importing torch for safety
+import os
+os.environ["CUDNN_WORKSPACE_LIMIT_IN_MB"] = "4096"  # Cap scratch at 4 GB
+
 import json, numpy as np, torch, torch.nn as nn
+torch.backends.cudnn.benchmark = False              # Obey the workspace cap
+
 from torch.utils.data import DataLoader  # Removed: Dataset (old approach)
 from tqdm import tqdm
 from functools import partial
 from pathlib import Path
 import pytorch_lightning as pl
-import os
 from torch import amp
-
-# NEW: Import streaming components for memory-efficient training
 import sys
 
 # Detect execution context and adjust paths accordingly
@@ -33,10 +35,6 @@ else:
     sys.path.append('training')
 
 from ml_pipeline.training.dataset_iterable_fixed import CVEIterableDatasetFixed, pad_and_mask_fixed
-
-# Configure CuDNN workspace limits to prevent OOM issues
-os.environ["CUDNN_WORKSPACE_LIMIT_IN_MB"] = "4096"  # Cap scratch at 4 GB
-torch.backends.cudnn.benchmark = False              # Obey the workspace cap
 
 # Define if local or paperspace:
 local_execution  = False
