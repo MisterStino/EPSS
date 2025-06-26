@@ -36,7 +36,7 @@ from ml_pipeline.training.dataset_iterable_fixed import CVEIterableDatasetFixed,
 
 
 # Define if local or paperspace:
-local_execution  = False
+local_execution  = True
 
 # Hardware-specific configurations
 LOCAL_CONFIG = {
@@ -45,14 +45,16 @@ LOCAL_CONFIG = {
     'lstm_layers': 2,      # Keep same depth
     'emb_dim': 8,          # Keep same embedding size
     'num_workers': 0,      # Windows multiprocessing fix
+    'prefetch_factor': 1,  # Reduced queue depth for memory efficiency
 }
 
 CLOUD_CONFIG = {
     'batch_size': 512,     # 90GB GPU capacity
-    'hidden_size': 512,    # Full model capacity  
+    'hidden_size': 768,    # Increased model capacity for better performance  
     'lstm_layers': 3,      # Same depth
     'emb_dim': 8,          # Same embedding size
-    'num_workers': 6,      # Linux multiprocessing optimization
+    'num_workers': 4,      # Reduced workers for better memory efficiency
+    'prefetch_factor': 1,  # Reduced queue depth for memory efficiency
 }
 
 # Select configuration based on execution environment
@@ -211,19 +213,22 @@ tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
                    collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON),
                    num_workers=CONFIG['num_workers'], 
                    pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                   persistent_workers=CONFIG['num_workers'] > 0)
+                   persistent_workers=CONFIG['num_workers'] > 0,
+                   prefetch_factor=CONFIG['prefetch_factor'])
 
 va_ld = DataLoader(va_ds, BATCH, shuffle=False,
                    collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
                    num_workers=CONFIG['num_workers'], 
                    pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                   persistent_workers=CONFIG['num_workers'] > 0)
+                   persistent_workers=CONFIG['num_workers'] > 0,
+                   prefetch_factor=CONFIG['prefetch_factor'])
 
 te_ld = DataLoader(te_ds, BATCH, shuffle=False,
                    collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
                    num_workers=CONFIG['num_workers'], 
                    pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                   persistent_workers=CONFIG['num_workers'] > 0)
+                   persistent_workers=CONFIG['num_workers'] > 0,
+                   prefetch_factor=CONFIG['prefetch_factor'])
 
 elapsed = time.time() - start_time
 print(f"✓ Memory-efficient data loaders ready in {elapsed:.1f}s")
@@ -263,54 +268,61 @@ model = Seq2SeqLSTM(
             layers    = CONFIG['lstm_layers']).to(dev)
 
 # ──────────────────────── STEP 5: Batch Size Tuning ──────────────────
-print(f"\n[STEP 5/6] Auto-tuning batch size for optimal GPU memory usage...")
+print(f"\n[STEP 5/6] Setting up optimized batch size and mixed precision...")
 tuning_start = time.time()
 
+# COMMENTED OUT: Lightning batch size tuning - using fixed optimized batch size instead
 # ❶ Create Lightning wrapper that can rebuild its own dataloader
-lightning_model = LightningWrapper(
-    model,
-    dataset=tr_ds,  # Pass dataset, not pre-built dataloader
-    collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON),
-    num_workers=CONFIG['num_workers'],
-    batch_size=CONFIG['batch_size']
-)
+# lightning_model = LightningWrapper(
+#     model,
+#     dataset=tr_ds,  # Pass dataset, not pre-built dataloader
+#     collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON),
+#     num_workers=CONFIG['num_workers'],
+#     batch_size=CONFIG['batch_size']
+# )
 
 # ❂ Create plain trainer (no batch-size flag for Lightning 2.5+)
-trainer = pl.Trainer(
-    max_epochs=EPOCHS,  # Explicitly set to silence warning (real training is manual)
-    limit_train_batches=1,
-    logger=False,  # Disable logging for tuning
-    enable_checkpointing=False,  # Disable checkpointing for tuning
-    enable_progress_bar=False  # Disable progress bar for cleaner output
-)
+# trainer = pl.Trainer(
+#     max_epochs=EPOCHS,  # Explicitly set to silence warning (real training is manual)
+#     limit_train_batches=1,
+#     logger=False,  # Disable logging for tuning
+#     enable_checkpointing=False,  # Disable checkpointing for tuning
+#     enable_progress_bar=False  # Disable progress bar for cleaner output
+# )
 
-# ❸ Create tuner and scale batch size with controlled limits
-import math
+# ❃ Create tuner and scale batch size with controlled limits
+# import math
 
-MAX_BATCH = 1024          # Upper limit for batch size
-INIT_VAL  = 512           # First value the tuner will try
+# MAX_BATCH = 1024          # Upper limit for batch size
+# INIT_VAL  = 512           # First value the tuner will try
 
-tuner = pl.tuner.Tuner(trainer)
-tuner.scale_batch_size(
-    lightning_model,
-    mode="power",              # Doubling strategy (512 → 1024)
-    init_val=INIT_VAL,
-    # Stop after log2(MAX_BATCH / INIT_VAL) successful doublings
-    max_trials=int(math.log2(MAX_BATCH // INIT_VAL)),
-)
+# tuner = pl.tuner.Tuner(trainer)
+# tuner.scale_batch_size(
+#     lightning_model,
+#     mode="power",              # Doubling strategy (512 → 1024)
+#     init_val=INIT_VAL,
+#     # Stop after log2(MAX_BATCH / INIT_VAL) successful doublings
+#     max_trials=int(math.log2(MAX_BATCH // INIT_VAL)),
+# )
 
 # Just in case: never let the tuned value exceed the cap
-lightning_model.hparams.batch_size = min(lightning_model.hparams.batch_size, MAX_BATCH)
+# lightning_model.hparams.batch_size = min(lightning_model.hparams.batch_size, MAX_BATCH)
 
-optimal_batch_size = lightning_model.hparams.batch_size
-print(f"✓ Optimal batch size found: {optimal_batch_size} (was {CONFIG['batch_size']})")
-tuning_elapsed = time.time() - tuning_start
-print(f"✓ Batch size tuning completed in {tuning_elapsed:.1f}s")
+# optimal_batch_size = lightning_model.hparams.batch_size
+# print(f"✓ Optimal batch size found: {optimal_batch_size} (was {CONFIG['batch_size']})")
+# tuning_elapsed = time.time() - tuning_start
+# print(f"✓ Batch size tuning completed in {tuning_elapsed:.1f}s")
 
 # CRITICAL: Lightning moves model back to CPU after tuning - move it back to GPU
-model = lightning_model.model  # Extract the tuned model
-model.to(dev)                  # Move back to GPU for manual training
-print(f"✓ Model moved back to GPU after Lightning tuning")
+# model = lightning_model.model  # Extract the tuned model
+# model.to(dev)                  # Move back to GPU for manual training
+# print(f"✓ Model moved back to GPU after Lightning tuning")
+
+# NEW: Set optimized batch size directly for mixed precision training
+MAX_BATCH = 2048  # Increased batch size for better GPU utilization with mixed precision
+optimal_batch_size = MAX_BATCH
+print(f"✓ Using optimized batch size: {optimal_batch_size} (was {CONFIG['batch_size']})")
+print("✓ Mixed precision training enabled - will use FP16 for better performance")
 
 # Update CONFIG with optimal batch size
 CONFIG['batch_size'] = optimal_batch_size
@@ -337,27 +349,35 @@ tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
                    collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON),
                    num_workers=CONFIG['num_workers'], 
                    pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                   persistent_workers=CONFIG['num_workers'] > 0)
+                   persistent_workers=CONFIG['num_workers'] > 0,
+                   prefetch_factor=CONFIG['prefetch_factor'])
 
 va_ld = DataLoader(va_ds, BATCH, shuffle=False,
                    collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
                    num_workers=CONFIG['num_workers'], 
                    pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                   persistent_workers=CONFIG['num_workers'] > 0)
+                   persistent_workers=CONFIG['num_workers'] > 0,
+                   prefetch_factor=CONFIG['prefetch_factor'])
 
 te_ld = DataLoader(te_ds, BATCH, shuffle=False,
                    collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
                    num_workers=CONFIG['num_workers'], 
                    pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                   persistent_workers=CONFIG['num_workers'] > 0)
+                   persistent_workers=CONFIG['num_workers'] > 0,
+                   prefetch_factor=CONFIG['prefetch_factor'])
 
 recreate_elapsed = time.time() - recreate_start
 print(f"✓ Data loaders recreated with optimal batch size in {recreate_elapsed:.1f}s")
 
 opt = torch.optim.Adam(model.parameters(), lr=LR)
 
+# ──────────────────────── MIXED PRECISION SETUP ─────────────────────────
+# Initialize gradient scaler for mixed precision training
+scaler = torch.cuda.amp.GradScaler()
+print("✓ Mixed precision gradient scaler initialized")
+
 # ──────────────────────── STEP 6: Training ──────────────────────────────────
-print(f"\n[STEP 6/6] Training for {EPOCHS} epochs...")
+print(f"\n[STEP 6/6] Training for {EPOCHS} epochs with mixed precision...")
 print("=" * 50)
 
 # Initialize training history tracking
@@ -375,10 +395,13 @@ for ep in range(1, EPOCHS + 1):
         me = me.to(dev, non_blocking=True)
         # date_pad stays on CPU - not needed for training
         opt.zero_grad()
-        loss = masked_mse(model(num, boo, cat), Y, mt, mh, me)
-        loss.backward()
-        nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        opt.step()
+        with torch.cuda.amp.autocast():
+            loss = masked_mse(model(num, boo, cat), Y, mt, mh, me)
+        scaler.scale(loss).backward()
+        scaler.unscale_(opt)  # Unscale gradients before clipping
+        nn.utils.clip_grad_norm_(model.parameters(), 1.0)  # Gradient clipping
+        scaler.step(opt)
+        scaler.update()
         tr_loss += loss.item()
         tr_batches += 1
     tr_loss /= tr_batches
@@ -395,7 +418,8 @@ for ep in range(1, EPOCHS + 1):
             mh = mh.to(dev, non_blocking=True)
             me = me.to(dev, non_blocking=True)
             # date_pad stays on CPU - not needed for validation
-            va_loss += masked_mse(model(num, boo, cat), Y, mt, mh, me).item()
+            with torch.cuda.amp.autocast():
+                va_loss += masked_mse(model(num, boo, cat), Y, mt, mh, me).item()
             va_batches += 1
     va_loss /= va_batches
     print(f"epoch {ep:02d}  train {tr_loss:.4f}  val {va_loss:.4f}")
@@ -420,7 +444,8 @@ with torch.no_grad():
         mh = mh.to(dev, non_blocking=True)
         me = me.to(dev, non_blocking=True)
         # date_pad stays on CPU - not needed for evaluation metrics
-        P = model(num, boo, cat)
+        with torch.cuda.amp.autocast():
+            P = model(num, boo, cat)
         m = mh * me.unsqueeze(-1)
         err = P - Y
         tot_mse += (err.pow(2) * m).sum().item()
@@ -470,7 +495,8 @@ te_ds.collected_cve_ids.clear()
 test_pred_loader = DataLoader(
     te_ds, batch_size=1, shuffle=False,
     collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
-    num_workers=0  # Single worker for deterministic CVE order
+    num_workers=0,  # Single worker for deterministic CVE order
+    prefetch_factor=1  # Consistent with optimized configuration
 )
 
 # Collect predictions, ground truth, masks, and metadata
@@ -480,8 +506,9 @@ print("  → Collecting predictions from test set...")
 model.eval()
 with torch.no_grad():
     for num, boo, cat, Y, mt, mh, me, date_pad in tqdm(test_pred_loader, desc="collect preds"):
-        # Forward pass
-        P = model(num.to(dev), boo.to(dev), cat.to(dev)).cpu()
+        # Forward pass with mixed precision
+        with torch.cuda.amp.autocast():
+            P = model(num.to(dev), boo.to(dev), cat.to(dev)).cpu()
         
         # Store results (remove batch dimension since batch_size=1)
         pred_list.append(P[0])          # [L, H]
