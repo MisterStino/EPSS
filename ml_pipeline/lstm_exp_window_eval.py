@@ -186,7 +186,7 @@ print("=" * 50)
 torch.manual_seed(0)
 dev = get_device()
 
-HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 1.6e-3 * (4096/3072)  # LR scaled for increased batch size: 1.6e-3 * (4096/3072) ≈ 2.13e-3
+HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 1.6e-3 * (2688/3072)  # LR scaled for batch size 2688: 1.6e-3 * (2688/3072) ≈ 1.40e-3
 
 # ──────────────────────── STEP 1: Streaming Dataset Creation ─────────────────────────
 print(f"\n[STEP 1/6] Creating streaming datasets (memory-efficient)...")
@@ -321,8 +321,8 @@ tuning_start = time.time()
 # print(f"✓ Model moved back to GPU after Lightning tuning")
 
 # NEW: Set optimized batch size directly for mixed precision training
-MAX_BATCH = 4096  # Increased batch size for better GPU utilization with workspace cap
-HIDDEN_SIZE = 896  # Adjusted hidden size for optimal performance
+MAX_BATCH = 2688  # Batch size in range 2304-2688 as specified
+HIDDEN_SIZE = 896  # Hidden size set to 896 as specified
 optimal_batch_size = MAX_BATCH
 print(f"✓ Using optimized batch size: {optimal_batch_size} (was {CONFIG['batch_size']})")
 print("✓ Mixed precision training enabled - will use FP16 for better performance")
