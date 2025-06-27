@@ -60,7 +60,7 @@ CLOUD_CONFIG = {
     'hidden_size': 896,    # Adjusted model capacity for optimized performance
     'lstm_layers': 3,      # Same depth
     'emb_dim': 8,          # Same embedding size
-    'num_workers': 16,     # Increased for better GPU saturation (was 10)
+    'num_workers': 10,     # Increased for better GPU saturation (was 10)
     'prefetch_factor': 4,  # Increased for better pipeline efficiency (was 2)
 }
 
