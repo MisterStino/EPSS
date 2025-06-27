@@ -148,7 +148,7 @@ class LightningWrapper(pl.LightningModule):
         return self.model(num, boo, cat)
     
     def training_step(self, batch, batch_idx):
-        num, boo, cat, Y, mt, mh, me, date_pad = batch
+        num, boo, cat, Y, mt, mh, me, date_pad, lengths = batch
         loss = masked_mse(self.model(num, boo, cat), Y, mt, mh, me)
         return loss
     
@@ -384,7 +384,7 @@ print("=" * 50)
 history = {"epoch": [], "tr_loss": [], "va_loss": []}
 for ep in range(1, EPOCHS + 1):
     model.train(); tr_loss = 0.0; tr_batches = 0
-    for num, boo, cat, Y, mt, mh, me, date_pad in tqdm(tr_ld, desc=f"train {ep}/{EPOCHS}"):
+    for num, boo, cat, Y, mt, mh, me, date_pad, lengths in tqdm(tr_ld, desc=f"train {ep}/{EPOCHS}"):
         # Move tensors to device - cat synchronously to avoid embedding race conditions
         num = num.to(dev, non_blocking=True)
         boo = boo.to(dev, non_blocking=True)
@@ -408,7 +408,7 @@ for ep in range(1, EPOCHS + 1):
 
     model.eval(); va_loss = 0.0; va_batches = 0
     with torch.no_grad():
-        for num, boo, cat, Y, mt, mh, me, date_pad in va_ld:
+        for num, boo, cat, Y, mt, mh, me, date_pad, lengths in va_ld:
             # Move tensors to device - cat synchronously to avoid embedding race conditions
             num = num.to(dev, non_blocking=True)
             boo = boo.to(dev, non_blocking=True)
@@ -434,7 +434,7 @@ print("🎯 FINAL EVALUATION")
 print("=" * 50)
 model.eval(); tot_mse = tot_mae = tot_n = 0.0
 with torch.no_grad():
-    for num, boo, cat, Y, mt, mh, me, date_pad in te_ld:
+    for num, boo, cat, Y, mt, mh, me, date_pad, lengths in te_ld:
         # Move tensors to device - cat synchronously to avoid embedding race conditions
         num = num.to(dev, non_blocking=True)
         boo = boo.to(dev, non_blocking=True)
@@ -505,7 +505,7 @@ pred_list, true_list, mh_list, me_list, date_list = [], [], [], [], []
 print("  → Collecting predictions from test set...")
 model.eval()
 with torch.no_grad():
-    for num, boo, cat, Y, mt, mh, me, date_pad in tqdm(test_pred_loader, desc="collect preds"):
+    for num, boo, cat, Y, mt, mh, me, date_pad, lengths in tqdm(test_pred_loader, desc="collect preds"):
         # Forward pass with mixed precision
         with torch.cuda.amp.autocast():
             P = model(num.to(dev), boo.to(dev), cat.to(dev)).cpu()
