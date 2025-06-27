@@ -84,7 +84,7 @@ class CVEIterableDatasetFixed(IterableDataset):
         self.flag_cols = ["flag_train", "flag_val", "flag_test"]
 
         reserved = set(self.cat_cols + self.bool_cols +
-                       self.flag_cols + ["cve", "date", "epss"])
+                       self.flag_cols + ["cve", "date"])  # EPSS now included as input feature
         self.num_cols = [
             f.name for f in self._schema
             if f.name not in reserved and

@@ -144,6 +144,11 @@ for c in NUMERIC:
              .withColumn(c, F.when(F.col(c).isNull(), -100.0)
                                .otherwise(((F.col(c)-μ[c])/σ[c]).cast("float"))))
 
+# EPSS: Keep unscaled but handle missing values
+df = (df.withColumn("epss_missing", F.col("epss").isNull().cast("boolean"))
+        .withColumn("epss", F.when(F.col("epss").isNull(), 0.0)
+                              .otherwise(F.col("epss").cast("float"))))
+
 # Boolean columns - includes sparse event features!
 BOOL_COLS = lambda df: [c for c in df.columns
                         if c.startswith(("has_", "is_"))

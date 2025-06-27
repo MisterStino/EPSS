@@ -49,8 +49,8 @@ LOCAL_CONFIG = {
 }
 
 CLOUD_CONFIG = {
-    'batch_size': 256,     # 90GB GPU capacity
-    'hidden_size': 500,    # Increased model capacity for better performance  
+    'batch_size': 512,     # 90GB GPU capacity
+    'hidden_size': 768,    # Increased model capacity for better performance  
     'lstm_layers': 3,      # Same depth
     'emb_dim': 8,          # Same embedding size
     'num_workers': 4,      # Reduced workers for better memory efficiency
@@ -496,7 +496,7 @@ test_pred_loader = DataLoader(
     te_ds, batch_size=1, shuffle=False,
     collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
     num_workers=0,  # Single worker for deterministic CVE order
-    # prefetch_factor omitted when num_workers=0 (single-threaded mode)
+    prefetch_factor=1  # Consistent with optimized configuration
 )
 
 # Collect predictions, ground truth, masks, and metadata
