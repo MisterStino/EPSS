@@ -120,7 +120,7 @@ for c in CAT_COLS:
         vocab[c] = {k:i+1 for i,k in enumerate(keys)} | {"UNK":0}
 
 NUMERIC = [f.name for f in df.schema
-           if f.name not in {"cve","date","epss"}|set(CAT_COLS)
+           if f.name not in {"cve","date"}|set(CAT_COLS)  # Include EPSS in standardization
            and not f.name.startswith("flag_")
            and f.dataType.simpleString() in {"double","float","int","bigint"}]
 
@@ -144,10 +144,8 @@ for c in NUMERIC:
              .withColumn(c, F.when(F.col(c).isNull(), -100.0)
                                .otherwise(((F.col(c)-μ[c])/σ[c]).cast("float"))))
 
-# EPSS: Keep unscaled but handle missing values
-df = (df.withColumn("epss_missing", F.col("epss").isNull().cast("boolean"))
-        .withColumn("epss", F.when(F.col("epss").isNull(), 0.0)
-                              .otherwise(F.col("epss").cast("float"))))
+# EPSS is now included in NUMERIC and will be standardized above
+# No separate handling needed - it gets the same treatment as other numerical features
 
 # Boolean columns - includes sparse event features!
 BOOL_COLS = lambda df: [c for c in df.columns

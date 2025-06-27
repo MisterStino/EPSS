@@ -64,9 +64,7 @@ print(f"[INFO] Batch: {CONFIG['batch_size']}, Hidden: {CONFIG['hidden_size']}")
 
 # ──────────────────────────── helpers ───────────────────────────────────────
 def get_device() -> torch.device:
-    if torch.cuda.is_available():
-        torch.backends.cudnn.benchmark = True
-        
+    if torch.cuda.is_available():        
         # Tensor-Core optimization for better performance on modern NVIDIA GPUs
         torch.set_float32_matmul_precision("high")
         
