@@ -14,7 +14,7 @@ Feature-rich, leakage-proof EPSS forecaster - STREAMING MEMORY-EFFICIENT VERSION
 import os
 os.environ["CUDNN_WORKSPACE_LIMIT_IN_MB"] = "4096"  # Cap scratch at 4 GB
 # Configure PyTorch memory allocator to prevent fragmentation
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:64,expandable_segments:True"
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:64"
 
 import json, numpy as np, torch, torch.nn as nn
 torch.backends.cudnn.benchmark = False              # Obey the workspace cap
