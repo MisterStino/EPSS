@@ -13,9 +13,15 @@ Feature-rich, leakage-proof EPSS forecaster - STREAMING MEMORY-EFFICIENT VERSION
 # Configure CuDNN workspace limits BEFORE importing torch for safety
 import os
 os.environ["CUDNN_WORKSPACE_LIMIT_IN_MB"] = "4096"  # Cap scratch at 4 GB
+# Configure PyTorch memory allocator to prevent fragmentation
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:64,expandable_segments:True"
 
 import json, numpy as np, torch, torch.nn as nn
 torch.backends.cudnn.benchmark = False              # Obey the workspace cap
+
+# Enable TF32 for better performance on Ampere+ GPUs
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
 
 from torch.utils.data import DataLoader  # Removed: Dataset (old approach)
 from tqdm import tqdm
@@ -54,8 +60,8 @@ CLOUD_CONFIG = {
     'hidden_size': 896,    # Adjusted model capacity for optimized performance
     'lstm_layers': 3,      # Same depth
     'emb_dim': 8,          # Same embedding size
-    'num_workers': 10,     # Optimized for 12-core system
-    'prefetch_factor': 2,  # Optimized queue depth for larger node
+    'num_workers': 16,     # Increased for better GPU saturation (was 10)
+    'prefetch_factor': 4,  # Increased for better pipeline efficiency (was 2)
 }
 
 # Select configuration based on execution environment
@@ -64,9 +70,9 @@ print(f"[INFO] Using {'LOCAL' if local_execution else 'CLOUD'} configuration:")
 print(f"[INFO] Batch: {CONFIG['batch_size']}, Hidden: {CONFIG['hidden_size']}")
 
 # === put right below your CONFIG block ===
-MAX_BATCH   = 2304          # ≤2688 to stay under workspace cap
-HIDDEN_SIZE = 832
-LR          = 1.6e-3 * (MAX_BATCH/3072)  # = 0.0012
+MAX_BATCH   = 768           # Optimal for persistent RNN kernels (H×B ≤ 8192×1536)
+HIDDEN_SIZE = 768           # Optimal for persistent RNN kernels
+LR          = 1.6e-3 * (MAX_BATCH/3072)  # = 0.0004 (scaled for smaller batch)
 CONFIG['batch_size']  = MAX_BATCH
 CONFIG['hidden_size'] = HIDDEN_SIZE
 BATCH = MAX_BATCH
@@ -125,7 +131,7 @@ class Seq2SeqLSTM(nn.Module):
                             batch_first=True, dropout=dropout)
         self.head = nn.Linear(hidden, horizon)
 
-    def forward(self, num, boo, cat):
+    def forward(self, num, boo, cat, lens=None):
         # Handle case where no categorical embeddings exist
         if len(self.emb):                           # tiny micro-perf
             cat = cat.long()                        # ⚠ NEW: ensure correct dtype
@@ -141,7 +147,22 @@ class Seq2SeqLSTM(nn.Module):
             x = torch.cat([num, boo.float(), e], dim=-1)
         else:
             x = torch.cat([num, boo.float()], dim=-1)
-        h, _ = self.lstm(x)
+        
+        # Use packed sequences for better performance if lengths provided
+        if lens is not None:
+            # Pack sequences to skip computation on padding tokens
+            packed = nn.utils.rnn.pack_padded_sequence(
+                x, lens.cpu(), batch_first=True, enforce_sorted=False
+            )
+            h_packed, _ = self.lstm(packed)
+            # Unpack back to original padded format
+            h, _ = nn.utils.rnn.pad_packed_sequence(
+                h_packed, batch_first=True, total_length=lens.max()
+            )
+        else:
+            # Fallback to standard LSTM (for backward compatibility)
+            h, _ = self.lstm(x)
+            
         return self.head(h)
 
 # Lightning wrapper that can recreate its own DataLoader for batch size tuning
@@ -254,7 +275,7 @@ sample_batch = next(iter(tr_ld))
 n_num = sample_batch[0].shape[-1]   # Numeric features dimension 
 n_bool = sample_batch[1].shape[-1]  # Boolean features dimension
 n_cat = sample_batch[2].shape[-1]   # Categorical features dimension
-# Note: sample_batch now has 8 elements (added date_pad), but we only need first 3 for dimensions
+# Note: sample_batch now has 9 elements (added lengths), but we only need first 3 for dimensions
 
 # Get categorical vocabulary sizes for embeddings
 cat_sizes = [len(VOCAB[col]) for col in VOCAB.keys()]
@@ -376,7 +397,7 @@ te_ld = DataLoader(te_ds, BATCH, shuffle=False,
 recreate_elapsed = time.time() - recreate_start
 print(f"✓ Data loaders recreated with optimal batch size in {recreate_elapsed:.1f}s")
 
-opt = torch.optim.Adam(model.parameters(), lr=LR)
+opt = torch.optim.AdamW(model.parameters(), lr=LR, fused=True)
 
 # ──────────────────────── MIXED PRECISION SETUP ─────────────────────────
 # Initialize gradient scaler for mixed precision training
@@ -384,14 +405,24 @@ scaler = torch.cuda.amp.GradScaler()
 print("✓ Mixed precision gradient scaler initialized")
 
 # ──────────────────────── STEP 6: Training ──────────────────────────────────
-print(f"\n[STEP 6/6] Training for {EPOCHS} epochs with mixed precision...")
+print(f"\n[STEP 6/6] Training for {EPOCHS} epochs with optimized performance...")
+print("=" * 50)
+
+# Print optimization summary
+print("🚀 PERFORMANCE OPTIMIZATIONS ENABLED:")
+print("  ✓ Packed sequences (skip padding computation)")
+print("  ✓ Persistent RNN kernels (optimal batch×hidden size)")
+print("  ✓ Fused AdamW optimizer")
+print("  ✓ TF32 + Mixed precision (FP16)")
+print("  ✓ Memory fragmentation prevention")
+print("  ✓ Increased DataLoader workers/prefetch")
 print("=" * 50)
 
 # Initialize training history tracking
 history = {"epoch": [], "tr_loss": [], "va_loss": []}
 for ep in range(1, EPOCHS + 1):
     model.train(); tr_loss = 0.0; tr_batches = 0
-    for num, boo, cat, Y, mt, mh, me, date_pad in tqdm(tr_ld, desc=f"train {ep}/{EPOCHS}"):
+    for num, boo, cat, Y, mt, mh, me, date_pad, lens in tqdm(tr_ld, desc=f"train {ep}/{EPOCHS}"):
         # Move tensors to device - cat synchronously to avoid embedding race conditions
         num = num.to(dev, non_blocking=True)
         boo = boo.to(dev, non_blocking=True)
@@ -400,10 +431,11 @@ for ep in range(1, EPOCHS + 1):
         mt = mt.to(dev, non_blocking=True)
         mh = mh.to(dev, non_blocking=True)
         me = me.to(dev, non_blocking=True)
+        lens = lens.to(dev, non_blocking=True)  # Sequence lengths for packed sequences
         # date_pad stays on CPU - not needed for training
         opt.zero_grad()
         with amp.autocast(device_type="cuda"):
-            loss = masked_mse(model(num, boo, cat), Y, mt, mh, me)
+            loss = masked_mse(model(num, boo, cat, lens), Y, mt, mh, me)
         scaler.scale(loss).backward()
         scaler.unscale_(opt)  # Unscale gradients before clipping
         nn.utils.clip_grad_norm_(model.parameters(), 1.0)  # Gradient clipping
@@ -415,7 +447,7 @@ for ep in range(1, EPOCHS + 1):
 
     model.eval(); va_loss = 0.0; va_batches = 0
     with torch.no_grad():
-        for num, boo, cat, Y, mt, mh, me, date_pad in va_ld:
+        for num, boo, cat, Y, mt, mh, me, date_pad, lens in va_ld:
             # Move tensors to device - cat synchronously to avoid embedding race conditions
             num = num.to(dev, non_blocking=True)
             boo = boo.to(dev, non_blocking=True)
@@ -424,9 +456,10 @@ for ep in range(1, EPOCHS + 1):
             mt = mt.to(dev, non_blocking=True)
             mh = mh.to(dev, non_blocking=True)
             me = me.to(dev, non_blocking=True)
+            lens = lens.to(dev, non_blocking=True)  # Sequence lengths for packed sequences
             # date_pad stays on CPU - not needed for validation
             with amp.autocast(device_type="cuda"):
-                va_loss += masked_mse(model(num, boo, cat), Y, mt, mh, me).item()
+                va_loss += masked_mse(model(num, boo, cat, lens), Y, mt, mh, me).item()
             va_batches += 1
     va_loss /= va_batches
     print(f"epoch {ep:02d}  train {tr_loss:.4f}  val {va_loss:.4f}")
@@ -441,7 +474,7 @@ print("🎯 FINAL EVALUATION")
 print("=" * 50)
 model.eval(); tot_mse = tot_mae = tot_n = 0.0
 with torch.no_grad():
-    for num, boo, cat, Y, mt, mh, me, date_pad in te_ld:
+    for num, boo, cat, Y, mt, mh, me, date_pad, lens in te_ld:
         # Move tensors to device - cat synchronously to avoid embedding race conditions
         num = num.to(dev, non_blocking=True)
         boo = boo.to(dev, non_blocking=True)
@@ -450,9 +483,10 @@ with torch.no_grad():
         mt = mt.to(dev, non_blocking=True)
         mh = mh.to(dev, non_blocking=True)
         me = me.to(dev, non_blocking=True)
+        lens = lens.to(dev, non_blocking=True)  # Sequence lengths for packed sequences
         # date_pad stays on CPU - not needed for evaluation metrics
         with amp.autocast(device_type="cuda"):
-            P = model(num, boo, cat)
+            P = model(num, boo, cat, lens)
         m = mh * me.unsqueeze(-1)
         err = P - Y
         tot_mse += (err.pow(2) * m).sum().item()
@@ -512,10 +546,17 @@ pred_list, true_list, mh_list, me_list, date_list = [], [], [], [], []
 print("  → Collecting predictions from test set...")
 model.eval()
 with torch.no_grad():
-    for num, boo, cat, Y, mt, mh, me, date_pad in tqdm(test_pred_loader, desc="collect preds"):
-        # Forward pass with mixed precision
-        with amp.autocast(device_type="cuda"):
-            P = model(num.to(dev), boo.to(dev), cat.to(dev)).cpu()
+    for batch_data in tqdm(test_pred_loader, desc="collect preds"):
+        if len(batch_data) == 9:  # New format with lengths
+            num, boo, cat, Y, mt, mh, me, date_pad, lens = batch_data
+            # Forward pass with packed sequences
+            with amp.autocast(device_type="cuda"):
+                P = model(num.to(dev), boo.to(dev), cat.to(dev), lens.to(dev)).cpu()
+        else:  # Backward compatibility - old format without lengths
+            num, boo, cat, Y, mt, mh, me, date_pad = batch_data
+            # Forward pass without packed sequences
+            with amp.autocast(device_type="cuda"):
+                P = model(num.to(dev), boo.to(dev), cat.to(dev)).cpu()
         
         # Store results (remove batch dimension since batch_size=1)
         pred_list.append(P[0])          # [L, H]

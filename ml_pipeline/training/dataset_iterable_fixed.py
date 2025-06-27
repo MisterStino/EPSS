@@ -242,7 +242,10 @@ def pad_and_mask_fixed(batch: Sequence[Tuple[torch.Tensor, ...]],
     # Dates are already in nanoseconds, just pad them
     date_pad = pad(dates, 0)
 
-    return num_pad, boo_pad, cat_pad, Y_pad, mT_pad, mH_pad, mE_pad, date_pad
+    # Return sequence lengths for packed sequence optimization
+    lengths_tensor = torch.tensor(lengths, dtype=torch.long)
+
+    return num_pad, boo_pad, cat_pad, Y_pad, mT_pad, mH_pad, mE_pad, date_pad, lengths_tensor
 
 
 # ─────────────────────────── smoke test ─────────────────────────
@@ -250,7 +253,7 @@ if __name__ == "__main__":
     from torch.utils.data import DataLoader
     from functools import partial
 
-    ARROW = Path(__file__).resolve().parent.parent / "work" / "epss_stage1.arrow"
+    ARROW = Path(__file__).resolve().parent.parent / "data_prep" / "work" / "epss_stage1.arrow"
     
     print("Testing PRODUCTION dataset loader...")
     ds = CVEIterableDatasetFixed(ARROW, horizon=30)
@@ -268,9 +271,14 @@ if __name__ == "__main__":
     print(f"✓ Batch shapes: {[t.shape for t in batch]}")
     
     # Check date conversion
-    dates = batch[-1]  # date_pad
+    dates = batch[-2]  # date_pad (second to last, since last is lengths)
     print(f"✓ Date sample (as nanoseconds): {dates[0, :5]}")
     print(f"✓ Date sample (as datetime): {dates[0, :5].numpy().view('datetime64[ns]')}")
+    
+    # Check lengths tensor
+    lengths = batch[-1]  # lengths tensor
+    print(f"✓ Lengths tensor: {lengths}")
+    print(f"✓ Total tensors returned: {len(batch)}")
     
     # Test multi-worker determinism (if available)
     try:
