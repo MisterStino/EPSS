@@ -565,10 +565,20 @@ ds = xr.Dataset(
     }
 )
 
-# Save to NetCDF with compression
+# Save to NetCDF with backend-appropriate settings
 netcdf_path = "ml_pipeline/results/predictions/predictions_stream.nc"
-encoding = {var: {"zlib": True, "complevel": 3} for var in ds.data_vars}
-ds.to_netcdf(netcdf_path, encoding=encoding)
+
+# Check which backend is available and set encoding accordingly
+try:
+    import netCDF4
+    # netCDF4 backend supports compression
+    encoding = {var: {"zlib": True, "complevel": 3} for var in ds.data_vars}
+    print("  → Using netCDF4 backend with compression")
+    ds.to_netcdf(netcdf_path, encoding=encoding, engine='netcdf4')
+except ImportError:
+    # scipy backend - no compression support
+    print("  → Using scipy backend (no compression)")
+    ds.to_netcdf(netcdf_path, engine='scipy')
 
 print(f"✓ Detailed predictions saved: {netcdf_path}")
 print(f"✓ Dataset shape: {len(cve_ids)} CVEs × {L_max} timesteps × {HORIZON} horizons")
