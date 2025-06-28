@@ -64,7 +64,7 @@ print(f"[INFO] Batch: {CONFIG['batch_size']}, Hidden: {CONFIG['hidden_size']}")
 
 # ──────────────────────────── helpers ───────────────────────────────────────
 def get_device() -> torch.device:
-    if torch.cuda.is_available():        
+    if torch.cuda.is_available():
         # Tensor-Core optimization for better performance on modern NVIDIA GPUs
         torch.set_float32_matmul_precision("high")
         
@@ -543,6 +543,12 @@ DT_numpy = DT_padded.numpy()
 DT_numpy[DT_numpy == 0] = np.datetime64("NaT").view("int64")  # Replace padding with NaT
 dates_2d = DT_numpy.view("datetime64[ns]")  # [N, L_max]
 
+P_padded = P_padded.float()   # float16 → float32 (NetCDF can’t store f16)
+T_padded = T_padded.float()   # keep pred & true the same dtype
+# quick guard (optional)
+assert P_padded.dtype == torch.float32
+### END CAST ──────────────────────────────
+
 # Get CVE IDs (collected during iteration)
 cve_ids = te_ds.collected_cve_ids
 print(f"  → CVE IDs collected: {len(cve_ids)}")
@@ -550,6 +556,10 @@ print(f"  → CVE IDs collected: {len(cve_ids)}")
 # Create xarray Dataset
 import xarray as xr
 import numpy as np
+
+
+
+
 
 ds = xr.Dataset(
     data_vars={
@@ -573,7 +583,7 @@ try:
     import netCDF4
     # netCDF4 backend supports compression
     encoding = {var: {"zlib": True, "complevel": 3} for var in ds.data_vars}
-    print("  → Using netCDF4 backend with compression")
+    print("→ Using netCDF4 backend with compression")
     ds.to_netcdf(netcdf_path, encoding=encoding, engine='netcdf4')
 except ImportError:
     # scipy backend - no compression support
