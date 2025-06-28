@@ -269,52 +269,6 @@ model = Seq2SeqLSTM(
 print(f"\n[STEP 5/6] Setting up optimized batch size and mixed precision...")
 tuning_start = time.time()
 
-# COMMENTED OUT: Lightning batch size tuning - using fixed optimized batch size instead
-# ❶ Create Lightning wrapper that can rebuild its own dataloader
-# lightning_model = LightningWrapper(
-#     model,
-#     dataset=tr_ds,  # Pass dataset, not pre-built dataloader
-#     collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON),
-#     num_workers=CONFIG['num_workers'],
-#     batch_size=CONFIG['batch_size']
-# )
-
-# ❂ Create plain trainer (no batch-size flag for Lightning 2.5+)
-# trainer = pl.Trainer(
-#     max_epochs=EPOCHS,  # Explicitly set to silence warning (real training is manual)
-#     limit_train_batches=1,
-#     logger=False,  # Disable logging for tuning
-#     enable_checkpointing=False,  # Disable checkpointing for tuning
-#     enable_progress_bar=False  # Disable progress bar for cleaner output
-# )
-
-# ❃ Create tuner and scale batch size with controlled limits
-# import math
-
-# MAX_BATCH = 1024          # Upper limit for batch size
-# INIT_VAL  = 512           # First value the tuner will try
-
-# tuner = pl.tuner.Tuner(trainer)
-# tuner.scale_batch_size(
-#     lightning_model,
-#     mode="power",              # Doubling strategy (512 → 1024)
-#     init_val=INIT_VAL,
-#     # Stop after log2(MAX_BATCH / INIT_VAL) successful doublings
-#     max_trials=int(math.log2(MAX_BATCH // INIT_VAL)),
-# )
-
-# Just in case: never let the tuned value exceed the cap
-# lightning_model.hparams.batch_size = min(lightning_model.hparams.batch_size, MAX_BATCH)
-
-# optimal_batch_size = lightning_model.hparams.batch_size
-# print(f"✓ Optimal batch size found: {optimal_batch_size} (was {CONFIG['batch_size']})")
-# tuning_elapsed = time.time() - tuning_start
-# print(f"✓ Batch size tuning completed in {tuning_elapsed:.1f}s")
-
-# CRITICAL: Lightning moves model back to CPU after tuning - move it back to GPU
-# model = lightning_model.model  # Extract the tuned model
-# model.to(dev)                  # Move back to GPU for manual training
-# print(f"✓ Model moved back to GPU after Lightning tuning")
 
 # NEW: Set optimized batch size directly for mixed precision training
 MAX_BATCH = 2048  # Increased batch size for better GPU utilization with mixed precision
@@ -517,6 +471,39 @@ with torch.no_grad():
 
 print(f"  → Collected {len(pred_list)} CVE sequences")
 
+
+# ────────────────────────────────────────────────────────────────────────────
+# Fallback: dump raw variable-length tensors to a compressed NPZ archive
+# ────────────────────────────────────────────────────────────────────────────
+try:
+    import numpy as np, time, uuid, os
+    from pathlib import Path
+
+    fallback_dir = Path("ml_pipeline/results/fallback_raw")
+    fallback_dir.mkdir(parents=True, exist_ok=True)
+
+    stamp      = time.strftime("%Y%m%d-%H%M%S")
+    tmp_name   = fallback_dir / f"pred_raw_{stamp}_{uuid.uuid4().hex}.npz.tmp"
+    final_npz  = tmp_name.with_suffix(".npz")          # atomic target
+
+    np.savez_compressed(
+        tmp_name,
+        pred       =[p.cpu().numpy() for p in pred_list],
+        true       =[t.cpu().numpy() for t in true_list],
+        mask_h     =[m.cpu().numpy() for m in mh_list],
+        eval_mask  =[m.cpu().numpy() for m in me_list],
+        dates      =[d.cpu().numpy() for d in date_list],
+        cve_ids    =np.array(te_ds.collected_cve_ids, dtype=object),
+    )
+
+    os.replace(tmp_name, final_npz)   # atomic rename
+    print(f"✓ Fallback NPZ written: {final_npz}")
+except:
+    print("error saving the raw fallback predictions")
+
+## end fallback
+
+
 # Pad all sequences to same length for rectangular array
 L_max = max(t.shape[0] for t in pred_list)
 print(f"  → Maximum sequence length: {L_max}")
@@ -543,12 +530,6 @@ DT_numpy = DT_padded.numpy()
 DT_numpy[DT_numpy == 0] = np.datetime64("NaT").view("int64")  # Replace padding with NaT
 dates_2d = DT_numpy.view("datetime64[ns]")  # [N, L_max]
 
-P_padded = P_padded.float()   # float16 → float32 (NetCDF can’t store f16)
-T_padded = T_padded.float()   # keep pred & true the same dtype
-# quick guard (optional)
-assert P_padded.dtype == torch.float32
-### END CAST ──────────────────────────────
-
 # Get CVE IDs (collected during iteration)
 cve_ids = te_ds.collected_cve_ids
 print(f"  → CVE IDs collected: {len(cve_ids)}")
@@ -556,10 +537,6 @@ print(f"  → CVE IDs collected: {len(cve_ids)}")
 # Create xarray Dataset
 import xarray as xr
 import numpy as np
-
-
-
-
 
 ds = xr.Dataset(
     data_vars={
@@ -583,9 +560,9 @@ try:
     import netCDF4
     # netCDF4 backend supports compression
     encoding = {var: {"zlib": True, "complevel": 3} for var in ds.data_vars}
-    print("→ Using netCDF4 backend with compression")
+    print("  → Using netCDF4 backend with compression")
     ds.to_netcdf(netcdf_path, encoding=encoding, engine='netcdf4')
-except ImportError:
+except:
     # scipy backend - no compression support
     print("  → Using scipy backend (no compression)")
     ds.to_netcdf(netcdf_path, engine='scipy')
@@ -594,3 +571,4 @@ print(f"✓ Detailed predictions saved: {netcdf_path}")
 print(f"✓ Dataset shape: {len(cve_ids)} CVEs × {L_max} timesteps × {HORIZON} horizons")
 print(f"✓ Variables: predictions, ground truth, horizon mask, eval mask")
 print(f"✓ Coordinates: CVE IDs, calendar dates, forecast horizons")
+# %%
