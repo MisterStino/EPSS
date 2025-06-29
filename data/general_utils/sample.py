@@ -167,11 +167,8 @@ def truncate_time_series_by_date(
     original_cves = df.select("cve").distinct().count()
     print(f"[INFO] original : {original_rows:,} rows  | {original_cves:,} CVEs")
 
-    # filter + cache so we scan the data only once afterwards
-    df_filt = (
-        df.filter(F.col("date").between(start_date, end_date))
-          .cache()
-    )
+    # filter data within date range (no caching to avoid memory pressure)
+    df_filt = df.filter(F.col("date").between(start_date, end_date))
 
     filtered_rows = df_filt.count()
     filtered_cves = df_filt.select("cve").distinct().count()
@@ -306,20 +303,303 @@ def sample_high_epss_and_jumps(
     spark.stop()
 
 
+
+
+from functools import reduce
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+
+def sample_by_temporal_behavior(
+    input_path: str = "data/full_db/processed/final_full_data.parquet",
+    output_path: str = "data/full_db/sampled/temporal_behavior_sampled.parquet",
+    type_a_rate: float = 1.0,    # Keep 100% of high-dynamic CVEs
+    type_b_rate: float = 0.3,    # Keep 30% of medium-dynamic CVEs  
+    type_c_rate: float = 0.05,   # Keep 5% of low-dynamic CVEs
+    stop_session: bool = True,
+    verbose: bool = True
+):
+    """
+    Sample CVEs based on temporal behavior patterns to improve LSTM training.
+    
+    This function addresses the core problem where LSTM models learn static patterns
+    instead of temporal dynamics by strategically filtering the training data to
+    emphasize CVEs with meaningful temporal variation.
+    
+    CVE Behavior Types:
+    - Type A (High-Dynamic): amplitude >= 0.5 OR max_epss >= 0.7
+    - Type B (Medium-Dynamic): 0.1 <= amplitude < 0.5 AND max_epss < 0.7  
+    - Type C (Low-Dynamic): amplitude < 0.1 AND max_epss < 0.7
+    - Type D (High-Risk Static): amplitude < 0.3 AND min_epss >= 0.7
+    
+    Output Dataset:
+    - Same schema as input + 'behavior_type' column indicating CVE classification
+    - Each row (cve, date) includes the behavior type for that CVE
+    - Enables analysis of model performance by temporal behavior pattern
+    
+    Parameters:
+    -----------
+    input_path : str
+        Path to the full dataset Parquet file in long format
+    output_path : str
+        Path to write the filtered dataset Parquet file
+    type_a_rate : float
+        Sampling rate for Type A CVEs (default 1.0 = keep all)
+    type_b_rate : float
+        Sampling rate for Type B CVEs (default 0.3 = keep 30%)
+    type_c_rate : float
+        Sampling rate for Type C CVEs (default 0.05 = keep 5%)
+    stop_session : bool
+        Whether to stop Spark session after completion
+    verbose : bool
+        Whether to print detailed progress information
+        
+    Returns:
+    --------
+    dict
+        Summary statistics about the sampling process including behavior type distribution
+    """
+    
+    # Initialize Spark session with optimized configuration
+    spark = get_spark_session()
+    
+    if verbose:
+        print(f"[INFO] 🚀 Starting temporal behavior-based sampling")
+        print(f"[INFO] Input: {input_path}")
+        print(f"[INFO] Output: {output_path}")
+        print(f"[INFO] Sampling rates - Type A: {type_a_rate:.1%}, Type B: {type_b_rate:.1%}, Type C: {type_c_rate:.1%}")
+    
+    # ==========================================
+    # STEP 1: Load and validate data
+    # ==========================================
+    
+    if verbose:
+        print(f"\n[STEP 1] 📁 Loading data from {input_path}")
+    
+    df = spark.read.parquet(input_path)
+    
+    # Ensure proper data types
+    df = df.withColumn("date", F.to_date("date"))
+    df = df.withColumn("epss", F.col("epss").cast("double"))
+    
+    # Basic validation
+    original_rows = df.count()
+    original_cves = df.select("cve").distinct().count()
+    
+    if verbose:
+        print(f"[INFO] ✅ Loaded {original_rows:,} rows with {original_cves:,} unique CVEs")
+    
+    # Validate required columns exist
+    required_cols = {"cve", "date", "epss"}
+    actual_cols = set(df.columns)
+    missing_cols = required_cols - actual_cols
+    if missing_cols:
+        raise ValueError(f"Missing required columns: {missing_cols}")
+    
+    # ==========================================
+    # STEP 2: Compute CVE variability metrics
+    # ==========================================
+    
+    if verbose:
+        print(f"\n[STEP 2] 📊 Computing temporal variability metrics per CVE")
+    
+    # 2a. Basic statistics per CVE
+    cve_stats_df = df.groupBy("cve").agg(
+        F.min("date").alias("first_seen"),
+        F.max("date").alias("last_seen"),
+        F.count("*").alias("observations"),
+        F.avg("epss").alias("avg_epss"),
+        F.min("epss").alias("min_epss"),
+        F.max("epss").alias("max_epss")
+    )
+    
+    # 2b. Add EPSS amplitude (total range)
+    cve_stats_df = cve_stats_df.withColumn(
+        "amplitude", F.col("max_epss") - F.col("min_epss")
+    )
+    
+    # 2c. Standard deviation per CVE
+    epss_stddev_df = df.groupBy("cve").agg(
+        F.stddev("epss").alias("epss_stddev")
+    )
+    
+    # 2d. Maximum one-day jump (temporal volatility)
+    window_spec = Window.partitionBy("cve").orderBy("date")
+    df_with_lag = df.withColumn("prev_epss", F.lag("epss").over(window_spec))
+    df_with_lag = df_with_lag.withColumn("epss_jump", F.abs(F.col("epss") - F.col("prev_epss")))
+    max_jump_df = df_with_lag.groupBy("cve").agg(
+        F.max("epss_jump").alias("max_one_day_jump")
+    )
+    
+    # 2e. Combine all variability metrics
+    dfs_to_join = [cve_stats_df, epss_stddev_df, max_jump_df]
+    final_cve_variability_df = reduce(
+        lambda left, right: left.join(right, on="cve", how="left"), 
+        dfs_to_join
+    )
+    
+    if verbose:
+        print(f"[INFO] ✅ Computed variability metrics for {final_cve_variability_df.count():,} CVEs")
+    
+    # ==========================================
+    # STEP 3: Classify CVEs by behavior type
+    # ==========================================
+    
+    if verbose:
+        print(f"\n[STEP 3] 🏷️  Classifying CVEs by temporal behavior patterns")
+    
+    # Apply behavior classification logic
+    final_labeled_df = final_cve_variability_df.withColumn(
+        "behavior_type",
+        F.when((F.col("amplitude") >= 0.5) | (F.col("max_epss") >= 0.7), "Type A")
+        .when((F.col("amplitude") >= 0.1) & (F.col("amplitude") < 0.5) & (F.col("max_epss") < 0.7), "Type B")
+        .when((F.col("amplitude") < 0.1) & (F.col("max_epss") < 0.7), "Type C")
+        .when((F.col("amplitude") < 0.3) & (F.col("min_epss") >= 0.7), "Type D")
+        .otherwise("Unclassified")
+    )
+    
+    # Get behavior type counts
+    behavior_counts = final_labeled_df.groupBy("behavior_type").count().collect()
+    behavior_dict = {row.behavior_type: row["count"] for row in behavior_counts}
+    
+    if verbose:
+        print(f"[INFO] 📈 CVE Behavior Classification:")
+        for behavior_type in ["Type A", "Type B", "Type C", "Type D", "Unclassified"]:
+            count = behavior_dict.get(behavior_type, 0)
+            pct = (count / original_cves) * 100
+            print(f"[INFO]   {behavior_type}: {count:,} CVEs ({pct:.1f}%)")
+    
+    # ==========================================  
+    # STEP 4: Strategic sampling by behavior type
+    # ==========================================
+    
+    if verbose:
+        print(f"\n[STEP 4] 🎯 Strategic sampling by behavior type")
+    
+    # Sample each type according to specified rates
+    type_a_df = final_labeled_df.filter(F.col("behavior_type") == "Type A")
+    type_b_full = final_labeled_df.filter(F.col("behavior_type") == "Type B")
+    type_c_full = final_labeled_df.filter(F.col("behavior_type") == "Type C")
+    type_d_df = final_labeled_df.filter(F.col("behavior_type") == "Type D")
+    
+    # Apply sampling rates
+    type_a_sampled = type_a_df.orderBy(F.rand()).limit(int(type_a_df.count() * type_a_rate))
+    type_b_sampled = type_b_full.orderBy(F.rand()).limit(int(type_b_full.count() * type_b_rate))  
+    type_c_sampled = type_c_full.orderBy(F.rand()).limit(int(type_c_full.count() * type_c_rate))
+    type_d_sampled = type_d_df.orderBy(F.rand()).limit(int(type_d_df.count() * 1.0))  # Keep all Type D
+    
+    # Combine selected CVEs (preserving behavior type)
+    training_cve_ids_df = (
+        type_a_sampled.select("cve", "behavior_type")
+        .unionByName(type_b_sampled.select("cve", "behavior_type"))
+        .unionByName(type_c_sampled.select("cve", "behavior_type"))
+        .unionByName(type_d_sampled.select("cve", "behavior_type"))
+        .distinct()
+    )
+    
+    selected_cves = training_cve_ids_df.count()
+    
+    if verbose:
+        print(f"[INFO] 📊 Sampling Results:")
+        print(f"[INFO]   Type A sampled: {type_a_sampled.count():,} / {type_a_df.count():,} ({type_a_rate:.1%})")
+        print(f"[INFO]   Type B sampled: {type_b_sampled.count():,} / {type_b_full.count():,} ({type_b_rate:.1%})")
+        print(f"[INFO]   Type C sampled: {type_c_sampled.count():,} / {type_c_full.count():,} ({type_c_rate:.1%})")
+        print(f"[INFO]   Type D sampled: {type_d_sampled.count():,} / {type_d_df.count():,} (100.0%)")
+        print(f"[INFO]   Total CVEs selected: {selected_cves:,}")
+    
+    # ==========================================
+    # STEP 5: Filter full time series and save
+    # ==========================================
+    
+    if verbose:
+        print(f"\n[STEP 5] 💾 Filtering full time series and saving")
+    
+    # Join with full time series to get all rows for selected CVEs
+    training_time_series_df = df.join(training_cve_ids_df, on="cve", how="inner")
+    
+    # Final validation
+    final_rows = training_time_series_df.count()
+    final_cves = training_time_series_df.select("cve").distinct().count()
+    
+    # Validate behavior type distribution in final dataset
+    final_behavior_dist = training_time_series_df.select("cve", "behavior_type").distinct().groupBy("behavior_type").count().collect()
+    final_behavior_dict = {row.behavior_type: row["count"] for row in final_behavior_dist}
+    
+    # Save the filtered dataset
+    training_time_series_df.write.mode("overwrite").parquet(output_path)
+    
+    if verbose:
+        print(f"[INFO] ✅ Saved filtered dataset to: {output_path}")
+        print(f"[INFO] 📊 Final dataset: {final_rows:,} rows with {final_cves:,} CVEs")
+        print(f"[INFO] 📉 Data reduction: {(1 - final_rows/original_rows):.1%} fewer rows, {(1 - final_cves/original_cves):.1%} fewer CVEs")
+        print(f"[INFO] 🏷️  Final behavior type distribution:")
+        for behavior_type in ["Type A", "Type B", "Type C", "Type D"]:
+            count = final_behavior_dict.get(behavior_type, 0)
+            pct = (count / final_cves) * 100 if final_cves > 0 else 0
+            print(f"[INFO]   {behavior_type}: {count:,} CVEs ({pct:.1f}% of final dataset)")
+    
+    # ==========================================
+    # STEP 6: Return summary statistics
+    # ==========================================
+    
+    summary_stats = {
+        "original_rows": original_rows,
+        "original_cves": original_cves,
+        "final_rows": final_rows,
+        "final_cves": final_cves,
+        "type_a_selected": type_a_sampled.count(),
+        "type_b_selected": type_b_sampled.count(), 
+        "type_c_selected": type_c_sampled.count(),
+        "type_d_selected": type_d_sampled.count(),
+        "total_selected": selected_cves,
+        "row_reduction_pct": (1 - final_rows/original_rows) * 100,
+        "cve_reduction_pct": (1 - final_cves/original_cves) * 100,
+        "final_behavior_distribution": final_behavior_dict,
+        "behavior_type_preserved": True  # Flag indicating behavior type is in final dataset
+    }
+    
+    if stop_session:
+        spark.stop()
+    
+    if verbose:
+        print(f"\n[INFO] 🎉 Temporal behavior sampling completed successfully!")
+        print(f"[INFO] Summary statistics: {summary_stats}")
+    
+    return summary_stats
+
+
 if __name__ == "__main__":
+
+    # Optional: Apply temporal truncation if needed
+    # truncate_time_series_by_date(
+    #     input_path="data/full_db/processed/final_full_data.parquet",
+    #     output_path="data/full_db/sampled/final_full_data_v3_v4truncated.parquet",
+    #     start_date="2023-03-08",
+    #     end_date="2025-04-15"
+    # )
+    # Example: Use temporal behavior sampling to improve LSTM training
+    stats = sample_by_temporal_behavior(
+        input_path="data/full_db/sampled/final_full_data_v3_v4truncated.parquet",
+        output_path="data/full_db/sampled/temporal_behavior_training.parquet",
+        type_a_rate=1.0,   # Keep all high-dynamic CVEs
+        type_b_rate=0.3,   # Keep 30% of medium-dynamic CVEs
+        type_c_rate=0.05,  # Keep 5% of low-dynamic CVEs
+        verbose=True
+    )
+    
+    # Optional: Apply temporal truncation if needed
+    # truncate_time_series_by_date(
+    #     input_path="data/full_db/sampled/temporal_behavior_training.parquet",
+    #     output_path="data/prod/final_full_data_v3_v4truncated_csaf_social.parquet",
+    #     start_date="2023-03-08",
+    #     end_date="2025-04-15"
+    # )
+    
+    # Legacy sampling methods (commented out)
     # sample_9000_cve_timeseries()
-    # Sample 30k CVEs from your minimal dataset
-    sample_high_epss_and_jumps(
-        input_path="data/full_db/processed/final_full_data.parquet",
-        output_path="data/full_db/prod/prod.parquet",
-        num_cve=2000
-    )
-
-    truncate_time_series_by_date(
-        input_path="data/full_db/prod/prod.parquet",
-        output_path="data/prod/final_full_data_v3_v4truncated_csaf_social.parquet",
-        start_date="2023-03-08",
-        end_date="2025-04-15"
-    )
-
+    # sample_high_epss_and_jumps(
+    #     input_path="data/full_db/processed/final_full_data.parquet",
+    #     output_path="data/full_db/prod/prod.parquet",
+    #     num_cve=2000
+    # )
     # sample_1000_cve_timeseries(num_cve=80000)
