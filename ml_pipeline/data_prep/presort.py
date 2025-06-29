@@ -26,7 +26,7 @@ spark = (SparkSession.builder
 
 # Use environment variable for data path, with fallback to default
 import os
-DEFAULT_DATA_PATH = "training_dataset_prod.parquet"
+DEFAULT_DATA_PATH = "data/full_db/sampled/training_dataset.parquet"
 RAW = norm(os.getenv("EPSS_DATA_PATH", DEFAULT_DATA_PATH))
 print(f"[INPUT] Using data from: {RAW}")  
 OUTDIR  = Path("ml_pipeline/data_prep/work")
@@ -50,11 +50,12 @@ DROP_COLS = [
     "original_date", 
     "reconstruction_timestamp",
     "reconstruction_timestamp_raw",
+    "date_parsed",
+    "sources_list",
     
     # Truly empty (100% missing - never populated)
     "dominant_event_type",
     "primary_source", 
-    
     
     # Mostly empty lists/counts
     "event_types_list",
@@ -70,6 +71,54 @@ DROP_COLS = [
     
     # Duplicate counts
     "reference_count",  # Same as n_refs
+    
+    # Redundant CVSS columns (versions captured elsewhere)
+    "has_v2",
+    "has_v30", 
+    "has_v31",
+    "has_v40",
+    "primary_cvss_score",
+    "primary_cvss_sev",
+    
+    # Redundant metadata
+    "max_stage_reached",
+    "desc_len_en",
+    
+    # All missing indicator columns (redundant with -100.0 fill strategy)
+    "age_epss_pub_missing",
+    "canon_base_missing",
+    "configuration_count_missing",
+    "cumulative_source_count_missing",
+    "days_since_last_event_missing",
+    "desc_len_all_missing",
+    "desc_len_en_missing",
+    "event_sequence_missing",
+    "event_stage_num_missing",
+    "event_type_count_missing",
+    "has_v2_missing",
+    "has_v30_missing",
+    "has_v31_missing",
+    "has_v40_missing",
+    "is_android_missing",
+    "is_application_missing",
+    "is_hardware_missing",
+    "is_ios_missing",
+    "is_linux_missing",
+    "is_macos_missing",
+    "is_os_missing",
+    "is_windows_missing",
+    "mastodon_day_count_missing",
+    "max_stage_reached_missing",
+    "n_cpes_missing",
+    "n_refs_missing",
+    "n_vendors_missing",
+    "primary_cvss_score_missing",
+    "published_date_delta_missing",
+    "reddit_day_count_missing",
+    "source_count_missing",
+    "total_detail_length_missing",
+    "total_events_so_far_missing",
+    "weakness_count_missing",
 ]
 
 
