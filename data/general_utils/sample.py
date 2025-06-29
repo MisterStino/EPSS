@@ -3,6 +3,9 @@ import random
 from pyspark.sql import functions as F
 from t3_spark.session import get_spark_session
 
+# Global seed for reproducible sampling across all functions
+SEED = 42
+
 def sample_1000_cve_timeseries(
     input_path="data/full_db/processed/final_full_data.parquet",
     output_path="data/full_db/sampled/final_full_data_sampled.parquet",
@@ -22,6 +25,9 @@ def sample_1000_cve_timeseries(
     num_cve : int
         The number of distinct CVEs to sample.
     """
+    # Set seed for reproducible Python random sampling
+    random.seed(SEED)
+    
     spark = get_spark_session()
     
     # 1. Read the full dataset.
@@ -33,7 +39,7 @@ def sample_1000_cve_timeseries(
     # Collect distinct CVE ids to driver (assuming the distinct set is reasonably small)
     distinct_cves = [row["cve"] for row in distinct_cves_df.collect()]
     
-    # 3. Randomly sample the required number of CVEs.
+    # 3. Randomly sample the required number of CVEs (deterministic with fixed seed).
     sampled_cves = random.sample(distinct_cves, num_cve)
     
     # 4. Filter the full DataFrame for rows corresponding to the sampled CVEs.
@@ -64,6 +70,9 @@ def sample_9000_cve_timeseries(
       • Group C: remaining with max_epss <  0.7 (sample half of the remainder)
     Writes out the long‐format Parquet containing full series for the sampled CVEs.
     """
+    # Set seed for reproducible Python random sampling
+    random.seed(SEED)
+    
     spark = get_spark_session()
 
     # 1) load
@@ -231,6 +240,9 @@ def sample_high_epss_and_jumps(
     jump_threshold : float
         Threshold for EPSS jumps (default 0.3)
     """
+    # Set seed for reproducible Python random sampling
+    random.seed(SEED)
+    
     spark = get_spark_session()
     
     print(f"[INFO] Sampling {num_cve} CVEs with high_epss≥{high_epss_threshold} and jumps>{jump_threshold}")
@@ -482,11 +494,11 @@ def sample_by_temporal_behavior(
     type_c_full = final_labeled_df.filter(F.col("behavior_type") == "Type C")
     type_d_df = final_labeled_df.filter(F.col("behavior_type") == "Type D")
     
-    # Apply sampling rates
-    type_a_sampled = type_a_df.orderBy(F.rand()).limit(int(type_a_df.count() * type_a_rate))
-    type_b_sampled = type_b_full.orderBy(F.rand()).limit(int(type_b_full.count() * type_b_rate))  
-    type_c_sampled = type_c_full.orderBy(F.rand()).limit(int(type_c_full.count() * type_c_rate))
-    type_d_sampled = type_d_df.orderBy(F.rand()).limit(int(type_d_df.count() * 1.0))  # Keep all Type D
+    # Apply sampling rates (deterministic with fixed seed)
+    type_a_sampled = type_a_df.orderBy(F.rand(SEED)).limit(int(type_a_df.count() * type_a_rate))
+    type_b_sampled = type_b_full.orderBy(F.rand(SEED)).limit(int(type_b_full.count() * type_b_rate))  
+    type_c_sampled = type_c_full.orderBy(F.rand(SEED)).limit(int(type_c_full.count() * type_c_rate))
+    type_d_sampled = type_d_df.orderBy(F.rand(SEED)).limit(int(type_d_df.count() * 1.0))  # Keep all Type D
     
     # Combine selected CVEs (preserving behavior type)
     training_cve_ids_df = (

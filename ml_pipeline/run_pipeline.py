@@ -37,7 +37,7 @@ class PipelineRunner:
     
     def __init__(self):
         self.steps_completed = 0
-        self.total_steps = 4
+        self.total_steps = 6
         
     def log(self, message: str) -> None:
         """Log a message with timestamp"""
@@ -110,6 +110,8 @@ class PipelineRunner:
         """
         self.log(f"{Colors.CYAN}🚀 Starting ML Pipeline Execution{Colors.NC}")
         self.log("Pipeline will run the following steps in sequence:")
+        self.log("-2. Data Sampling (Temporal Behavior)")
+        self.log("-1. Final Sampling (Classification & Balancing)")
         self.log("0. Cleanup Stale Files")
         self.log("1. Data Preprocessing and Sorting")
         self.log("2. Arrow File Conversion")
@@ -120,6 +122,16 @@ class PipelineRunner:
         
         # Define pipeline steps
         pipeline_steps = [
+            {
+                "name": "-2-SAMPLE",
+                "module": "data.general_utils.sample",
+                "description": "Creating temporal behavior-based sampling from full dataset using sample_by_temporal_behavior function"
+            },
+            {
+                "name": "-1-FINAL-SAMPLE",
+                "module": "data.general_utils.final_sample",
+                "description": "Applying fixed classification logic and balanced sampling strategy with Type D correction"
+            },
             {
                 "name": "0-CLEANUP",
                 "module": "ml_pipeline.cleanup_stale_files",
