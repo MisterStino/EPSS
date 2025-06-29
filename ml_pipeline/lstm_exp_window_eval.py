@@ -36,16 +36,16 @@ from ml_pipeline.training.dataset_iterable_fixed import CVEIterableDatasetFixed,
 
 
 # Define if local or paperspace:
-local_execution  = False
+local_execution  = True
 
 # Hardware-specific configurations
 LOCAL_CONFIG = {
-    'batch_size': 512,      # 4GB GPU limit
+    'batch_size': 128,      # 4GB GPU limit
     'hidden_size': 256,    # Reduced model capacity
     'lstm_layers': 2,      # Keep same depth
     'emb_dim': 8,          # Keep same embedding size
     'num_workers': 0,      # Windows multiprocessing fix
-    'prefetch_factor': 1,  # Reduced queue depth for memory efficiency
+    'prefetch_factor': None,  # Reduced queue depth for memory efficiency
 }
 
 CLOUD_CONFIG = {
@@ -76,7 +76,7 @@ def get_device() -> torch.device:
 
 
 
-WORK_DIR = Path("work") if not is_notebook_execution else Path("./work")
+WORK_DIR = Path("ml_pipeline/work") if not is_notebook_execution else Path("./work")
 ARROW_PATH = WORK_DIR / "epss_stage1.arrow"
 VOCAB_PATH = WORK_DIR / "vocab.json"
 
@@ -182,7 +182,7 @@ print("=" * 50)
 torch.manual_seed(0)
 dev = get_device()
 
-HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 1e-3
+HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 3, 1e-3
 
 # ──────────────────────── STEP 1: Streaming Dataset Creation ─────────────────────────
 print(f"\n[STEP 1/6] Creating streaming datasets (memory-efficient)...")
@@ -271,7 +271,7 @@ tuning_start = time.time()
 
 
 # NEW: Set optimized batch size directly for mixed precision training
-MAX_BATCH = 2048  # Increased batch size for better GPU utilization with mixed precision
+MAX_BATCH = CONFIG['batch_size']  # Increased batch size for better GPU utilization with mixed precision
 optimal_batch_size = MAX_BATCH
 print(f"✓ Using optimized batch size: {optimal_batch_size} (was {CONFIG['batch_size']})")
 print("✓ Mixed precision training enabled - will use FP16 for better performance")
@@ -471,39 +471,6 @@ with torch.no_grad():
 
 print(f"  → Collected {len(pred_list)} CVE sequences")
 
-
-# ────────────────────────────────────────────────────────────────────────────
-# Fallback: dump raw variable-length tensors to a compressed NPZ archive
-# ────────────────────────────────────────────────────────────────────────────
-try:
-    import numpy as np, time, uuid, os
-    from pathlib import Path
-
-    fallback_dir = Path("ml_pipeline/results/fallback_raw")
-    fallback_dir.mkdir(parents=True, exist_ok=True)
-
-    stamp      = time.strftime("%Y%m%d-%H%M%S")
-    tmp_name   = fallback_dir / f"pred_raw_{stamp}_{uuid.uuid4().hex}.npz.tmp"
-    final_npz  = tmp_name.with_suffix(".npz")          # atomic target
-
-    np.savez_compressed(
-        tmp_name,
-        pred       =[p.cpu().numpy() for p in pred_list],
-        true       =[t.cpu().numpy() for t in true_list],
-        mask_h     =[m.cpu().numpy() for m in mh_list],
-        eval_mask  =[m.cpu().numpy() for m in me_list],
-        dates      =[d.cpu().numpy() for d in date_list],
-        cve_ids    =np.array(te_ds.collected_cve_ids, dtype=object),
-    )
-
-    os.replace(tmp_name, final_npz)   # atomic rename
-    print(f"✓ Fallback NPZ written: {final_npz}")
-except:
-    print("error saving the raw fallback predictions")
-
-## end fallback
-
-
 # Pad all sequences to same length for rectangular array
 L_max = max(t.shape[0] for t in pred_list)
 print(f"  → Maximum sequence length: {L_max}")
@@ -530,6 +497,12 @@ DT_numpy = DT_padded.numpy()
 DT_numpy[DT_numpy == 0] = np.datetime64("NaT").view("int64")  # Replace padding with NaT
 dates_2d = DT_numpy.view("datetime64[ns]")  # [N, L_max]
 
+P_padded = P_padded.float()   # float16 → float32 (NetCDF can’t store f16)
+T_padded = T_padded.float()   # keep pred & true the same dtype
+# quick guard (optional)
+assert P_padded.dtype == torch.float32
+### END CAST ──────────────────────────────
+
 # Get CVE IDs (collected during iteration)
 cve_ids = te_ds.collected_cve_ids
 print(f"  → CVE IDs collected: {len(cve_ids)}")
@@ -537,6 +510,10 @@ print(f"  → CVE IDs collected: {len(cve_ids)}")
 # Create xarray Dataset
 import xarray as xr
 import numpy as np
+
+
+
+
 
 ds = xr.Dataset(
     data_vars={
@@ -560,9 +537,9 @@ try:
     import netCDF4
     # netCDF4 backend supports compression
     encoding = {var: {"zlib": True, "complevel": 3} for var in ds.data_vars}
-    print("  → Using netCDF4 backend with compression")
+    print("→ Using netCDF4 backend with compression")
     ds.to_netcdf(netcdf_path, encoding=encoding, engine='netcdf4')
-except:
+except ImportError:
     # scipy backend - no compression support
     print("  → Using scipy backend (no compression)")
     ds.to_netcdf(netcdf_path, engine='scipy')
@@ -571,4 +548,3 @@ print(f"✓ Detailed predictions saved: {netcdf_path}")
 print(f"✓ Dataset shape: {len(cve_ids)} CVEs × {L_max} timesteps × {HORIZON} horizons")
 print(f"✓ Variables: predictions, ground truth, horizon mask, eval mask")
 print(f"✓ Coordinates: CVE IDs, calendar dates, forecast horizons")
-# %%

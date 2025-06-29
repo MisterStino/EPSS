@@ -106,8 +106,11 @@ for t in ["published_date","last_modified_date","snapshot_date"]:
             delta = F.when(delta < 0, None).otherwise(delta)
         df = df.withColumn(f"{t}_delta", delta.cast("int"))
 
-# 1·4 EPSS
-df = df.withColumn("epss", F.log(F.col("epss") + 1e-6))
+# 1·4 EPSS - Create separate target and input columns
+# Target: log-transformed only (for Y)
+df = df.withColumn("epss_target", F.log(F.col("epss") + 1e-6))
+# Input: will be log-transformed + standardized (for features)  
+df = df.withColumn("epss_input", F.log(F.col("epss") + 1e-6))
 
 # 1·5 vocab + stats
 CAT_COLS = ["cwe_id","source_identifier","vuln_status","canon_severity","primary_cvss_sev","prev_event_type"]
@@ -119,8 +122,9 @@ for c in CAT_COLS:
                   .rdd.map(lambda r: r[0]).collect())
         vocab[c] = {k:i+1 for i,k in enumerate(keys)} | {"UNK":0}
 
+# Include epss_input in standardization, exclude epss_target and original epss
 NUMERIC = [f.name for f in df.schema
-           if f.name not in {"cve","date"}|set(CAT_COLS)  # Include EPSS in standardization
+           if f.name not in {"cve","date","epss","epss_target"}|set(CAT_COLS)  
            and not f.name.startswith("flag_")
            and f.dataType.simpleString() in {"double","float","int","bigint"}]
 
@@ -133,19 +137,25 @@ stats = (df.filter("flag_train")
 μ = {c: stats[f"mean_{c}"] for c in NUMERIC}
 σ = {c: stats[f"std_{c}"] or 1.0 for c in NUMERIC}
 
-# 1·6 encode + z-score
+# 1·6 encode + z-score (excluding EPSS target processing)
 for c, mapping in vocab.items():
     if c in df.columns:
         map_expr = F.create_map([F.lit(k) for kv in mapping.items() for k in kv])
         df = df.withColumn(c, F.coalesce(map_expr.getItem(F.col(c)).cast("int"), F.lit(0)))
 
+# Standardize numeric columns (epss_input will be included, epss_target excluded)
 for c in NUMERIC:
-    df = (df.withColumn(f"{c}_missing", F.col(c).isNull().cast("boolean"))
-             .withColumn(c, F.when(F.col(c).isNull(), -100.0)
-                               .otherwise(((F.col(c)-μ[c])/σ[c]).cast("float"))))
+    if c != "epss_input":
+        # Standard processing for other numeric columns (with missing value handling)  
+        df = (df.withColumn(f"{c}_missing", F.col(c).isNull().cast("boolean"))
+                 .withColumn(c, F.when(F.col(c).isNull(), -100.0)
+                                   .otherwise(((F.col(c)-μ[c])/σ[c]).cast("float"))))
+    else:
+        # Special processing for epss_input: no missing value handling, just standardization
+        df = df.withColumn(c, ((F.col(c)-μ[c])/σ[c]).cast("float"))
 
-# EPSS is now included in NUMERIC and will be standardized above
-# No separate handling needed - it gets the same treatment as other numerical features
+# Drop original epss column to avoid confusion
+df = df.drop("epss")
 
 # Boolean columns - includes sparse event features!
 BOOL_COLS = lambda df: [c for c in df.columns

@@ -312,7 +312,7 @@ if __name__ == "__main__":
     sample_high_epss_and_jumps(
         input_path="data/full_db/processed/final_full_data.parquet",
         output_path="data/full_db/prod/prod.parquet",
-        num_cve=20000
+        num_cve=2000
     )
 
     truncate_time_series_by_date(

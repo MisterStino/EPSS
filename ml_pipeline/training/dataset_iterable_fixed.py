@@ -83,8 +83,10 @@ class CVEIterableDatasetFixed(IterableDataset):
 
         self.flag_cols = ["flag_train", "flag_val", "flag_test"]
 
+        # Exclude epss_target from input features (it's used only for targets)
+        # epss_input will be automatically included in num_cols for standardized input features
         reserved = set(self.cat_cols + self.bool_cols +
-                       self.flag_cols + ["cve", "date"])  # EPSS now included as input feature
+                       self.flag_cols + ["cve", "date", "epss_target"])
         self.num_cols = [
             f.name for f in self._schema
             if f.name not in reserved and
@@ -196,7 +198,7 @@ class CVEIterableDatasetFixed(IterableDataset):
                                      for c in self.bool_cols])
                     buf_cat .append([cols[self.col2idx[c]][r].as_py()
                                      for c in self.cat_cols])
-                    buf_eps .append(cols[self.col2idx["epss"]][r].as_py())
+                    buf_eps .append(cols[self.col2idx["epss_target"]][r].as_py())
                     buf_flag.append([cols[self.col2idx[c]][r].as_py()
                                      for c in self.flag_cols])
                     

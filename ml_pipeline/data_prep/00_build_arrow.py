@@ -65,7 +65,7 @@ for rb in reader:
     for col, dt in df.dtypes.items():
         if dt == "bool":
             df[col] = df[col].astype("uint8")
-        elif col == "epss" and dt == "float64":
+        elif col in ["epss_target", "epss_input"] and dt == "float64":
             df[col] = df[col].astype("float32")
 
     tbl = pa.Table.from_pandas(df, preserve_index=False)
@@ -83,7 +83,9 @@ print(f"✓ {rows_written:,} rows  →  {ARROW_OUT}")
 
 # ───────────────────────── integrity check ───────────────────
 tab = ipc.open_file(pa.memory_map(str(ARROW_OUT), "r")).read_all()
-assert tab.schema.field("epss").type == pa.float32()
+# Check that both EPSS columns are float32
+assert tab.schema.field("epss_target").type == pa.float32()
+assert tab.schema.field("epss_input").type == pa.float32()
 vocab = json.load((ROOT / "vocab.json").open())
 scaler = joblib.load(ROOT / "scaler.pkl")
 assert len(vocab) == len(vocab)            # dummy: just to prove load works
