@@ -36,7 +36,7 @@ __pycache__/
 .arrow
 .tmp
 .nc
-.pt
+*.pt
 data/epss/raw/
 
 data/epss/cve-time-series/
