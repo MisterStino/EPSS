@@ -265,8 +265,8 @@ def main():
     print("🚀 STARTING RAY TUNE HYPERPARAMETER OPTIMIZATION")
     print("=" * 60)
     
-    # Setup paths (same as original script)
-    WORK_DIR = Path("work")
+    # FIXED: Standardized paths for cross-platform consistency
+    WORK_DIR = Path("ml_pipeline/work")
     ARROW_PATH = WORK_DIR / "epss_stage1.arrow"
     VOCAB_PATH = WORK_DIR / "vocab.json"
     

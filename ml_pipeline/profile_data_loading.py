@@ -321,7 +321,7 @@ class DataLoadingProfiler:
 
 def main():
     """Main profiling function"""
-    arrow_path = Path("work/epss_stage1.arrow")
+    arrow_path = Path("ml_pipeline/work/epss_stage1.arrow")
     
     if not arrow_path.exists():
         print(f"Error: Arrow file not found at {arrow_path}")

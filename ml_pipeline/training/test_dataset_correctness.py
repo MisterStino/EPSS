@@ -91,7 +91,7 @@ def test_tensor_shapes_and_dtypes():
     """Test that all output tensors have correct shapes and dtypes"""
     print("Testing tensor shapes and dtypes...")
     
-    ARROW_PATH = Path("../work/epss_stage1.arrow")
+    ARROW_PATH = Path("../ml_pipeline/work/epss_stage1.arrow")
     if not ARROW_PATH.exists():
         print("  ⚠ Arrow file not found, skipping tensor tests")
         return
@@ -144,7 +144,7 @@ def test_date_conversion():
     """Test that date conversion produces valid datetime64[ns] values"""
     print("Testing date conversion...")
     
-    ARROW_PATH = Path("../work/epss_stage1.arrow")
+    ARROW_PATH = Path("../ml_pipeline/work/epss_stage1.arrow")
     if not ARROW_PATH.exists():
         print("  ⚠ Arrow file not found, skipping date tests")
         return
@@ -185,7 +185,7 @@ def test_multi_worker_consistency():
     """Test that multi-worker loading produces consistent results"""
     print("Testing multi-worker consistency...")
     
-    ARROW_PATH = Path("../work/epss_stage1.arrow")
+    ARROW_PATH = Path("../ml_pipeline/work/epss_stage1.arrow")
     if not ARROW_PATH.exists():
         print("  ⚠ Arrow file not found, skipping multi-worker tests")
         return

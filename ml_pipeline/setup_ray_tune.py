@@ -113,7 +113,7 @@ def validate_data_files():
     print("\n📁 VALIDATING DATA FILES")
     print("=" * 50)
     
-    work_dir = Path("work")
+    work_dir = Path("ml_pipeline/work")
     arrow_path = work_dir / "epss_stage1.arrow"
     vocab_path = work_dir / "vocab.json"
     
@@ -189,7 +189,7 @@ if [ ! -f "ml_pipeline/lstm_ray_tune.py" ]; then
 fi
 
 # Check data files
-if [ ! -f "work/epss_stage1.arrow" ]; then
+if [ ! -f "ml_pipeline/work/epss_stage1.arrow" ]; then
     echo "❌ Error: Arrow file not found. Please run data preparation first."
     echo "   python -m ml_pipeline.data_prep.00_build_arrow"
     exit 1

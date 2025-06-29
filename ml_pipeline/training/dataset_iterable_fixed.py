@@ -255,7 +255,7 @@ if __name__ == "__main__":
     from torch.utils.data import DataLoader
     from functools import partial
 
-    ARROW = Path(__file__).resolve().parent.parent / "data_prep" / "work" / "epss_stage1.arrow"
+    ARROW = Path(__file__).resolve().parent.parent / "work" / "epss_stage1.arrow"
     
     print("Testing PRODUCTION dataset loader...")
     ds = CVEIterableDatasetFixed(ARROW, horizon=30)

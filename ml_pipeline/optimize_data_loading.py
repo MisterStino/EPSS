@@ -198,7 +198,7 @@ def create_optimized_dataloader(arrow_path, batch_size=32, flag_kind="train", ma
 
 
 if __name__ == "__main__":
-    arrow_path = Path("work/epss_stage1.arrow")
+    arrow_path = Path("ml_pipeline/work/epss_stage1.arrow")
     if arrow_path.exists():
         print("Testing optimized data loader...")
         loader = create_optimized_dataloader(arrow_path, batch_size=16, max_sequence_length=150)

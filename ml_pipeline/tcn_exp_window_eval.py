@@ -4,7 +4,7 @@
 """
 Feature-rich, leakage-proof EPSS forecaster - STREAMING MEMORY-EFFICIENT VERSION
 
-• streams from preprocessed Arrow file (work/epss_stage1.arrow)
+• streams from preprocessed Arrow file (ml_pipeline/work/epss_stage1.arrow)
 • uses per-batch padding instead of global padding (10× memory reduction)
 • maintains identical mathematical behavior with original approach
 • trains a mixed-type Seq-to-Seq LSTM that predicts the next 30-day EPSS path
@@ -21,14 +21,8 @@ from pathlib import Path
 import sys
 import os
 
-# Detect execution context and adjust paths accordingly
-is_notebook_execution = os.path.basename(os.getcwd()) != "ml-pipeline"
-if is_notebook_execution:
-    # Running as notebook - add relative path to training module
-    sys.path.append('./training')
-else:
-    # Running as module - direct path to training
-    sys.path.append('training')
+# FIXED: Always use module imports regardless of execution context
+sys.path.append('training')
 
 from ml_pipeline.training.dataset_iterable_fixed import CVEIterableDatasetFixed, pad_and_mask_fixed
 
@@ -105,7 +99,7 @@ def transform_epss(arr: np.ndarray,
 # Arrow file path (created by 00_build_arrow.py preprocessing step)
 # ✅ FIXED: Always use ml-pipeline/work/ directory regardless of execution context
 # This ensures consistency with 00_build_arrow.py output location
-WORK_DIR = Path("work") if not is_notebook_execution else Path("./work")
+WORK_DIR = Path("ml_pipeline/work")  # FIXED: Consistent path regardless of execution context  
 ARROW_PATH = WORK_DIR / "epss_stage1.arrow"
 VOCAB_PATH = WORK_DIR / "vocab.json"
 

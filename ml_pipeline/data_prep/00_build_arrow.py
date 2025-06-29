@@ -93,13 +93,13 @@ assert scaler["mean"].keys() == scaler["std"].keys()
 print("✓ schema, vocab, scaler  OK – ready for training")
 
 # ───────────────────────── copy files for LSTM step ──────────────────
-# The LSTM step expects files in work/ directory, so copy them there
+# FIXED: Standardize to ml_pipeline/work/ for cross-platform consistency
 import shutil
 
-LSTM_WORK_DIR = Path("work")
-LSTM_WORK_DIR.mkdir(exist_ok=True)
+LSTM_WORK_DIR = Path("ml_pipeline/work")
+LSTM_WORK_DIR.mkdir(parents=True, exist_ok=True)
 
-# Copy necessary files for LSTM step
+# Copy necessary files for LSTM step - now consistent with LSTM expectations
 shutil.copy2(ROOT / "vocab.json", LSTM_WORK_DIR / "vocab.json")
 shutil.copy2(ROOT / "scaler.pkl", LSTM_WORK_DIR / "scaler.pkl") 
 shutil.copy2(ROOT / "epss_stage1.arrow", LSTM_WORK_DIR / "epss_stage1.arrow")

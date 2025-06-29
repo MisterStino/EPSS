@@ -4,7 +4,7 @@
 """
 Feature-rich, leakage-proof EPSS forecaster - STREAMING MEMORY-EFFICIENT VERSION
 
-• streams from preprocessed Arrow file (work/epss_stage1.arrow)
+• streams from preprocessed Arrow file (ml_pipeline/work/epss_stage1.arrow)
 • uses per-batch padding instead of global padding (10× memory reduction)
 • maintains identical mathematical behavior with original approach
 • trains a mixed-type Seq-to-Seq LSTM that predicts the next 30-day EPSS path
@@ -22,15 +22,8 @@ import pytorch_lightning as pl
 import sys
 import os
 
-# Detect execution context and adjust paths accordingly
-is_notebook_execution = os.path.basename(os.getcwd()) != "ml-pipeline"
-if is_notebook_execution:
-    # Running as notebook - add relative path to training module
-    sys.path.append('./training')
-else:
-    # Running as module - direct path to training
-    sys.path.append('training')
-
+# FIXED: Always use module imports regardless of execution context
+sys.path.append('training')
 from ml_pipeline.training.dataset_iterable_fixed import CVEIterableDatasetFixed, pad_and_mask_fixed
 
 
@@ -76,7 +69,8 @@ def get_device() -> torch.device:
 
 
 
-WORK_DIR = Path("ml_pipeline/work") if not is_notebook_execution else Path("./work")
+# FIXED: Always use standardized path regardless of execution context
+WORK_DIR = Path("ml_pipeline/work")
 ARROW_PATH = WORK_DIR / "epss_stage1.arrow"
 VOCAB_PATH = WORK_DIR / "vocab.json"
 
@@ -84,9 +78,9 @@ print(f"[INFO] Work directory: {WORK_DIR.resolve()}")
 print(f"[INFO] Looking for artifacts in: {ARROW_PATH.parent.resolve()}") 
 
 if not ARROW_PATH.exists():
-    raise FileNotFoundError(f"Arrow file not found: {ARROW_PATH}. Run: python -m models.models.data_prep.00_build_arrow")
+    raise FileNotFoundError(f"Arrow file not found: {ARROW_PATH}. Run: python -m ml_pipeline.data_prep.00_build_arrow")
 if not VOCAB_PATH.exists():
-    raise FileNotFoundError(f"Vocab file not found: {VOCAB_PATH}. Run: python -m models.models.data_prep.00_build_arrow")
+    raise FileNotFoundError(f"Vocab file not found: {VOCAB_PATH}. Run: python -m ml_pipeline.data_prep.00_build_arrow")
 
 # Load vocabulary for model initialization (built from training data only)
 with open(VOCAB_PATH, 'r') as f:
