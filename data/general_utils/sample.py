@@ -584,8 +584,8 @@ if __name__ == "__main__":
 
     # Optional: Apply temporal truncation if needed
     truncate_time_series_by_date(
-        input_path="data/full_db/processed/final_full_data.parquet",
-        output_path="data/full_db/sampled/final_full_data_v3_v4truncated.parquet",
+        input_path="data/epss/processed/epss_processed.parquet",
+        output_path="data/epss/sampled/epss_processed_truncated.parquet",
         start_date="2023-03-08",
         end_date="2025-04-15"
     )
