@@ -26,7 +26,7 @@ spark = (SparkSession.builder
 
 # Use environment variable for data path, with fallback to default
 import os
-DEFAULT_DATA_PATH = "data/prod/final_full_data_v3_v4truncated_csaf_social.parquet"
+DEFAULT_DATA_PATH = "training_dataset_prod.parquet"
 RAW = norm(os.getenv("EPSS_DATA_PATH", DEFAULT_DATA_PATH))
 print(f"[INPUT] Using data from: {RAW}")  
 OUTDIR  = Path("ml_pipeline/data_prep/work")

@@ -15,7 +15,7 @@ SEED = 42
 # 1. Initialize Spark session
 spark = get_spark_session()
 
-# 2. Load data
+# 2. Load data 
 folder_path = "data/full_db/sampled/final_full_data_v3_v4truncated.parquet"
 df = spark.read.parquet(folder_path)
 df = df.withColumn("date", to_date("date"))
