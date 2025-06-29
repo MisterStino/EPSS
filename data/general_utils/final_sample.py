@@ -140,17 +140,23 @@ from pyspark.sql.functions import col, rand
 
 # Type A — keep all
 type_a_df = final_labeled_df.filter(col("behavior_type") == "Type A")
+type_a_count = type_a_df.count()
 
-# Type B — sample 30%
+# Type B — sample up to Type A count
 type_b_full = final_labeled_df.filter(col("behavior_type") == "Type B")
-type_b_sampled = type_b_full.orderBy(rand()).limit(int(type_b_full.count() * 0.3))
+type_b_limit = min(type_b_full.count(), type_a_count)
+type_b_sampled = type_b_full.orderBy(rand()).limit(type_b_limit)
 
-# Type C — sample 5%
+# Type C — sample up to Type A count
 type_c_full = final_labeled_df.filter(col("behavior_type") == "Type C")
-type_c_sampled = type_c_full.orderBy(rand()).limit(int(type_c_full.count() * 0.05))
+type_c_limit = min(type_c_full.count(), type_a_count)
+type_c_sampled = type_c_full.orderBy(rand()).limit(type_c_limit)
+
+# Type D — keep all (will be small)
+type_d_df = final_labeled_df.filter(col("behavior_type") == "Type D")
 
 # Combine selected CVEs
-training_cve_ids_df = type_a_df.unionByName(type_b_sampled).unionByName(type_c_sampled).select("cve").distinct()
+training_cve_ids_df = type_a_df.unionByName(type_b_sampled).unionByName(type_c_sampled).unionByName(type_d_df).select("cve").distinct()
 
 # Join with full time series
 training_time_series_df = df.join(training_cve_ids_df, on="cve", how="inner")
@@ -159,8 +165,9 @@ training_time_series_df = df.join(training_cve_ids_df, on="cve", how="inner")
 training_time_series_df.write.mode("overwrite").parquet("training_dataset_prod.parquet")
 
 # Print summary
-print("✅ Training dataset saved to 'training_dataset_comparison.parquet'")
+print("✅ Training dataset saved to 'training_dataset_prod.parquet'")
 print(f"- Type A included: {type_a_df.count()}")
-print(f"- Type B sampled: {type_b_sampled.count()}")
-print(f"- Type C sampled: {type_c_sampled.count()}")
+print(f"- Type B sampled: {type_b_sampled.count()} (capped at Type A count)")
+print(f"- Type C sampled: {type_c_sampled.count()} (capped at Type A count)")
+print(f"- Type D included: {type_d_df.count()}")
 print(f"- Total CVEs in training set: {training_cve_ids_df.count()}")
