@@ -176,7 +176,7 @@ print("=" * 50)
 torch.manual_seed(0)
 dev = get_device()
 
-HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 3, 1e-3
+HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 1e-3
 
 # ──────────────────────── STEP 1: Streaming Dataset Creation ─────────────────────────
 print(f"\n[STEP 1/6] Creating streaming datasets (memory-efficient)...")
