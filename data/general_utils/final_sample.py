@@ -18,7 +18,7 @@ extra_configs = {
 spark = get_spark_session("UnifiedEPSSPipeline", "local[*]", extra_configs)
 
 # 2. Load data
-folder_path = "data/full_db/sampled/final_full_data_v3_v4truncated.parquet"
+folder_path = "data/epss/sampled/epss_processed_truncated.parquet"
 df = spark.read.parquet(folder_path)
 df = df.withColumn("date", to_date("date"))
 df = df.withColumn("epss", col("epss").cast(DoubleType()))
