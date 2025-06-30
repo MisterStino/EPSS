@@ -45,18 +45,71 @@ def get_device():
         print("WARNING: CUDA not available, falling back to CPU")
         return torch.device("cpu")
 
+def find_project_root():
+    """Find the project root directory containing ml_pipeline."""
+    current = Path.cwd()
+    
+    # Try current directory first
+    if (current / "ml_pipeline").exists():
+        return current
+    
+    # Try parent directories
+    for parent in current.parents:
+        if (parent / "ml_pipeline").exists():
+            return parent
+    
+    # Try common paths for remote execution
+    for path in ["/notebooks/EPSS", "/notebooks", Path.home() / "EPSS"]:
+        path = Path(path)
+        if path.exists() and (path / "ml_pipeline").exists():
+            return path
+    
+    raise FileNotFoundError("Could not find project root with ml_pipeline directory")
+
 def load_vocab_and_paths():
     """Load vocabulary and verify paths exist."""
-    arrow_path = Path("ml_pipeline/work/epss_stage1.arrow")
-    vocab_path = Path("ml_pipeline/work/vocab.json")
+    # Find project root dynamically
+    project_root = find_project_root()
     
-    if not arrow_path.exists():
-        raise FileNotFoundError(f"Arrow file not found: {arrow_path}")
-    if not vocab_path.exists():
-        raise FileNotFoundError(f"Vocabulary file not found: {vocab_path}")
+    # Try multiple possible locations
+    arrow_candidates = [
+        project_root / "ml_pipeline" / "work" / "epss_stage1.arrow",
+        project_root / "ml_pipeline" / "data_prep" / "work" / "epss_stage1.arrow",
+    ]
+    
+    vocab_candidates = [
+        project_root / "ml_pipeline" / "work" / "vocab.json",
+        project_root / "ml_pipeline" / "data_prep" / "work" / "vocab.json",
+    ]
+    
+    # Find Arrow file
+    arrow_path = None
+    for candidate in arrow_candidates:
+        if candidate.exists():
+            arrow_path = candidate
+            break
+    
+    if arrow_path is None:
+        raise FileNotFoundError(f"Arrow file not found in any of: {arrow_candidates}")
+    
+    # Find vocab file
+    vocab_path = None
+    for candidate in vocab_candidates:
+        if candidate.exists():
+            vocab_path = candidate
+            break
+    
+    if vocab_path is None:
+        # Try to generate vocab.json if missing
+        print("vocab.json not found. Run: python -m ml_pipeline.generate_missing_vocab")
+        raise FileNotFoundError(f"Vocabulary file not found in any of: {vocab_candidates}")
     
     with open(vocab_path, 'r') as f:
         vocab = json.load(f)
+    
+    print(f"Using project root: {project_root}")
+    print(f"Using Arrow file: {arrow_path}")
+    print(f"Using vocab file: {vocab_path}")
     
     return vocab, arrow_path
 

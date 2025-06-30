@@ -55,18 +55,48 @@ def main():
         print("Error: spike-percentile must be between 90 and 99")
         sys.exit(1)
     
-    # Check prerequisites
-    arrow_path = Path("ml_pipeline/work/epss_stage1.arrow")
-    vocab_path = Path("ml_pipeline/work/vocab.json")
+    # Check prerequisites with robust path detection
+    def find_project_root():
+        current = Path.cwd()
+        if (current / "ml_pipeline").exists():
+            return current
+        for parent in current.parents:
+            if (parent / "ml_pipeline").exists():
+                return parent
+        for path in ["/notebooks/EPSS", "/notebooks", Path.home() / "EPSS"]:
+            path = Path(path)
+            if path.exists() and (path / "ml_pipeline").exists():
+                return path
+        raise FileNotFoundError("Could not find project root")
     
-    if not arrow_path.exists():
-        print(f"Error: Arrow file not found: {arrow_path}")
+    try:
+        project_root = find_project_root()
+        print(f"Project root: {project_root}")
+    except FileNotFoundError:
+        print("Error: Could not find project root with ml_pipeline directory")
+        sys.exit(1)
+    
+    # Check for required files
+    arrow_candidates = [
+        project_root / "ml_pipeline" / "work" / "epss_stage1.arrow",
+        project_root / "ml_pipeline" / "data_prep" / "work" / "epss_stage1.arrow",
+    ]
+    vocab_candidates = [
+        project_root / "ml_pipeline" / "work" / "vocab.json",
+        project_root / "ml_pipeline" / "data_prep" / "work" / "vocab.json",
+    ]
+    
+    arrow_found = any(p.exists() for p in arrow_candidates)
+    vocab_found = any(p.exists() for p in vocab_candidates)
+    
+    if not arrow_found:
+        print(f"Error: Arrow file not found in any of: {arrow_candidates}")
         print("Please run: python -m ml_pipeline.data_prep.00_build_arrow")
         sys.exit(1)
     
-    if not vocab_path.exists():
-        print(f"Error: Vocabulary file not found: {vocab_path}")
-        print("Please run: python -m ml_pipeline.data_prep.00_build_arrow")
+    if not vocab_found:
+        print(f"Error: Vocabulary file not found in any of: {vocab_candidates}")
+        print("Try running: python -m ml_pipeline.generate_missing_vocab")
         sys.exit(1)
     
     # Configure based on mode

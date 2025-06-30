@@ -8,6 +8,7 @@ import json
 import torch
 from pathlib import Path
 import sys
+from functools import partial
 
 # Add training path for imports
 sys.path.append('training')
