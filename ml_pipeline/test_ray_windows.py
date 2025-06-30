@@ -111,11 +111,11 @@ def test_ray_tune():
                 num_samples=3,
                 max_concurrent_trials=1
             ),
-            run_config=ray.air.RunConfig(
-                name="test_tune",
-                storage_path="./test_ray_results",
-                log_to_file=False
-            )
+                     run_config=tune.RunConfig(
+             name="test_tune",
+             storage_path=str(Path("./test_ray_results").absolute()),
+             log_to_file=False
+         )
         )
         
         results = tuner.fit()

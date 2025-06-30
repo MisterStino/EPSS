@@ -385,6 +385,11 @@ def main():
     Main function to run hyperparameter optimization with Ray Tune.
     """
     
+    # Suppress Docker CPU detection warnings and deprecation warnings
+    import os
+    os.environ["RAY_DISABLE_IMPORT_WARNING"] = "1"
+    os.environ["RAY_TRAIN_ENABLE_V2_MIGRATION_WARNINGS"] = "0"
+    
     # Initialize Ray (disable dashboard only on Windows to avoid handle errors)
     import platform
     is_windows = platform.system().lower() == 'windows'
@@ -461,12 +466,12 @@ def main():
             num_samples=50,  # Number of trials
             max_concurrent_trials=2,  # Limit concurrent trials for resource management
         ),
-        run_config=ray.air.RunConfig(
+        run_config=tune.RunConfig(
             name="epss_lstm_comprehensive_hpo",
             progress_reporter=reporter,
             stop={"global_step": 20000},  # Stop condition
-            failure_config=ray.air.FailureConfig(max_failures=3),
-            storage_path="./ray_results",
+            failure_config=tune.FailureConfig(max_failures=3),
+            storage_path=str(Path("./ray_results").absolute()),  # Use absolute path
             log_to_file=True
         )
     )

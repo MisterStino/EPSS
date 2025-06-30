@@ -130,6 +130,11 @@ def main():
     
     # Monkey patch the configuration
     def patched_main():
+        # Suppress warnings
+        import os
+        os.environ["RAY_DISABLE_IMPORT_WARNING"] = "1"
+        os.environ["RAY_TRAIN_ENABLE_V2_MIGRATION_WARNINGS"] = "0"
+        
         import ray
         from ray.tune.search.optuna import OptunaSearch
         from ray.tune.schedulers import ASHAScheduler
@@ -199,12 +204,12 @@ def main():
                 num_samples=config['num_samples'],
                 max_concurrent_trials=args.concurrent_trials,
             ),
-            run_config=ray.air.RunConfig(
+            run_config=tune.RunConfig(
                 name=f"epss_lstm_{args.mode}_hpo",
                 progress_reporter=reporter,
                 stop={"global_step": config['max_steps']},
-                failure_config=ray.air.FailureConfig(max_failures=3),
-                storage_path="./ray_results",
+                failure_config=tune.FailureConfig(max_failures=3),
+                storage_path=str(Path("./ray_results").absolute()),  # Use absolute path
                 log_to_file=True
             )
         )
