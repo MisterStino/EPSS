@@ -32,6 +32,13 @@ sys.path.append('training')
 from ml_pipeline.training.dataset_iterable_fixed import CVEIterableDatasetFixed, pad_and_mask_fixed
 from ml_pipeline.training.dataset_iterable_sus import CVEIterableDatasetSUS, collate_sus_train
 
+# ───────────────────────────── GLOBAL SUS CONFIGURATION ──────────────────────
+
+# SUS Configuration - Global constants
+USE_SUS = True  # Enable significance-based undersampling
+SUS_BETA = 0.5  # Default SUS significance threshold (0.1-0.9)
+SUS_LOOK_AHEAD = 10  # Default SUS look-ahead window
+
 # ───────────────────────────── HELPER FUNCTIONS ──────────────────────
 
 def get_device():
@@ -254,11 +261,6 @@ def train_lstm_with_tune(config):
     # Constants
     HORIZON = 30
     REPORT_EVERY_N_BATCHES = 100  # Early metric reporting
-    
-    # SUS Configuration
-    USE_SUS = True  # Enable significance-based undersampling
-    SUS_BETA = 0.5  # SUS significance threshold (0.1-0.9)
-    SUS_LOOK_AHEAD = 10  # SUS look-ahead window
     
     # Setup device and paths
     device = get_device()
