@@ -167,16 +167,17 @@ class Seq2SeqTCN(nn.Module):
 
         in_dim = n_num + n_bool + emb_dim * len(cat_sizes)  # feature channels
 
-        # tcn.TCN expects [B, L, in_dim] and outputs [B, L, horizon] if return_sequences=True
+        # tcn.TCN expects [B, in_dim, L] and outputs [B, num_channels[-1], L]
         self.tcn = TCN(
-            input_size=in_dim,
-            output_size=horizon,
+            num_inputs=in_dim,
             num_channels=[nb_filters] * levels,
             kernel_size=kernel_size,
             dropout=dropout,
-            weight_norm=True,
-            return_sequences=True,
+            use_norm='weight_norm',
         )
+        
+        # Add output projection to get the desired horizon dimension
+        self.output_proj = nn.Linear(nb_filters, horizon)
 
     def forward(self, num, boo, cat):
         # Build per-timestep feature vector exactly like old LSTM
@@ -192,9 +193,11 @@ class Seq2SeqTCN(nn.Module):
         else:
             x = torch.cat([num, boo.float()], dim=-1)     # [B,L,F]
 
-        x = x.transpose(1, 2)                # ⇒ [B, F, L]  (channels-first)
-        y = self.tcn(x)                      # ⇒ [B, horizon, L]
-        return y.transpose(1, 2)             # ⇒ [B, L, horizon]  (old shape)
+        x = x.transpose(1, 2)                # ⇒ [B, F, L]  (channels-first for TCN)
+        y = self.tcn(x)                      # ⇒ [B, nb_filters, L]
+        y = y.transpose(1, 2)                # ⇒ [B, L, nb_filters]
+        y = self.output_proj(y)              # ⇒ [B, L, horizon]
+        return y
 
 # Lightning wrapper that can recreate its own DataLoader for batch size tuning
 class LightningWrapper(pl.LightningModule):
