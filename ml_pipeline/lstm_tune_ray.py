@@ -30,6 +30,7 @@ import math
 # FIXED: Always use module imports regardless of execution context
 sys.path.append('training')
 from ml_pipeline.training.dataset_iterable_fixed import CVEIterableDatasetFixed, pad_and_mask_fixed
+from ml_pipeline.training.dataset_iterable_sus import CVEIterableDatasetSUS, collate_sus_train
 
 # ───────────────────────────── HELPER FUNCTIONS ──────────────────────
 
@@ -243,6 +244,10 @@ def train_lstm_with_tune(config):
     lr = config["lr"]
     batch_size = config["batch_size"]
     
+    # SUS parameters (from config if optimizing, otherwise use defaults)
+    trial_sus_beta = config.get("sus_beta", SUS_BETA)
+    trial_sus_look_ahead = config.get("sus_look_ahead", SUS_LOOK_AHEAD)
+    
     # Fixed max epochs - ASHA scheduler will handle early stopping
     max_epochs = 50  # High limit, scheduler will stop early if not improving
     
@@ -250,9 +255,33 @@ def train_lstm_with_tune(config):
     HORIZON = 30
     REPORT_EVERY_N_BATCHES = 100  # Early metric reporting
     
+    # SUS Configuration
+    USE_SUS = True  # Enable significance-based undersampling
+    SUS_BETA = 0.5  # SUS significance threshold (0.1-0.9)
+    SUS_LOOK_AHEAD = 10  # SUS look-ahead window
+    
     # Setup device and paths
     device = get_device()
     vocab, arrow_path = load_vocab_and_paths()
+    
+    # Load SUS configuration if enabled
+    sus_z_norm = None
+    if USE_SUS:
+        project_root = find_project_root()
+        sus_config_path = project_root / "ml_pipeline" / "work" / f"sus_config_beta{trial_sus_beta}_d{trial_sus_look_ahead}_q0.995.json"
+        
+        if sus_config_path.exists():
+            with open(sus_config_path, 'r') as f:
+                sus_data = json.load(f)
+                sus_z_norm = sus_data['Z']
+                print(f"[Ray Worker] SUS enabled: β={trial_sus_beta}, Δ={trial_sus_look_ahead}, Z={sus_z_norm:.6f}")
+        else:
+            print(f"[Ray Worker] WARNING: SUS config not found: {sus_config_path}")
+            print(f"[Ray Worker] Run: python -m ml_pipeline.tools.compute_weight_quantile --arrow {arrow_path} --beta {trial_sus_beta} --look-ahead {trial_sus_look_ahead}")
+            USE_SUS = False
+            print(f"[Ray Worker] Falling back to standard dataset")
+    else:
+        print(f"[Ray Worker] Using standard dataset (SUS disabled)")
     
     # Debug GPU availability in Ray worker
     print(f"[Ray Worker] Using device: {device}")
@@ -270,24 +299,55 @@ def train_lstm_with_tune(config):
         print("[Ray Worker] WARNING: CUDA not available - running on CPU only!")
     
     try:
-        # Create datasets (CVEIterableDatasetFixed only takes arrow_path and horizon)
-        train_dataset = CVEIterableDatasetFixed(arrow_path, horizon=HORIZON)
-        val_dataset = CVEIterableDatasetFixed(arrow_path, horizon=HORIZON)
-        test_dataset = CVEIterableDatasetFixed(arrow_path, horizon=HORIZON)
-        
-        # Create dataloaders with proper collate function parameters
-        train_loader = DataLoader(
-            train_dataset, 
-            batch_size=batch_size, 
-            collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON),
-            num_workers=0
-        )
-        val_loader = DataLoader(
-            val_dataset, 
-            batch_size=batch_size, 
-            collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
-            num_workers=0
-        )
+        # Create datasets - use SUS if enabled, otherwise standard
+        if USE_SUS and sus_z_norm is not None:
+            print(f"[Ray Worker] Creating SUS datasets...")
+            train_dataset = CVEIterableDatasetSUS(arrow_path, horizon=HORIZON)
+            val_dataset = CVEIterableDatasetSUS(arrow_path, horizon=HORIZON)
+            test_dataset = CVEIterableDatasetSUS(arrow_path, horizon=HORIZON)
+            
+            # Create SUS dataloaders
+            train_loader = DataLoader(
+                train_dataset, 
+                batch_size=batch_size, 
+                collate_fn=partial(collate_sus_train, 
+                                 flag_kind="train", 
+                                 horizon=HORIZON,
+                                 beta=trial_sus_beta,
+                                 look_ahead=trial_sus_look_ahead,
+                                 z_norm=sus_z_norm),
+                num_workers=0
+            )
+            val_loader = DataLoader(
+                val_dataset, 
+                batch_size=batch_size, 
+                collate_fn=partial(collate_sus_train, 
+                                 flag_kind="val", 
+                                 horizon=HORIZON,
+                                 beta=trial_sus_beta,
+                                 look_ahead=trial_sus_look_ahead,
+                                 z_norm=sus_z_norm),
+                num_workers=0
+            )
+        else:
+            print(f"[Ray Worker] Creating standard datasets...")
+            train_dataset = CVEIterableDatasetFixed(arrow_path, horizon=HORIZON)
+            val_dataset = CVEIterableDatasetFixed(arrow_path, horizon=HORIZON)
+            test_dataset = CVEIterableDatasetFixed(arrow_path, horizon=HORIZON)
+            
+            # Create standard dataloaders
+            train_loader = DataLoader(
+                train_dataset, 
+                batch_size=batch_size, 
+                collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON),
+                num_workers=0
+            )
+            val_loader = DataLoader(
+                val_dataset, 
+                batch_size=batch_size, 
+                collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
+                num_workers=0
+            )
         
         # Get feature dimensions from first batch
         first_batch = next(iter(train_loader))
@@ -606,6 +666,10 @@ def main():
         # Training hyperparameters - memory-safe batch sizes
         "lr": tune.qloguniform(1e-5, 5e-3, q=1e-6),  # More conservative max LR
         "batch_size": tune.choice([128, 256, 512]),  # Memory-tested batch sizes
+        
+        # SUS hyperparameters (if SUS is enabled)
+        "sus_beta": tune.uniform(0.3, 0.7) if USE_SUS else SUS_BETA,  # SUS significance threshold
+        "sus_look_ahead": tune.choice([5, 10, 15, 20]) if USE_SUS else SUS_LOOK_AHEAD,  # SUS window
         # epochs removed - let ASHA scheduler handle early stopping
     }
     
@@ -680,6 +744,9 @@ def main():
     print(f"Max epochs per trial: 50 (ASHA scheduler will stop early)")
     print("Optimization objectives: minimize val_loss, maximize val_spike_recall")
     print("Early stopping: ASHA scheduler (grace period: 3 epochs)")
+    print(f"Training strategy: {'SUS (Significance-based Undersampling)' if USE_SUS else 'Standard'}")
+    if USE_SUS:
+        print(f"SUS optimization: β ∈ [0.3, 0.7], Δ ∈ [5, 10, 15, 20]")
     print("=" * 80)
     
     # Run optimization
