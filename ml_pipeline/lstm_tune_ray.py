@@ -25,6 +25,7 @@ import pytorch_lightning as pl
 import sys
 import os
 import time
+import math
 
 # FIXED: Always use module imports regardless of execution context
 sys.path.append('training')
@@ -273,11 +274,27 @@ def train_lstm_with_tune(config):
         
         # Get feature dimensions from first batch
         first_batch = next(iter(train_loader))
-        num_tensor, boo_tensor, cat_tensor, target_tensor, m_t, m_eval, m_h = first_batch
+        num_tensor, boo_tensor, cat_tensor, target_tensor, m_t, m_h, m_eval, date_tensor, lengths_tensor = first_batch
         
         num_features = num_tensor.shape[-1]
         bool_features = boo_tensor.shape[-1]
         cat_features_list = list(vocab.keys())
+        
+        # Debug: Check data ranges
+        print(f"Numeric tensor range: [{num_tensor.min():.6f}, {num_tensor.max():.6f}]")
+        print(f"Target tensor range: [{target_tensor.min():.6f}, {target_tensor.max():.6f}]")
+        print(f"Boolean tensor range: [{boo_tensor.min():.6f}, {boo_tensor.max():.6f}]")
+        print(f"Categorical tensor range: [{cat_tensor.min()}, {cat_tensor.max()}]")
+        
+        # Check for any initial NaN/Inf in the data
+        if torch.isnan(num_tensor).any():
+            print("WARNING: NaN found in numeric features!")
+        if torch.isnan(target_tensor).any():
+            print("WARNING: NaN found in targets!")
+        if torch.isinf(num_tensor).any():
+            print("WARNING: Inf found in numeric features!")
+        if torch.isinf(target_tensor).any():
+            print("WARNING: Inf found in targets!")
         
         # Define spike threshold from training data
         # Sample some batches to estimate EPSS distribution
@@ -285,7 +302,7 @@ def train_lstm_with_tune(config):
         for i, batch in enumerate(train_loader):
             if i >= 10:  # Sample first 10 batches
                 break
-            _, _, _, targets, _, _, _ = batch
+            _, _, _, targets, _, _, _, _, _ = batch
             epss_samples.append(targets.cpu().numpy())
         
         epss_samples = np.concatenate(epss_samples, axis=0)
@@ -303,8 +320,34 @@ def train_lstm_with_tune(config):
             horizon=HORIZON
         ).to(device)
         
-        # Optimizer and scheduler
-        optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
+        # Initialize weights properly to prevent NaN/Inf
+        def init_weights(m):
+            if isinstance(m, nn.Linear):
+                torch.nn.init.xavier_uniform_(m.weight)
+                if m.bias is not None:
+                    torch.nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.LSTM):
+                for name, param in m.named_parameters():
+                    if 'weight_ih' in name:
+                        torch.nn.init.xavier_uniform_(param.data)
+                    elif 'weight_hh' in name:
+                        torch.nn.init.orthogonal_(param.data)
+                    elif 'bias' in name:
+                        param.data.fill_(0)
+                        # Set forget gate bias to 1
+                        n = param.size(0)
+                        param.data[(n//4):(n//2)].fill_(1)
+        
+        model.apply(init_weights)
+        
+        # Optimizer and scheduler with improved stability
+        optimizer = torch.optim.AdamW(
+            model.parameters(), 
+            lr=lr, 
+            weight_decay=0.01,
+            eps=1e-8,  # Numerical stability
+            betas=(0.9, 0.999)
+        )
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
         
         # Training loop
@@ -317,7 +360,7 @@ def train_lstm_with_tune(config):
             num_batches = 0
             
             for batch_idx, batch in enumerate(train_loader):
-                num_tensor, boo_tensor, cat_tensor, target_tensor, m_t, m_eval, m_h = batch
+                num_tensor, boo_tensor, cat_tensor, target_tensor, m_t, m_h, m_eval, date_tensor, lengths_tensor = batch
                 
                 # Move to device
                 num_tensor = num_tensor.to(device)
@@ -328,9 +371,28 @@ def train_lstm_with_tune(config):
                 m_eval = m_eval.to(device)
                 m_h = m_h.to(device)
                 
+                # Input validation - check for NaN/Inf
+                if torch.isnan(num_tensor).any() or torch.isinf(num_tensor).any():
+                    print(f"NaN or Inf found in num_tensor")
+                    continue
+                if torch.isnan(target_tensor).any() or torch.isinf(target_tensor).any():
+                    print(f"NaN or Inf found in target_tensor")
+                    continue
+                
                 # Forward pass
                 pred = model(num_tensor, boo_tensor, cat_tensor)
+                
+                # Check predictions for NaN/Inf
+                if torch.isnan(pred).any() or torch.isinf(pred).any():
+                    print(f"NaN or Inf found in predictions")
+                    continue
+                
                 loss = masked_mse(pred, target_tensor, m_t, m_eval, m_h)
+                
+                # Check loss for NaN/Inf
+                if torch.isnan(loss) or torch.isinf(loss):
+                    print(f"NaN or Inf found in loss: {loss.item()}")
+                    continue
                 
                 # Calculate spike recall for this batch
                 with torch.no_grad():
@@ -342,7 +404,13 @@ def train_lstm_with_tune(config):
                 # Backward pass
                 optimizer.zero_grad()
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                
+                # Check gradients for NaN/Inf before clipping
+                grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                if torch.isnan(grad_norm) or torch.isinf(grad_norm):
+                    print(f"NaN or Inf found in gradients, skipping update")
+                    continue
+                
                 optimizer.step()
                 
                 epoch_loss += loss.item()
@@ -351,16 +419,18 @@ def train_lstm_with_tune(config):
                 global_step += 1
                 
                 # Early reporting every N batches
-                if global_step % REPORT_EVERY_N_BATCHES == 0:
+                if global_step % REPORT_EVERY_N_BATCHES == 0 and num_batches > 0:
                     avg_loss = epoch_loss / num_batches
                     avg_spike_recall = epoch_spike_recall / num_batches
                     
-                    session.report({
-                        "train_loss": avg_loss,
-                        "train_spike_recall": avg_spike_recall,
-                        "epoch": epoch + (batch_idx / len(train_loader)),
-                        "global_step": global_step
-                    })
+                    # Only report if metrics are valid
+                    if not (math.isnan(avg_loss) or math.isinf(avg_loss)):
+                        session.report({
+                            "train_loss": avg_loss,
+                            "train_spike_recall": avg_spike_recall,
+                            "epoch": epoch + (batch_idx / len(train_loader)),
+                            "global_step": global_step
+                        })
             
             # Validation at end of epoch
             model.eval()
@@ -370,7 +440,7 @@ def train_lstm_with_tune(config):
             
             with torch.no_grad():
                 for val_batch in val_loader:
-                    num_tensor, boo_tensor, cat_tensor, target_tensor, m_t, m_eval, m_h = val_batch
+                    num_tensor, boo_tensor, cat_tensor, target_tensor, m_t, m_h, m_eval, date_tensor, lengths_tensor = val_batch
                     
                     # Move to device
                     num_tensor = num_tensor.to(device)
@@ -381,9 +451,24 @@ def train_lstm_with_tune(config):
                     m_eval = m_eval.to(device)
                     m_h = m_h.to(device)
                     
+                    # Input validation
+                    if torch.isnan(num_tensor).any() or torch.isinf(num_tensor).any():
+                        continue
+                    if torch.isnan(target_tensor).any() or torch.isinf(target_tensor).any():
+                        continue
+                    
                     # Forward pass
                     pred = model(num_tensor, boo_tensor, cat_tensor)
+                    
+                    # Check predictions
+                    if torch.isnan(pred).any() or torch.isinf(pred).any():
+                        continue
+                    
                     loss = masked_mse(pred, target_tensor, m_t, m_eval, m_h)
+                    
+                    # Check loss
+                    if torch.isnan(loss) or torch.isinf(loss):
+                        continue
                     
                     # Calculate spike recall
                     pred_flat = pred.cpu().numpy().flatten()
@@ -395,24 +480,46 @@ def train_lstm_with_tune(config):
                     val_batches += 1
             
             # Calculate epoch averages
-            avg_train_loss = epoch_loss / num_batches
-            avg_train_spike_recall = epoch_spike_recall / num_batches
-            avg_val_loss = val_loss / val_batches
-            avg_val_spike_recall = val_spike_recall / val_batches
+            if num_batches > 0:
+                avg_train_loss = epoch_loss / num_batches
+                avg_train_spike_recall = epoch_spike_recall / num_batches
+            else:
+                avg_train_loss = float('inf')
+                avg_train_spike_recall = 0.0
+                
+            if val_batches > 0:
+                avg_val_loss = val_loss / val_batches
+                avg_val_spike_recall = val_spike_recall / val_batches
+            else:
+                avg_val_loss = float('inf')
+                avg_val_spike_recall = 0.0
             
             # Step scheduler
             scheduler.step()
             
-            # Report to Ray Tune
-            session.report({
-                "train_loss": avg_train_loss,
-                "val_loss": avg_val_loss,
-                "train_spike_recall": avg_train_spike_recall,
-                "val_spike_recall": avg_val_spike_recall,
-                "epoch": epoch + 1,
-                "global_step": global_step,
-                "lr": scheduler.get_last_lr()[0]
-            })
+            # Report to Ray Tune - only if metrics are valid
+            if not (math.isnan(avg_train_loss) or math.isinf(avg_train_loss) or 
+                    math.isnan(avg_val_loss) or math.isinf(avg_val_loss)):
+                session.report({
+                    "train_loss": avg_train_loss,
+                    "val_loss": avg_val_loss,
+                    "train_spike_recall": avg_train_spike_recall,
+                    "val_spike_recall": avg_val_spike_recall,
+                    "epoch": epoch + 1,
+                    "global_step": global_step,
+                    "lr": scheduler.get_last_lr()[0]
+                })
+            else:
+                # Report failure metrics for invalid results
+                session.report({
+                    "train_loss": float('inf'),
+                    "val_loss": float('inf'),
+                    "train_spike_recall": 0.0,
+                    "val_spike_recall": 0.0,
+                    "epoch": epoch + 1,
+                    "global_step": global_step,
+                    "lr": scheduler.get_last_lr()[0]
+                })
             
             model.train()
         
@@ -463,8 +570,8 @@ def main():
         "layers": tune.choice([2, 3, 4]),  # Include layers for capacity exploration
         "dropout": tune.uniform(0.05, 0.3),
         
-        # Training hyperparameters
-        "lr": tune.qloguniform(1e-5, 1e-2, q=1e-6),  # Quantized log-uniform for better coverage
+        # Training hyperparameters - more conservative ranges for stability
+        "lr": tune.qloguniform(1e-5, 5e-3, q=1e-6),  # More conservative max LR
         "batch_size": tune.choice([256, 512, 768, 1024]),  # Larger batches for big GPUs
         "epochs": tune.choice([8, 12, 16, 20])  # Reasonable range for HPO
     }
