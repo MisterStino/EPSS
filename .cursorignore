@@ -7,7 +7,6 @@ __pycache__/
 *.gz
 *.png
 *.csv.gz
-*.pdf
 *mp4
 
 *.json

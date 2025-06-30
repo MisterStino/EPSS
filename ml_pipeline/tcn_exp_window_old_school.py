@@ -227,7 +227,7 @@ class LightningWrapper(pl.LightningModule):
             num_workers=self._num_workers,
             pin_memory=self._num_workers > 0,  # Only use pin_memory with multiprocessing
             persistent_workers=False,
-            timeout=120,
+            timeout=120 if CONFIG['num_workers'] > 0 else 0,
         )
 
 # ───────────────────────────── 7  masked loss ───────────────────────────────
@@ -286,30 +286,29 @@ def main():
     print(f"\n[STEP 2/6] Creating data loaders with per-batch padding...")
     start_time = time.time()
 
-    # Use appropriate collate function based on dataset type
-    # SUS dataset yields fixed-length windows, original dataset needs padding
-    tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
-                       collate_fn=train_collate_fn,
-                       num_workers=CONFIG['num_workers'], 
-                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                       persistent_workers=False,
-                       timeout=120,
-                       prefetch_factor=CONFIG['prefetch_factor'])
+    # Build common kwargs again
+    _dl_common_re = dict(
+        batch_size=BATCH,
+        shuffle=False,
+        num_workers=CONFIG['num_workers'],
+        pin_memory=CONFIG['num_workers'] > 0,
+        persistent_workers=False,
+        timeout=120 if CONFIG['num_workers'] > 0 else 0,
+    )
+    if CONFIG['num_workers'] > 0:
+        _dl_common_re["prefetch_factor"] = CONFIG["prefetch_factor"]
 
-    va_ld = DataLoader(va_ds, BATCH, shuffle=False,
+    tr_ld = DataLoader(tr_ds, collate_fn=train_collate_fn, **_dl_common_re)
+
+    _dl_val_re = _dl_common_re.copy()
+    _dl_val_re.pop("prefetch_factor", None) if CONFIG['num_workers'] == 0 else None
+    va_ld = DataLoader(va_ds,
                        collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
-                       num_workers=CONFIG['num_workers'], 
-                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                       persistent_workers=False,
-                       prefetch_factor=CONFIG['prefetch_factor'])
+                       **_dl_val_re)
 
-    te_ld = DataLoader(te_ds, BATCH, shuffle=False,
+    te_ld = DataLoader(te_ds,
                        collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
-                       num_workers=CONFIG['num_workers'], 
-                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                       persistent_workers=False,
-                       timeout=120,
-                       prefetch_factor=CONFIG['prefetch_factor'])
+                       **_dl_common_re)
 
     elapsed = time.time() - start_time
     print(f"✓ Memory-efficient data loaders ready in {elapsed:.1f}s")
@@ -396,28 +395,30 @@ def main():
     print(f"\n[RECREATING DATALOADERS] Using optimal batch size: {BATCH}")
     recreate_start = time.time()
 
-    tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
-                       collate_fn=train_collate_fn,
-                       num_workers=CONFIG['num_workers'], 
-                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                       persistent_workers=False,
-                       timeout=120,
-                       prefetch_factor=CONFIG['prefetch_factor'])
+    # ⚙️ Build conditional kwargs – identical logic as first DataLoader block
+    _re_dl = dict(
+        batch_size=BATCH,
+        shuffle=False,
+        num_workers=CONFIG['num_workers'],
+        pin_memory=CONFIG['num_workers'] > 0,
+        persistent_workers=False,
+        timeout=120 if CONFIG['num_workers'] > 0 else 0,
+    )
+    if CONFIG['num_workers'] > 0:
+        _re_dl['prefetch_factor'] = CONFIG['prefetch_factor']
 
-    va_ld = DataLoader(va_ds, BATCH, shuffle=False,
+    tr_ld = DataLoader(tr_ds, collate_fn=train_collate_fn, **_re_dl)
+
+    _re_dl_val = _re_dl.copy()
+    # Remove prefetch_factor if single-process
+    _re_dl_val.pop('prefetch_factor', None) if CONFIG['num_workers'] == 0 else None
+    va_ld = DataLoader(va_ds,
                        collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
-                       num_workers=CONFIG['num_workers'], 
-                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                       persistent_workers=False,
-                       prefetch_factor=CONFIG['prefetch_factor'])
+                       **_re_dl_val)
 
-    te_ld = DataLoader(te_ds, BATCH, shuffle=False,
+    te_ld = DataLoader(te_ds,
                        collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
-                       num_workers=CONFIG['num_workers'], 
-                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                       persistent_workers=False,
-                       timeout=120,
-                       prefetch_factor=CONFIG['prefetch_factor'])
+                       **_re_dl)
 
     recreate_elapsed = time.time() - recreate_start
     print(f"✓ Data loaders recreated with optimal batch size in {recreate_elapsed:.1f}s")
@@ -426,7 +427,7 @@ def main():
 
     # ──────────────────────── MIXED PRECISION SETUP ─────────────────────────
     # Initialize gradient scaler for mixed precision training
-    scaler = torch.cuda.amp.GradScaler()
+    scaler = torch.amp.GradScaler('cuda')
     print("✓ Mixed precision gradient scaler initialized")
 
     # ──────────────────────── STEP 6: Training ──────────────────────────────────
@@ -448,7 +449,7 @@ def main():
             me = me.to(dev, non_blocking=True)
             # date_pad stays on CPU - not needed for training
             opt.zero_grad()
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast('cuda'):
                 loss = masked_mse(model(num, boo, cat), Y, mt, mh, me)
             scaler.scale(loss).backward()
             scaler.unscale_(opt)  # Unscale gradients before clipping
@@ -474,7 +475,7 @@ def main():
                 mh = mh.to(dev, non_blocking=True)
                 me = me.to(dev, non_blocking=True)
                 # date_pad stays on CPU - not needed for validation
-                with torch.cuda.amp.autocast():
+                with torch.amp.autocast('cuda'):
                     P = model(num, boo, cat)
                     va_loss += masked_mse(P, Y, mt, mh, me).item()
                 
@@ -526,7 +527,7 @@ def main():
             mh = mh.to(dev, non_blocking=True)
             me = me.to(dev, non_blocking=True)
             # date_pad stays on CPU - not needed for evaluation metrics
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast('cuda'):
                 P = model(num, boo, cat)
             m = mh * me.unsqueeze(-1)
             err = P - Y
@@ -589,7 +590,7 @@ def main():
     with torch.no_grad():
         for num, boo, cat, Y, mt, mh, me, date_pad, lengths in tqdm(test_pred_loader, desc="collect preds"):
             # Forward pass with mixed precision
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast('cuda'):
                 P = model(num.to(dev), boo.to(dev), cat.to(dev)).cpu()
             
             # Store results (remove batch dimension since batch_size=1)
