@@ -352,6 +352,12 @@ def main():
                 kernel_size= CONFIG['tcn_kernel']).to(dev)
 
     # 🔭 BIG RECEPTIVE FIELD ANNOUNCEMENT 🔭
+    # Calculate receptive field manually since pytorch_tcn doesn't expose it as an attribute
+    # For a TCN with exponential dilation: receptive_field = 1 + sum(dilation * (kernel_size - 1))
+    # With dilation_base=2, levels=6, kernel_size=3: dilations = [1, 2, 4, 8, 16, 32]
+    dilations = [2**i for i in range(CONFIG['tcn_levels'])]
+    receptive_field = 1 + sum(d * (CONFIG['tcn_kernel'] - 1) for d in dilations)
+    
     print("\n" + "="*80)
     print("🔭" * 20)
     print("██╗    ██╗ ██████╗ ██╗   ██╗██╗   ██╗██╗   ██╗██╗   ██╗██╗   ██╗")
@@ -362,7 +368,7 @@ def main():
     print(" ╚══╝╚══╝  ╚═════╝  ╚═════╝  ╚═════╝  ╚═════╝  ╚═════╝  ╚═════╝ ")
     print()
     print("🎯 I CAN SEEEEEE YOUUUUU FOORRRR:")
-    print(f"🔥🔥🔥 {model.tcn.receptive_field} DAYS INTO THE PAST! 🔥🔥🔥")
+    print(f"🔥🔥🔥 {receptive_field} DAYS INTO THE PAST! 🔥🔥🔥")
     print("🎯 THAT'S LIKE SEEING INTO THE MATRIX OF TIME! 🕰️")
     print("🔭" * 20)
     print("="*80 + "\n")
