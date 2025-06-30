@@ -9,11 +9,15 @@ to model training and evaluation in the correct sequence.
 Pipeline Steps:
 1. Data preprocessing and sorting (presort.py)
 2. Arrow file conversion for efficient streaming (00_build_arrow.py) 
-3. LSTM model training and evaluation (lstm_exp_window_eval.py)
+3. Model training and evaluation (configurable: LSTM, TCN, or TCN-baseline)
 
-Usage: python -m ml_pipeline.run_pipeline
+Usage: 
+  python -m ml_pipeline.run_pipeline                    # Default: LSTM
+  python -m ml_pipeline.run_pipeline --model tcn        # TCN with SUS
+  python -m ml_pipeline.run_pipeline --model tcn-baseline  # TCN without SUS
 """
 
+import argparse
 import subprocess
 import sys
 import os
@@ -35,9 +39,10 @@ class Colors:
 class PipelineRunner:
     """ML Pipeline Runner with error handling and logging"""
     
-    def __init__(self):
+    def __init__(self, model_choice: str = "lstm"):
         self.steps_completed = 0
         self.total_steps = 7
+        self.model_choice = model_choice
         
     def log(self, message: str) -> None:
         """Log a message with timestamp"""
@@ -126,10 +131,27 @@ class PipelineRunner:
         self.log("1. Data Preprocessing and Sorting")
         self.log("2. Arrow File Conversion")
         self.log("2B. SUS Weight Quantile Computation")
-        self.log("3. LSTM Model Training and Evaluation")
+        self.log(f"3. {self.model_choice.upper()} Model Training and Evaluation")
         print("=" * 40)
         print()
         
+        # Model-specific configuration
+        model_configs = {
+            "lstm": {
+                "module": "ml_pipeline.lstm_exp_window_eval",
+                "description": "Training LSTM model with SUS sampling and windowed evaluation"
+            },
+            "tcn": {
+                "module": "ml_pipeline.tcn_exp_window_eval", 
+                "description": "Training TCN model with SUS sampling and windowed evaluation"
+            },
+            "tcn-baseline": {
+                "module": "ml_pipeline.tcn_exp_window_old_school",
+                "description": "Training TCN baseline model (no SUS) for comparison"
+            }
+        }
+        
+        selected_model = model_configs.get(self.model_choice, model_configs["lstm"])
         
         # Define pipeline steps
         pipeline_steps = [
@@ -165,13 +187,18 @@ class PipelineRunner:
             },
             {
                 "name": "3-TRAIN",
-                "module": "ml_pipeline.lstm_exp_window_eval",
-                "description": "Training LSTM model with windowed evaluation and generating predictions"
+                "module": selected_model["module"],
+                "description": selected_model["description"]
             }
         ]
         
         # Run each step
         for step in pipeline_steps:
+            # Skip SUS weight computation for baseline model (doesn't use SUS)
+            if step["name"] == "2B-SUS-Z" and self.model_choice == "tcn-baseline":
+                self.log(f"Skipping {step['name']} for baseline model (no SUS)")
+                continue
+            
             if not self.run_step(step["name"], step["module"], step["description"]):
                 return False
         
@@ -189,7 +216,11 @@ class PipelineRunner:
 
 def main():
     """Main entry point for the pipeline runner"""
-    runner = PipelineRunner()
+    parser = argparse.ArgumentParser(description="Run the ML pipeline with different models")
+    parser.add_argument("--model", choices=["lstm", "tcn", "tcn-baseline"], help="Specify the model to run")
+    args = parser.parse_args()
+
+    runner = PipelineRunner(args.model)
     
     try:
         success = runner.run_pipeline()
