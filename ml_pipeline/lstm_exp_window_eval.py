@@ -468,8 +468,8 @@ def main():
         z_mode = "max" if "q1.000" in str(SUS_CONFIG_PATH) else "quant"
         tag = f"B{SUS_CONFIG['beta']}_D{SUS_CONFIG['look_ahead']}_{z_mode}"
         
-        # Ensure results directory exists
-        Path("results").mkdir(exist_ok=True)
+        # Ensure results directory exists (Path imported at module level)
+        Path("ml_pipeline/results/predictions").mkdir(parents=True, exist_ok=True)
         
         # Append metrics to CSV (final epoch values)
         with open(f"results/grid_{tag}.csv", "a") as fh:
@@ -507,7 +507,7 @@ def main():
     print("=" * 50)
 
     # CRITICAL FIX: Ensure directories exist before saving
-    from pathlib import Path
+    # Ensure results directory exists (Path imported at module level)
     Path("ml_pipeline/results/predictions").mkdir(parents=True, exist_ok=True)
     print("✓ Results directories created/verified")
 

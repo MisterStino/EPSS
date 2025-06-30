@@ -217,10 +217,10 @@ class PipelineRunner:
 def main():
     """Main entry point for the pipeline runner"""
     parser = argparse.ArgumentParser(description="Run the ML pipeline with different models")
-    parser.add_argument("--model", choices=["lstm", "tcn", "tcn-baseline"], help="Specify the model to run")
+    parser.add_argument("--model", choices=["lstm", "tcn", "tcn-baseline"], help="Specify the model to run", default="lstm")
     args = parser.parse_args()
 
-    runner = PipelineRunner(args.model)
+    runner = PipelineRunner(args.model or "lstm")
     
     try:
         success = runner.run_pipeline()
