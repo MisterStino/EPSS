@@ -281,6 +281,7 @@ def main():
                        num_workers=CONFIG['num_workers'], 
                        pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
                        persistent_workers=False,
+                       timeout=120,
                        prefetch_factor=CONFIG['prefetch_factor'])
 
     te_ld = DataLoader(te_ds, BATCH, shuffle=False,
@@ -288,6 +289,7 @@ def main():
                        num_workers=CONFIG['num_workers'], 
                        pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
                        persistent_workers=False,
+                       timeout=120,
                        prefetch_factor=CONFIG['prefetch_factor'])
 
     elapsed = time.time() - start_time
@@ -371,6 +373,7 @@ def main():
                        num_workers=CONFIG['num_workers'], 
                        pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
                        persistent_workers=False,
+                       timeout=120,
                        prefetch_factor=CONFIG['prefetch_factor'])
 
     te_ld = DataLoader(te_ds, BATCH, shuffle=False,
@@ -378,6 +381,7 @@ def main():
                        num_workers=CONFIG['num_workers'], 
                        pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
                        persistent_workers=False,
+                       timeout=120,
                        prefetch_factor=CONFIG['prefetch_factor'])
 
     recreate_elapsed = time.time() - recreate_start
