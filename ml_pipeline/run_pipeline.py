@@ -37,7 +37,7 @@ class PipelineRunner:
     
     def __init__(self):
         self.steps_completed = 0
-        self.total_steps = 6
+        self.total_steps = 7
         
     def log(self, message: str) -> None:
         """Log a message with timestamp"""
@@ -74,13 +74,23 @@ class PipelineRunner:
         """
         self.log(f"Starting Step: {Colors.BLUE}{step_name}{Colors.NC}")
         self.log(f"Description: {description}")
-        self.log(f"Command: python -m {module_name}")
+        
+        # Special handling for SUS weight quantile computation
+        if module_name == "ml_pipeline.tools.compute_weight_quantile":
+            cmd = [sys.executable, "-m", module_name, 
+                   "--arrow", "ml_pipeline/work/epss_stage1.arrow",
+                   "--beta", "3.0", "--look-ahead", "5", "--quantile", "0.995"]
+            self.log(f"Command: python -m {module_name} --arrow ml_pipeline/work/epss_stage1.arrow --beta 3.0 --look-ahead 5 --quantile 0.995")
+        else:
+            cmd = [sys.executable, "-m", module_name]
+            self.log(f"Command: python -m {module_name}")
+        
         print("-" * 40)
         
         try:
             # Run the module as subprocess
             result = subprocess.run(
-                [sys.executable, "-m", module_name],
+                cmd,
                 check=True,
                 capture_output=False,  # Let output go to console
                 text=True
@@ -115,6 +125,7 @@ class PipelineRunner:
         self.log("0. Cleanup Stale Files")
         self.log("1. Data Preprocessing and Sorting")
         self.log("2. Arrow File Conversion")
+        self.log("2B. SUS Weight Quantile Computation")
         self.log("3. LSTM Model Training and Evaluation")
         print("=" * 40)
         print()
@@ -146,6 +157,11 @@ class PipelineRunner:
                 "name": "2-ARROW",
                 "module": "ml_pipeline.data_prep.00_build_arrow",
                 "description": "Converting sorted Parquet data to Arrow format for memory-efficient streaming during training"
+            },
+            {
+                "name": "2B-SUS-Z",
+                "module": "ml_pipeline.tools.compute_weight_quantile",
+                "description": "Computing Z normalization constant for SUS sampling to ensure optimal spike detection"
             },
             {
                 "name": "3-TRAIN",

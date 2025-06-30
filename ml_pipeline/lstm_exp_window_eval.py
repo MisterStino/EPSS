@@ -25,11 +25,12 @@ import os
 # FIXED: Always use module imports regardless of execution context
 sys.path.append('training')
 from ml_pipeline.training.dataset_iterable_fixed import CVEIterableDatasetFixed, pad_and_mask_fixed
+from ml_pipeline.training.dataset_iterable_sus import CVEIterableDatasetSUS, collate_fixed_win, collate_sus_train
 
 
 
 # Define if local or paperspace:
-local_execution  = True
+local_execution  = False
 
 # Hardware-specific configurations
 LOCAL_CONFIG = {
@@ -89,6 +90,28 @@ with open(VOCAB_PATH, 'r') as f:
 print(f"[INFO] Streaming from: {ARROW_PATH}")
 print(f"[INFO] Vocabulary loaded: {len(VOCAB)} categorical columns")
 print(f"[INFO] Memory-efficient streaming approach - no DataFrame loading!")
+
+# ─────────────────────────── SUS Configuration ─────────────────────────────
+# SUS (Stochastic Under-Sampling) parameters for addressing within-CVE imbalance
+SUS_CONFIG = {
+    'enabled': True,           # Enable SUS for training
+    'look_ahead': 5,          # Days ahead to compute future change (Δ in paper)
+    'beta': 3.0,              # Exponent for probability function (higher = more selective)
+    'z_norm': None,           # Will be loaded from pre-computed config
+    'seed': 42                # Random seed for reproducible sampling
+}
+
+# Load pre-computed Z normalization constant
+SUS_CONFIG_PATH = WORK_DIR / f"sus_config_beta{SUS_CONFIG['beta']}_q0.995.json"
+if SUS_CONFIG['enabled'] and SUS_CONFIG_PATH.exists():
+    with open(SUS_CONFIG_PATH, 'r') as f:
+        sus_data = json.load(f)
+        SUS_CONFIG['z_norm'] = sus_data['Z']
+        print(f"[INFO] SUS enabled: β={SUS_CONFIG['beta']}, Δ={SUS_CONFIG['look_ahead']}, Z={SUS_CONFIG['z_norm']:.6f}")
+elif SUS_CONFIG['enabled']:
+    print(f"[WARNING] SUS enabled but config not found: {SUS_CONFIG_PATH}")
+    print(f"[WARNING] Run: python -m ml_pipeline.tools.compute_weight_quantile --arrow {ARROW_PATH}")
+    SUS_CONFIG['enabled'] = False
 
 
 # ───────────────────────────── 6  model ──────────────────────────────────────
@@ -182,14 +205,28 @@ HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 1e-3
 print(f"\n[STEP 1/6] Creating streaming datasets (memory-efficient)...")
 start_time = time.time()
 
-# NEW: Create streaming datasets - no global padding, no DataFrame in memory
-print("  → Training dataset (streaming)...")
-tr_ds = CVEIterableDatasetFixed(ARROW_PATH, horizon=HORIZON)
+# SUS: Use SUS dataset for training, original dataset for validation/test
+if SUS_CONFIG['enabled']:
+    print("  → Training dataset (SUS sampling)...")
+    tr_ds = CVEIterableDatasetSUS(
+        ARROW_PATH, 
+        horizon=HORIZON,
+        look_ahead=SUS_CONFIG['look_ahead'],
+        beta=SUS_CONFIG['beta'],
+        z_norm=SUS_CONFIG['z_norm'],
+        seed=SUS_CONFIG['seed']
+    )
+    train_collate_fn = partial(collate_sus_train, horizon=HORIZON, flag_kind="train")
+    print(f"    ✓ SUS training: shows more spikes, fewer flat windows")
+else:
+    print("  → Training dataset (standard streaming)...")
+    tr_ds = CVEIterableDatasetFixed(ARROW_PATH, horizon=HORIZON)
+    train_collate_fn = partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON)
 
-print("  → Validation dataset (streaming)...")  
+print("  → Validation dataset (standard streaming)...")  
 va_ds = CVEIterableDatasetFixed(ARROW_PATH, horizon=HORIZON)
 
-print("  → Test dataset (streaming)...")
+print("  → Test dataset (standard streaming)...")
 te_ds = CVEIterableDatasetFixed(ARROW_PATH, horizon=HORIZON)
 
 elapsed = time.time() - start_time
@@ -199,10 +236,10 @@ print(f"✓ All streaming datasets created in {elapsed:.1f}s")
 print(f"\n[STEP 2/6] Creating data loaders with per-batch padding...")
 start_time = time.time()
 
-# NEW: Use per-batch padding collate function instead of global padding
-# Note: IterableDataset doesn't support shuffle - randomness handled by worker sharding
+# Use appropriate collate function based on dataset type
+# SUS dataset yields fixed-length windows, original dataset needs padding
 tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
-                   collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON),
+                   collate_fn=train_collate_fn,
                    num_workers=CONFIG['num_workers'], 
                    pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
                    persistent_workers=CONFIG['num_workers'] > 0,
@@ -292,7 +329,7 @@ print(f"\n[RECREATING DATALOADERS] Using optimal batch size: {BATCH}")
 recreate_start = time.time()
 
 tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
-                   collate_fn=partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON),
+                   collate_fn=train_collate_fn,
                    num_workers=CONFIG['num_workers'], 
                    pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
                    persistent_workers=CONFIG['num_workers'] > 0,
