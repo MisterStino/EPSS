@@ -268,7 +268,9 @@ def train_lstm_with_tune(config):
     
     # Load SUS configuration if enabled
     sus_z_norm = None
-    if USE_SUS:
+    use_sus_for_trial = USE_SUS  # Local copy to avoid UnboundLocalError
+    
+    if use_sus_for_trial:
         project_root = find_project_root()
         sus_config_path = project_root / "ml_pipeline" / "work" / f"sus_config_beta{trial_sus_beta}_d{trial_sus_look_ahead}_q0.995.json"
         
@@ -280,7 +282,7 @@ def train_lstm_with_tune(config):
         else:
             print(f"[Ray Worker] WARNING: SUS config not found: {sus_config_path}")
             print(f"[Ray Worker] Run: python -m ml_pipeline.tools.compute_weight_quantile --arrow {arrow_path} --beta {trial_sus_beta} --look-ahead {trial_sus_look_ahead}")
-            USE_SUS = False
+            use_sus_for_trial = False
             print(f"[Ray Worker] Falling back to standard dataset")
     else:
         print(f"[Ray Worker] Using standard dataset (SUS disabled)")
@@ -302,7 +304,7 @@ def train_lstm_with_tune(config):
     
     try:
         # Create datasets - use SUS if enabled, otherwise standard
-        if USE_SUS and sus_z_norm is not None:
+        if use_sus_for_trial and sus_z_norm is not None:
             print(f"[Ray Worker] Creating SUS datasets...")
             train_dataset = CVEIterableDatasetSUS(arrow_path, horizon=HORIZON)
             val_dataset = CVEIterableDatasetSUS(arrow_path, horizon=HORIZON)
