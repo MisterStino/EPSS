@@ -292,28 +292,23 @@ def main():
 
     # Use appropriate collate function based on dataset type
     # SUS dataset yields fixed-length windows, original dataset needs padding
-    tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
-                       collate_fn=train_collate_fn,
-                       num_workers=CONFIG['num_workers'], 
-                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                       persistent_workers=False,
-                       timeout=120 if CONFIG['num_workers'] > 0 else 0,
-                       prefetch_factor=CONFIG['prefetch_factor'])
-
-    va_ld = DataLoader(va_ds, BATCH, shuffle=False,
-                       collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
-                       num_workers=CONFIG['num_workers'], 
-                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                       persistent_workers=False,
-                       prefetch_factor=CONFIG['prefetch_factor'])
-
-    te_ld = DataLoader(te_ds, BATCH, shuffle=False,
-                       collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
-                       num_workers=CONFIG['num_workers'], 
-                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                       persistent_workers=False,
-                       timeout=120 if CONFIG['num_workers'] > 0 else 0,
-                       prefetch_factor=CONFIG['prefetch_factor'])
+    
+    # Build kwargs dynamically to avoid passing arguments that are invalid when
+    # `num_workers == 0` (e.g. ``prefetch_factor`` is only supported in multi-process mode)
+    _dl_common = dict(
+        batch_size=BATCH,
+        shuffle=False,
+        num_workers=CONFIG['num_workers'],
+        pin_memory=CONFIG['num_workers'] > 0,
+        persistent_workers=False,
+        timeout=120 if CONFIG['num_workers'] > 0 else 0
+    )
+    if CONFIG['num_workers'] > 0:
+        _dl_common['prefetch_factor'] = CONFIG['prefetch_factor']
+    
+    tr_ld = DataLoader(tr_ds, collate_fn=train_collate_fn, **_dl_common)
+    va_ld = DataLoader(va_ds, collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON), **_dl_common)
+    te_ld = DataLoader(te_ds, collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON), **_dl_common)
 
     elapsed = time.time() - start_time
     print(f"✓ Memory-efficient data loaders ready in {elapsed:.1f}s")
@@ -329,7 +324,7 @@ def main():
     n_num = sample_batch[0].shape[-1]   # Numeric features dimension 
     n_bool = sample_batch[1].shape[-1]  # Boolean features dimension
     n_cat = sample_batch[2].shape[-1]   # Categorical features dimension
-    # Note: sample_batch now has 8 elements (added date_pad), but we only need first 3 for dimensions
+    # Note: sample_batch now has 9 elements when using SUS (nums, boos, cats, Y, mT, mH, mE, dates, lengths), but we only need first 3 for dimensions
 
     # Get categorical vocabulary sizes for embeddings
     cat_sizes = [len(VOCAB[col]) for col in VOCAB.keys()]
@@ -384,28 +379,12 @@ def main():
     print(f"\n[RECREATING DATALOADERS] Using optimal batch size: {BATCH}")
     recreate_start = time.time()
 
-    tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
-                       collate_fn=train_collate_fn,
-                       num_workers=CONFIG['num_workers'], 
-                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                       persistent_workers=False,
-                       timeout=120 if CONFIG['num_workers'] > 0 else 0,
-                       prefetch_factor=CONFIG['prefetch_factor'])
-
-    va_ld = DataLoader(va_ds, BATCH, shuffle=False,
-                       collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
-                       num_workers=CONFIG['num_workers'], 
-                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                       persistent_workers=False,
-                       prefetch_factor=CONFIG['prefetch_factor'])
-
-    te_ld = DataLoader(te_ds, BATCH, shuffle=False,
-                       collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
-                       num_workers=CONFIG['num_workers'], 
-                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                       persistent_workers=False,
-                       timeout=120 if CONFIG['num_workers'] > 0 else 0,
-                       prefetch_factor=CONFIG['prefetch_factor'])
+    # Update batch size in common kwargs
+    _dl_common['batch_size'] = BATCH
+    
+    tr_ld = DataLoader(tr_ds, collate_fn=train_collate_fn, **_dl_common)
+    va_ld = DataLoader(va_ds, collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON), **_dl_common)
+    te_ld = DataLoader(te_ds, collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON), **_dl_common)
 
     recreate_elapsed = time.time() - recreate_start
     print(f"✓ Data loaders recreated with optimal batch size in {recreate_elapsed:.1f}s")
