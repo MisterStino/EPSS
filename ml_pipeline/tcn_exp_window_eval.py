@@ -393,7 +393,8 @@ def main():
 
     # ──────────────────────── MIXED PRECISION SETUP ─────────────────────────
     # Initialize gradient scaler for mixed precision training
-    scaler = torch.amp.GradScaler('cuda')
+    scaler = torch.cuda.amp.GradScaler()
+
     print("✓ Mixed precision gradient scaler initialized")
 
     # ──────────────────────── STEP 6: Training ──────────────────────────────────
