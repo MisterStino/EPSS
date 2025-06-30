@@ -252,6 +252,16 @@ def train_lstm_with_tune(config):
     device = get_device()
     vocab, arrow_path = load_vocab_and_paths()
     
+    # Debug GPU availability in Ray worker
+    print(f"[Ray Worker] Using device: {device}")
+    if torch.cuda.is_available():
+        print(f"[Ray Worker] CUDA available: {torch.cuda.is_available()}")
+        print(f"[Ray Worker] CUDA device count: {torch.cuda.device_count()}")
+        print(f"[Ray Worker] Current CUDA device: {torch.cuda.current_device()}")
+        print(f"[Ray Worker] CUDA device name: {torch.cuda.get_device_name()}")
+    else:
+        print("[Ray Worker] WARNING: CUDA not available - running on CPU only!")
+    
     try:
         # Create datasets (CVEIterableDatasetFixed only takes arrow_path and horizon)
         train_dataset = CVEIterableDatasetFixed(arrow_path, horizon=HORIZON)
@@ -616,15 +626,18 @@ def main():
         max_error_rows=5
     )
     
-    # Create and run tuner
+    # Create and run tuner with explicit GPU allocation
     tuner = tune.Tuner(
-        train_lstm_with_tune,
+        tune.with_resources(
+            train_lstm_with_tune,
+            resources={"cpu": 1, "gpu": 1}  # Explicitly request 1 GPU per trial
+        ),
         param_space=search_space,
         tune_config=tune.TuneConfig(
             search_alg=search_algorithm,
             scheduler=scheduler,
             num_samples=50,  # Number of trials
-            max_concurrent_trials=2,  # Limit concurrent trials for resource management
+            max_concurrent_trials=2,  # Limit to available GPUs (2 GPUs = max 2 concurrent)
         ),
         run_config=tune.RunConfig(
             name="epss_lstm_comprehensive_hpo",
