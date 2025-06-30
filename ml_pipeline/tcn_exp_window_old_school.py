@@ -435,9 +435,23 @@ def main():
     opt = torch.optim.Adam(model.parameters(), lr=LR)
 
     # ──────────────────────── MIXED PRECISION SETUP ─────────────────────────
-    # Initialize gradient scaler for mixed precision training
-    scaler = torch.amp.GradScaler('cuda')
-    print("✓ Mixed precision gradient scaler initialized")
+    # Initialize gradient scaler for mixed precision training (version-compatible)
+    try:
+        # PyTorch >= 1.6
+        scaler = torch.cuda.amp.GradScaler()
+        autocast_context = torch.cuda.amp.autocast
+        print("✓ Mixed precision gradient scaler initialized (torch.cuda.amp)")
+    except AttributeError:
+        try:
+            # PyTorch >= 1.9 (newer location)
+            scaler = torch.amp.GradScaler('cuda')
+            autocast_context = lambda: torch.amp.autocast('cuda')
+            print("✓ Mixed precision gradient scaler initialized (torch.amp)")
+        except AttributeError:
+            # Fallback: no mixed precision
+            scaler = None
+            autocast_context = lambda: torch.no_grad()
+            print("⚠️ Mixed precision not available - using regular precision")
 
     # ──────────────────────── STEP 6: Training ──────────────────────────────────
     print(f"\n[STEP 6/6] Training for {EPOCHS} epochs with mixed precision...")
@@ -458,13 +472,21 @@ def main():
             me = me.to(dev, non_blocking=True)
             # date_pad stays on CPU - not needed for training
             opt.zero_grad()
-            with torch.amp.autocast('cuda'):
+            with autocast_context():
                 loss = masked_mse(model(num, boo, cat), Y, mt, mh, me)
-            scaler.scale(loss).backward()
-            scaler.unscale_(opt)  # Unscale gradients before clipping
-            nn.utils.clip_grad_norm_(model.parameters(), 1.0)  # Gradient clipping
-            scaler.step(opt)
-            scaler.update()
+            
+            if scaler is not None:
+                # Mixed precision training
+                scaler.scale(loss).backward()
+                scaler.unscale_(opt)  # Unscale gradients before clipping
+                nn.utils.clip_grad_norm_(model.parameters(), 1.0)  # Gradient clipping
+                scaler.step(opt)
+                scaler.update()
+            else:
+                # Regular precision training
+                loss.backward()
+                nn.utils.clip_grad_norm_(model.parameters(), 1.0)  # Gradient clipping
+                opt.step()
             tr_loss += loss.item()
             tr_batches += 1
         tr_loss /= tr_batches
@@ -484,7 +506,7 @@ def main():
                 mh = mh.to(dev, non_blocking=True)
                 me = me.to(dev, non_blocking=True)
                 # date_pad stays on CPU - not needed for validation
-                with torch.amp.autocast('cuda'):
+                with autocast_context():
                     P = model(num, boo, cat)
                     va_loss += masked_mse(P, Y, mt, mh, me).item()
                 
@@ -536,7 +558,7 @@ def main():
             mh = mh.to(dev, non_blocking=True)
             me = me.to(dev, non_blocking=True)
             # date_pad stays on CPU - not needed for evaluation metrics
-            with torch.amp.autocast('cuda'):
+            with autocast_context():
                 P = model(num, boo, cat)
             m = mh * me.unsqueeze(-1)
             err = P - Y
@@ -598,8 +620,8 @@ def main():
     model.eval()
     with torch.no_grad():
         for num, boo, cat, Y, mt, mh, me, date_pad, lengths in tqdm(test_pred_loader, desc="collect preds"):
-            # Forward pass with mixed precision
-            with torch.amp.autocast('cuda'):
+            # Forward pass with mixed precision (if available)
+            with autocast_context():
                 P = model(num.to(dev), boo.to(dev), cat.to(dev)).cpu()
             
             # Store results (remove batch dimension since batch_size=1)
