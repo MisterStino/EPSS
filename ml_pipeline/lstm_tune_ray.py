@@ -256,7 +256,7 @@ def train_lstm_with_tune(config):
     trial_sus_look_ahead = config.get("sus_look_ahead", SUS_LOOK_AHEAD)
     
     # Fixed max epochs - ASHA scheduler will handle early stopping
-    max_epochs = 50  # High limit, scheduler will stop early if not improving
+    max_epochs = 1  # TESTING: Reduced to 1 epoch for quick validation
     
     # Constants
     HORIZON = 30
@@ -726,13 +726,13 @@ def main():
         tune_config=tune.TuneConfig(
             search_alg=search_algorithm,
             scheduler=scheduler,
-            num_samples=50,  # Number of trials
-            max_concurrent_trials=2,  # Limit to available GPUs (2 GPUs = max 2 concurrent)
+            num_samples=1,  # TESTING: Reduced to 1 trial for quick validation
+            max_concurrent_trials=1,  # TESTING: Only 1 concurrent trial
         ),
         run_config=tune.RunConfig(
             name="epss_lstm_comprehensive_hpo",
             progress_reporter=reporter,
-            stop={"training_iteration": 50},  # Stop condition (matches max_epochs)
+            stop={"training_iteration": 1},  # TESTING: Stop after 1 iteration
             failure_config=tune.FailureConfig(max_failures=3),
             storage_path=str(Path("./ray_results").absolute()),  # Use absolute path
             log_to_file=True
@@ -743,9 +743,9 @@ def main():
     print("Search space:")
     for key, value in search_space.items():
         print(f"  {key}: {value}")
-    print(f"Number of trials: 50")
-    print(f"Max concurrent trials: 2")
-    print(f"Max epochs per trial: 50 (ASHA scheduler will stop early)")
+    print(f"Number of trials: 1")  # TESTING
+    print(f"Max concurrent trials: 1")  # TESTING
+    print(f"Max epochs per trial: 1 (TESTING MODE)")
     print("Optimization objectives: minimize val_loss, maximize val_spike_recall")
     print("Early stopping: ASHA scheduler (grace period: 3 epochs)")
     print(f"Training strategy: {'SUS (Significance-based Undersampling)' if USE_SUS else 'Standard'}")
