@@ -242,7 +242,9 @@ def train_lstm_with_tune(config):
     dropout = config["dropout"]
     lr = config["lr"]
     batch_size = config["batch_size"]
-    epochs = config["epochs"]
+    
+    # Fixed max epochs - ASHA scheduler will handle early stopping
+    max_epochs = 50  # High limit, scheduler will stop early if not improving
     
     # Constants
     HORIZON = 30
@@ -259,6 +261,11 @@ def train_lstm_with_tune(config):
         print(f"[Ray Worker] CUDA device count: {torch.cuda.device_count()}")
         print(f"[Ray Worker] Current CUDA device: {torch.cuda.current_device()}")
         print(f"[Ray Worker] CUDA device name: {torch.cuda.get_device_name()}")
+        
+        # Memory monitoring
+        total_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3  # GB
+        print(f"[Ray Worker] GPU total memory: {total_memory:.2f} GB")
+        torch.cuda.empty_cache()  # Clear cache before starting
     else:
         print("[Ray Worker] WARNING: CUDA not available - running on CPU only!")
     
@@ -358,13 +365,13 @@ def train_lstm_with_tune(config):
             eps=1e-8,  # Numerical stability
             betas=(0.9, 0.999)
         )
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max_epochs)
         
         # Training loop
         model.train()
         global_step = 0
         
-        for epoch in range(epochs):
+        for epoch in range(max_epochs):
             epoch_loss = 0.0
             epoch_spike_recall = 0.0
             num_batches = 0
@@ -389,15 +396,26 @@ def train_lstm_with_tune(config):
                     print(f"NaN or Inf found in target_tensor")
                     continue
                 
-                # Forward pass
-                pred = model(num_tensor, boo_tensor, cat_tensor)
+                # Forward pass with OOM handling
+                try:
+                    pred = model(num_tensor, boo_tensor, cat_tensor)
+                except torch.cuda.OutOfMemoryError as e:
+                    print(f"[OOM] Forward pass failed: {e}")
+                    torch.cuda.empty_cache()
+                    # Skip this batch and continue
+                    continue
                 
                 # Check predictions for NaN/Inf
                 if torch.isnan(pred).any() or torch.isinf(pred).any():
                     print(f"NaN or Inf found in predictions")
                     continue
                 
-                loss = masked_mse(pred, target_tensor, m_t, m_eval, m_h)
+                try:
+                    loss = masked_mse(pred, target_tensor, m_t, m_eval, m_h)
+                except torch.cuda.OutOfMemoryError as e:
+                    print(f"[OOM] Loss computation failed: {e}")
+                    torch.cuda.empty_cache()
+                    continue
                 
                 # Check loss for NaN/Inf
                 if torch.isnan(loss) or torch.isinf(loss):
@@ -411,17 +429,22 @@ def train_lstm_with_tune(config):
                     target_flat = target_tensor.cpu().numpy().flatten()
                     batch_spike_recall = calculate_spike_recall(target_flat, pred_flat, spike_threshold)
                 
-                # Backward pass
-                optimizer.zero_grad()
-                loss.backward()
-                
-                # Check gradients for NaN/Inf before clipping
-                grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-                if torch.isnan(grad_norm) or torch.isinf(grad_norm):
-                    print(f"NaN or Inf found in gradients, skipping update")
+                # Backward pass with OOM handling
+                try:
+                    optimizer.zero_grad()
+                    loss.backward()
+                    
+                    # Check gradients for NaN/Inf before clipping
+                    grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                    if torch.isnan(grad_norm) or torch.isinf(grad_norm):
+                        print(f"NaN or Inf found in gradients, skipping update")
+                        continue
+                    
+                    optimizer.step()
+                except torch.cuda.OutOfMemoryError as e:
+                    print(f"[OOM] Backward pass failed: {e}")
+                    torch.cuda.empty_cache()
                     continue
-                
-                optimizer.step()
                 
                 epoch_loss += loss.item()
                 epoch_spike_recall += batch_spike_recall
@@ -573,17 +596,17 @@ def main():
             num_gpus=None   # Auto-detect
         )
     
-    # Define refined search space for large GPU memory (48-90GB)
+    # Define search space optimized for 16GB GPU memory (based on memory analysis)
     search_space = {
-        # Model architecture - optimized for large memory
-        "hidden_size": tune.choice([512, 768, 1024, 1536]),  # Larger sizes for big GPUs
-        "layers": tune.choice([2, 3, 4]),  # Include layers for capacity exploration
+        # Model architecture - memory-tested configurations
+        "hidden_size": tune.choice([256, 384, 512, 640, 768]),  # Memory-validated sizes
+        "layers": tune.choice([1, 2, 3]),  # Include single layer for efficiency
         "dropout": tune.uniform(0.05, 0.3),
         
-        # Training hyperparameters - more conservative ranges for stability
+        # Training hyperparameters - memory-safe batch sizes
         "lr": tune.qloguniform(1e-5, 5e-3, q=1e-6),  # More conservative max LR
-        "batch_size": tune.choice([256, 512, 768, 1024]),  # Larger batches for big GPUs
-        "epochs": tune.choice([8, 12, 16, 20])  # Reasonable range for HPO
+        "batch_size": tune.choice([128, 256, 512]),  # Memory-tested batch sizes
+        # epochs removed - let ASHA scheduler handle early stopping
     }
     
     # Setup Bayesian optimization with OptunaSearch
@@ -594,14 +617,14 @@ def main():
         study_name="epss_lstm_hpo"
     )
     
-    # Setup ASHA scheduler for early stopping
+    # Setup ASHA scheduler for aggressive early stopping
     scheduler = ASHAScheduler(
-        time_attr="global_step",
+        time_attr="training_iteration",  # Use epochs instead of global steps
         metric="val_loss",
         mode="min",
-        max_t=20000,  # Maximum global steps
-        grace_period=2000,  # Minimum steps before stopping
-        reduction_factor=2
+        max_t=50,  # Maximum epochs (matches max_epochs in training)
+        grace_period=3,  # Minimum epochs before stopping (allow 3 epochs to see progress)
+        reduction_factor=2  # Stop bottom 50% of trials at each rung
     )
     
     # Setup reporter
@@ -611,8 +634,7 @@ def main():
             "layers": "layers",
             "dropout": "dropout",
             "lr": "lr",
-            "batch_size": "batch",
-            "epochs": "epochs"
+            "batch_size": "batch"
         },
         metric_columns=[
             "val_loss", 
@@ -642,7 +664,7 @@ def main():
         run_config=tune.RunConfig(
             name="epss_lstm_comprehensive_hpo",
             progress_reporter=reporter,
-            stop={"global_step": 20000},  # Stop condition
+            stop={"training_iteration": 50},  # Stop condition (matches max_epochs)
             failure_config=tune.FailureConfig(max_failures=3),
             storage_path=str(Path("./ray_results").absolute()),  # Use absolute path
             log_to_file=True
@@ -655,7 +677,9 @@ def main():
         print(f"  {key}: {value}")
     print(f"Number of trials: 50")
     print(f"Max concurrent trials: 2")
+    print(f"Max epochs per trial: 50 (ASHA scheduler will stop early)")
     print("Optimization objectives: minimize val_loss, maximize val_spike_recall")
+    print("Early stopping: ASHA scheduler (grace period: 3 epochs)")
     print("=" * 80)
     
     # Run optimization
