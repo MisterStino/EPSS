@@ -47,7 +47,7 @@ CLOUD_CONFIG = {
     'hidden_size': 500,    # Increased model capacity for better performance  
     'lstm_layers': 3,      # Same depth
     'emb_dim': 8,          # Same embedding size
-    'num_workers': 4,      # Reduced workers for better memory efficiency
+    'num_workers': 6,      # Reduced workers for better memory efficiency
     'prefetch_factor': 1,  # Reduced queue depth for memory efficiency
 }
 
