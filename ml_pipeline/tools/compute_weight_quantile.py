@@ -208,7 +208,7 @@ def main():
     if args.output:
         output_path = Path(args.output)
     else:
-        output_path = arrow_path.parent / f"sus_config_beta{args.beta}_q{args.quantile}.json"
+        output_path = arrow_path.parent / f"sus_config_beta{args.beta}_d{args.look_ahead}_q{args.quantile}.json"
     
     # Save configuration
     with open(output_path, 'w') as f:

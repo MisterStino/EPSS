@@ -12,6 +12,14 @@ Feature-rich, leakage-proof EPSS forecaster - STREAMING MEMORY-EFFICIENT VERSION
 
 # ───────────────────────────── CELL 1: IMPORTS & SETUP ──────────────────────
 import json, numpy as np, torch, torch.nn as nn
+
+# ── CLI overrides for grid search ───────────────────
+import argparse
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument("--beta", type=float)
+parser.add_argument("--look-ahead", type=int)
+parser.add_argument("--epochs", type=int, default=12)
+args, _ = parser.parse_known_args()
 from torch.utils.data import DataLoader  # Removed: Dataset (old approach)
 from tqdm import tqdm
 from functools import partial
@@ -30,7 +38,8 @@ from ml_pipeline.training.dataset_iterable_sus import CVEIterableDatasetSUS, col
 
 
 # Define if local or paperspace:
-local_execution  = False
+import platform
+local_execution = platform.system() == "Windows"  # Auto-detect Windows for local execution
 
 # Hardware-specific configurations
 LOCAL_CONFIG = {
@@ -48,13 +57,19 @@ CLOUD_CONFIG = {
     'lstm_layers': 3,      # Same depth
     'emb_dim': 8,          # Same embedding size
     'num_workers': 6,      # Reduced workers for better memory efficiency
-    'prefetch_factor': 1,  # Reduced queue depth for memory efficiency
+    'prefetch_factor': None,  # Reduced queue depth for memory efficiency
 }
 
 # Select configuration based on execution environment
 CONFIG = LOCAL_CONFIG if local_execution else CLOUD_CONFIG
+
+# FIX: Disable persistent workers to avoid IterableDataset deadlock
+CONFIG['num_workers'] = 0           # Single-threaded to prevent hanging
+CONFIG['prefetch_factor'] = None    # Not needed with single worker
+
 print(f"[INFO] Using {'LOCAL' if local_execution else 'CLOUD'} configuration:")
 print(f"[INFO] Batch: {CONFIG['batch_size']}, Hidden: {CONFIG['hidden_size']}")
+print(f"[INFO] Workers: {CONFIG['num_workers']} (persistent_workers will be False)")
 
 # ──────────────────────────── helpers ───────────────────────────────────────
 def get_device() -> torch.device:
@@ -98,11 +113,23 @@ SUS_CONFIG = {
     'look_ahead': 5,          # Days ahead to compute future change (Δ in paper)
     'beta': 3.0,              # Exponent for probability function (higher = more selective)
     'z_norm': None,           # Will be loaded from pre-computed config
-    'seed': 42                # Random seed for reproducible sampling
+    'seed': 42,               # Random seed for reproducible sampling
+    'quick_grid': False       # Flag for grid search CSV logging
 }
 
+# Apply CLI overrides
+if args.beta is not None:
+    SUS_CONFIG["beta"] = args.beta
+if args.look_ahead is not None:
+    SUS_CONFIG["look_ahead"] = args.look_ahead
+EPOCHS = args.epochs          # replaces the literal 12 later in the file
+if EPOCHS == 2:
+    SUS_CONFIG["quick_grid"] = True  # Enable CSV logging for grid search
+
 # Load pre-computed Z normalization constant
-SUS_CONFIG_PATH = WORK_DIR / f"sus_config_beta{SUS_CONFIG['beta']}_q0.995.json"
+SUS_CONFIG_PATH = WORK_DIR / (
+    f"sus_config_beta{SUS_CONFIG['beta']}_d{SUS_CONFIG['look_ahead']}_q0.995.json"
+)
 if SUS_CONFIG['enabled'] and SUS_CONFIG_PATH.exists():
     with open(SUS_CONFIG_PATH, 'r') as f:
         sus_data = json.load(f)
@@ -179,7 +206,7 @@ class LightningWrapper(pl.LightningModule):
             collate_fn=self._collate,
             num_workers=self._num_workers,
             pin_memory=self._num_workers > 0,  # Only use pin_memory with multiprocessing
-            persistent_workers=self._num_workers > 0,
+            persistent_workers=False,
         )
 
 # ───────────────────────────── 7  masked loss ───────────────────────────────
@@ -193,205 +220,182 @@ def masked_mse(pred, true, m_t, m_h, m_eval):
 # Main training routine - optimized for notebook execution
 import time
 
-print("🚀 STARTING MODEL TRAINING PIPELINE")
-print("=" * 50)
+def main():
+    """Main training function - wrapped for Windows multiprocessing compatibility"""
+    print("🚀 STARTING MODEL TRAINING PIPELINE")
+    print("=" * 50)
 
-torch.manual_seed(0)
-dev = get_device()
+    torch.manual_seed(0)
+    dev = get_device()
 
-HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 1e-3
+    HORIZON, BATCH, LR = 30, CONFIG['batch_size'], 1e-3
 
-# ──────────────────────── STEP 1: Streaming Dataset Creation ─────────────────────────
-print(f"\n[STEP 1/6] Creating streaming datasets (memory-efficient)...")
-start_time = time.time()
+    # ──────────────────────── STEP 1: Streaming Dataset Creation ─────────────────────────
+    print(f"\n[STEP 1/6] Creating streaming datasets (memory-efficient)...")
+    start_time = time.time()
 
-# SUS: Use SUS dataset for training, original dataset for validation/test
-if SUS_CONFIG['enabled']:
-    print("  → Training dataset (SUS sampling)...")
-    tr_ds = CVEIterableDatasetSUS(
-        ARROW_PATH, 
-        horizon=HORIZON,
-        look_ahead=SUS_CONFIG['look_ahead'],
-        beta=SUS_CONFIG['beta'],
-        z_norm=SUS_CONFIG['z_norm'],
-        seed=SUS_CONFIG['seed']
-    )
-    train_collate_fn = partial(collate_sus_train, horizon=HORIZON, flag_kind="train")
-    print(f"    ✓ SUS training: shows more spikes, fewer flat windows")
-else:
-    print("  → Training dataset (standard streaming)...")
-    tr_ds = CVEIterableDatasetFixed(ARROW_PATH, horizon=HORIZON)
-    train_collate_fn = partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON)
+    # SUS: Use SUS dataset for training, original dataset for validation/test
+    if SUS_CONFIG['enabled']:
+        print("  → Training dataset (SUS sampling)...")
+        tr_ds = CVEIterableDatasetSUS(
+            ARROW_PATH, 
+            horizon=HORIZON,
+            look_ahead=SUS_CONFIG['look_ahead'],
+            beta=SUS_CONFIG['beta'],
+            z_norm=SUS_CONFIG['z_norm'],
+            seed=SUS_CONFIG['seed']
+        )
+        train_collate_fn = partial(collate_sus_train, horizon=HORIZON, flag_kind="train")
+        print(f"    ✓ SUS training: shows more spikes, fewer flat windows")
+    else:
+        print("  → Training dataset (standard streaming)...")
+        tr_ds = CVEIterableDatasetFixed(ARROW_PATH, horizon=HORIZON)
+        train_collate_fn = partial(pad_and_mask_fixed, flag_kind="train", horizon=HORIZON)
 
-print("  → Validation dataset (standard streaming)...")  
-va_ds = CVEIterableDatasetFixed(ARROW_PATH, horizon=HORIZON)
+    print("  → Validation dataset (standard streaming)...")  
+    va_ds = CVEIterableDatasetFixed(ARROW_PATH, horizon=HORIZON)
 
-print("  → Test dataset (standard streaming)...")
-te_ds = CVEIterableDatasetFixed(ARROW_PATH, horizon=HORIZON)
+    print("  → Test dataset (standard streaming)...")
+    te_ds = CVEIterableDatasetFixed(ARROW_PATH, horizon=HORIZON)
 
-elapsed = time.time() - start_time
-print(f"✓ All streaming datasets created in {elapsed:.1f}s")
+    elapsed = time.time() - start_time
+    print(f"✓ All streaming datasets created in {elapsed:.1f}s")
 
-# ──────────────────────── STEP 2: DataLoader Creation (Per-Batch Padding) ─────────────────
-print(f"\n[STEP 2/6] Creating data loaders with per-batch padding...")
-start_time = time.time()
+    # ──────────────────────── STEP 2: DataLoader Creation (Per-Batch Padding) ─────────────────
+    print(f"\n[STEP 2/6] Creating data loaders with per-batch padding...")
+    start_time = time.time()
 
-# Use appropriate collate function based on dataset type
-# SUS dataset yields fixed-length windows, original dataset needs padding
-tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
-                   collate_fn=train_collate_fn,
-                   num_workers=CONFIG['num_workers'], 
-                   pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                   persistent_workers=CONFIG['num_workers'] > 0,
-                   prefetch_factor=CONFIG['prefetch_factor'])
+    # Use appropriate collate function based on dataset type
+    # SUS dataset yields fixed-length windows, original dataset needs padding
+    tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
+                       collate_fn=train_collate_fn,
+                       num_workers=CONFIG['num_workers'], 
+                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
+                       persistent_workers=False,
+                       prefetch_factor=CONFIG['prefetch_factor'])
 
-va_ld = DataLoader(va_ds, BATCH, shuffle=False,
-                   collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
-                   num_workers=CONFIG['num_workers'], 
-                   pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                   persistent_workers=CONFIG['num_workers'] > 0,
-                   prefetch_factor=CONFIG['prefetch_factor'])
+    va_ld = DataLoader(va_ds, BATCH, shuffle=False,
+                       collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
+                       num_workers=CONFIG['num_workers'], 
+                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
+                       persistent_workers=False,
+                       prefetch_factor=CONFIG['prefetch_factor'])
 
-te_ld = DataLoader(te_ds, BATCH, shuffle=False,
-                   collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
-                   num_workers=CONFIG['num_workers'], 
-                   pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                   persistent_workers=CONFIG['num_workers'] > 0,
-                   prefetch_factor=CONFIG['prefetch_factor'])
+    te_ld = DataLoader(te_ds, BATCH, shuffle=False,
+                       collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
+                       num_workers=CONFIG['num_workers'], 
+                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
+                       persistent_workers=False,
+                       prefetch_factor=CONFIG['prefetch_factor'])
 
-elapsed = time.time() - start_time
-print(f"✓ Memory-efficient data loaders ready in {elapsed:.1f}s")
-print(f"✓ Per-batch padding (not global) - massive memory savings!")
+    elapsed = time.time() - start_time
+    print(f"✓ Memory-efficient data loaders ready in {elapsed:.1f}s")
+    print(f"✓ Per-batch padding (not global) - massive memory savings!")
 
-# ──────────────────────── STEP 3: Dynamic Model Dimension Detection ─────────────────
-print(f"\n[STEP 3/6] Detecting model dimensions from streaming data...")
-start_time = time.time()
+    # ──────────────────────── STEP 3: Dynamic Model Dimension Detection ─────────────────
+    print(f"\n[STEP 3/6] Detecting model dimensions from streaming data...")
+    start_time = time.time()
 
-# NEW: Get dimensions from actual streaming data sample (not DataFrame)
-print("  → Sampling batch to determine feature dimensions...")
-sample_batch = next(iter(tr_ld))
-n_num = sample_batch[0].shape[-1]   # Numeric features dimension 
-n_bool = sample_batch[1].shape[-1]  # Boolean features dimension
-n_cat = sample_batch[2].shape[-1]   # Categorical features dimension
-# Note: sample_batch now has 8 elements (added date_pad), but we only need first 3 for dimensions
+    # NEW: Get dimensions from actual streaming data sample (not DataFrame)
+    print("  → Sampling batch to determine feature dimensions...")
+    sample_batch = next(iter(tr_ld))
+    n_num = sample_batch[0].shape[-1]   # Numeric features dimension 
+    n_bool = sample_batch[1].shape[-1]  # Boolean features dimension
+    n_cat = sample_batch[2].shape[-1]   # Categorical features dimension
+    # Note: sample_batch now has 8 elements (added date_pad), but we only need first 3 for dimensions
 
-# Get categorical vocabulary sizes for embeddings
-cat_sizes = [len(VOCAB[col]) for col in VOCAB.keys()]
+    # Get categorical vocabulary sizes for embeddings
+    cat_sizes = [len(VOCAB[col]) for col in VOCAB.keys()]
 
-print(f"  → Detected dimensions: {n_num} numeric, {n_bool} boolean, {n_cat} categorical")
-print(f"  → Categorical vocab sizes: {cat_sizes}")
+    print(f"  → Detected dimensions: {n_num} numeric, {n_bool} boolean, {n_cat} categorical")
+    print(f"  → Categorical vocab sizes: {cat_sizes}")
 
-elapsed = time.time() - start_time
-print(f"✓ Dynamic dimensions detected in {elapsed:.1f}s")
+    elapsed = time.time() - start_time
+    print(f"✓ Dynamic dimensions detected in {elapsed:.1f}s")
 
-# ──────────────────────── STEP 4: Model Setup ───────────────────────────────
-print(f"\n[STEP 4/6] Setting up model with dynamic dimensions...")
-start_time = time.time()
+    # ──────────────────────── STEP 4: Model Setup ───────────────────────────────
+    print(f"\n[STEP 4/6] Setting up model with dynamic dimensions...")
+    start_time = time.time()
 
-model = Seq2SeqLSTM(
-            n_num     = n_num,        # From streaming data sample
-            n_bool    = n_bool,       # From streaming data sample  
-            cat_sizes = cat_sizes,    # From loaded vocabulary
-            horizon   = HORIZON,
-            hidden    = CONFIG['hidden_size'],
-            layers    = CONFIG['lstm_layers']).to(dev)
+    model = Seq2SeqLSTM(
+                n_num     = n_num,        # From streaming data sample
+                n_bool    = n_bool,       # From streaming data sample  
+                cat_sizes = cat_sizes,    # From loaded vocabulary
+                horizon   = HORIZON,
+                hidden    = CONFIG['hidden_size'],
+                layers    = CONFIG['lstm_layers']).to(dev)
 
-# ──────────────────────── STEP 5: Batch Size Tuning ──────────────────
-print(f"\n[STEP 5/6] Setting up optimized batch size and mixed precision...")
-tuning_start = time.time()
+    # ──────────────────────── STEP 5: Batch Size Tuning ──────────────────
+    print(f"\n[STEP 5/6] Setting up optimized batch size and mixed precision...")
+    tuning_start = time.time()
 
+    # NEW: Set optimized batch size directly for mixed precision training
+    MAX_BATCH = CONFIG['batch_size']  # Increased batch size for better GPU utilization with mixed precision
+    optimal_batch_size = MAX_BATCH
+    print(f"✓ Using optimized batch size: {optimal_batch_size} (was {CONFIG['batch_size']})")
+    print("✓ Mixed precision training enabled - will use FP16 for better performance")
 
-# NEW: Set optimized batch size directly for mixed precision training
-MAX_BATCH = CONFIG['batch_size']  # Increased batch size for better GPU utilization with mixed precision
-optimal_batch_size = MAX_BATCH
-print(f"✓ Using optimized batch size: {optimal_batch_size} (was {CONFIG['batch_size']})")
-print("✓ Mixed precision training enabled - will use FP16 for better performance")
+    # Update CONFIG with optimal batch size
+    CONFIG['batch_size'] = optimal_batch_size
+    BATCH = optimal_batch_size
 
-# Update CONFIG with optimal batch size
-CONFIG['batch_size'] = optimal_batch_size
-BATCH = optimal_batch_size
+    # Skip torch.compile() to avoid kernel cache OOM with variable-length sequences
+    # Eager mode is more stable for streaming, per-batch-padded RNNs
+    if hasattr(torch, "compile") and dev.type == "cuda" and not local_execution:
+        print("  → Skipping model compilation (avoiding kernel cache OOM with variable lengths)")
+        # model = torch.compile(model)  # DISABLED: causes OOM with variable sequence lengths
+    elif local_execution:
+        print("  → Running in eager mode (local execution)")
 
-# Skip torch.compile() to avoid kernel cache OOM with variable-length sequences
-# Eager mode is more stable for streaming, per-batch-padded RNNs
-if hasattr(torch, "compile") and dev.type == "cuda" and not local_execution:
-    print("  → Skipping model compilation (avoiding kernel cache OOM with variable lengths)")
-    # model = torch.compile(model)  # DISABLED: causes OOM with variable sequence lengths
-elif local_execution:
-    print("  → Running in eager mode (local execution)")
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    elapsed = time.time() - start_time
+    print(f"✓ Model ready: {total_params:,} total params, {trainable_params:,} trainable ({elapsed:.1f}s)")
 
-total_params = sum(p.numel() for p in model.parameters())
-trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-elapsed = time.time() - start_time
-print(f"✓ Model ready: {total_params:,} total params, {trainable_params:,} trainable ({elapsed:.1f}s)")
+    # Recreate data loaders with optimal batch size
+    print(f"\n[RECREATING DATALOADERS] Using optimal batch size: {BATCH}")
+    recreate_start = time.time()
 
-# Recreate data loaders with optimal batch size
-print(f"\n[RECREATING DATALOADERS] Using optimal batch size: {BATCH}")
-recreate_start = time.time()
+    tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
+                       collate_fn=train_collate_fn,
+                       num_workers=CONFIG['num_workers'], 
+                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
+                       persistent_workers=False,
+                       prefetch_factor=CONFIG['prefetch_factor'])
 
-tr_ld = DataLoader(tr_ds, BATCH, shuffle=False,
-                   collate_fn=train_collate_fn,
-                   num_workers=CONFIG['num_workers'], 
-                   pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                   persistent_workers=CONFIG['num_workers'] > 0,
-                   prefetch_factor=CONFIG['prefetch_factor'])
+    va_ld = DataLoader(va_ds, BATCH, shuffle=False,
+                       collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
+                       num_workers=CONFIG['num_workers'], 
+                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
+                       persistent_workers=False,
+                       prefetch_factor=CONFIG['prefetch_factor'])
 
-va_ld = DataLoader(va_ds, BATCH, shuffle=False,
-                   collate_fn=partial(pad_and_mask_fixed, flag_kind="val", horizon=HORIZON),
-                   num_workers=CONFIG['num_workers'], 
-                   pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                   persistent_workers=CONFIG['num_workers'] > 0,
-                   prefetch_factor=CONFIG['prefetch_factor'])
+    te_ld = DataLoader(te_ds, BATCH, shuffle=False,
+                       collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
+                       num_workers=CONFIG['num_workers'], 
+                       pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
+                       persistent_workers=False,
+                       prefetch_factor=CONFIG['prefetch_factor'])
 
-te_ld = DataLoader(te_ds, BATCH, shuffle=False,
-                   collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
-                   num_workers=CONFIG['num_workers'], 
-                   pin_memory=CONFIG['num_workers'] > 0,  # Only use pin_memory with multiprocessing
-                   persistent_workers=CONFIG['num_workers'] > 0,
-                   prefetch_factor=CONFIG['prefetch_factor'])
+    recreate_elapsed = time.time() - recreate_start
+    print(f"✓ Data loaders recreated with optimal batch size in {recreate_elapsed:.1f}s")
 
-recreate_elapsed = time.time() - recreate_start
-print(f"✓ Data loaders recreated with optimal batch size in {recreate_elapsed:.1f}s")
+    opt = torch.optim.Adam(model.parameters(), lr=LR)
 
-opt = torch.optim.Adam(model.parameters(), lr=LR)
+    # ──────────────────────── MIXED PRECISION SETUP ─────────────────────────
+    # Initialize gradient scaler for mixed precision training
+    scaler = torch.cuda.amp.GradScaler()
+    print("✓ Mixed precision gradient scaler initialized")
 
-# ──────────────────────── MIXED PRECISION SETUP ─────────────────────────
-# Initialize gradient scaler for mixed precision training
-scaler = torch.cuda.amp.GradScaler()
-print("✓ Mixed precision gradient scaler initialized")
+    # ──────────────────────── STEP 6: Training ──────────────────────────────────
+    print(f"\n[STEP 6/6] Training for {EPOCHS} epochs with mixed precision...")
+    print("=" * 50)
 
-# ──────────────────────── STEP 6: Training ──────────────────────────────────
-print(f"\n[STEP 6/6] Training for {EPOCHS} epochs with mixed precision...")
-print("=" * 50)
-
-# Initialize training history tracking
-history = {"epoch": [], "tr_loss": [], "va_loss": []}
-for ep in range(1, EPOCHS + 1):
-    model.train(); tr_loss = 0.0; tr_batches = 0
-    for num, boo, cat, Y, mt, mh, me, date_pad, lengths in tqdm(tr_ld, desc=f"train {ep}/{EPOCHS}"):
-        # Move tensors to device - cat synchronously to avoid embedding race conditions
-        num = num.to(dev, non_blocking=True)
-        boo = boo.to(dev, non_blocking=True)
-        cat = cat.to(dev, non_blocking=False)  # Synchronous for index tensor
-        Y = Y.to(dev, non_blocking=True)
-        mt = mt.to(dev, non_blocking=True)
-        mh = mh.to(dev, non_blocking=True)
-        me = me.to(dev, non_blocking=True)
-        # date_pad stays on CPU - not needed for training
-        opt.zero_grad()
-        with torch.cuda.amp.autocast():
-            loss = masked_mse(model(num, boo, cat), Y, mt, mh, me)
-        scaler.scale(loss).backward()
-        scaler.unscale_(opt)  # Unscale gradients before clipping
-        nn.utils.clip_grad_norm_(model.parameters(), 1.0)  # Gradient clipping
-        scaler.step(opt)
-        scaler.update()
-        tr_loss += loss.item()
-        tr_batches += 1
-    tr_loss /= tr_batches
-
-    model.eval(); va_loss = 0.0; va_batches = 0
-    with torch.no_grad():
-        for num, boo, cat, Y, mt, mh, me, date_pad, lengths in va_ld:
+    # Initialize training history tracking
+    history = {"epoch": [], "tr_loss": [], "va_loss": []}
+    for ep in range(1, EPOCHS + 1):
+        model.train(); tr_loss = 0.0; tr_batches = 0
+        for num, boo, cat, Y, mt, mh, me, date_pad, lengths in tqdm(tr_ld, desc=f"train {ep}/{EPOCHS}"):
             # Move tensors to device - cat synchronously to avoid embedding race conditions
             num = num.to(dev, non_blocking=True)
             boo = boo.to(dev, non_blocking=True)
@@ -400,182 +404,235 @@ for ep in range(1, EPOCHS + 1):
             mt = mt.to(dev, non_blocking=True)
             mh = mh.to(dev, non_blocking=True)
             me = me.to(dev, non_blocking=True)
-            # date_pad stays on CPU - not needed for validation
+            # date_pad stays on CPU - not needed for training
+            opt.zero_grad()
             with torch.cuda.amp.autocast():
-                va_loss += masked_mse(model(num, boo, cat), Y, mt, mh, me).item()
-            va_batches += 1
-    va_loss /= va_batches
-    print(f"epoch {ep:02d}  train {tr_loss:.4f}  val {va_loss:.4f}")
-    
-    # Track training history
-    history["epoch"].append(ep)
-    history["tr_loss"].append(tr_loss)
-    history["va_loss"].append(va_loss)
+                loss = masked_mse(model(num, boo, cat), Y, mt, mh, me)
+            scaler.scale(loss).backward()
+            scaler.unscale_(opt)  # Unscale gradients before clipping
+            nn.utils.clip_grad_norm_(model.parameters(), 1.0)  # Gradient clipping
+            scaler.step(opt)
+            scaler.update()
+            tr_loss += loss.item()
+            tr_batches += 1
+        tr_loss /= tr_batches
 
-print("\n" + "=" * 50)
-print("🎯 FINAL EVALUATION")
-print("=" * 50)
-model.eval(); tot_mse = tot_mae = tot_n = 0.0
-with torch.no_grad():
-    for num, boo, cat, Y, mt, mh, me, date_pad, lengths in te_ld:
-        # Move tensors to device - cat synchronously to avoid embedding race conditions
-        num = num.to(dev, non_blocking=True)
-        boo = boo.to(dev, non_blocking=True)
-        cat = cat.to(dev, non_blocking=False)  # Synchronous for index tensor
-        Y = Y.to(dev, non_blocking=True)
-        mt = mt.to(dev, non_blocking=True)
-        mh = mh.to(dev, non_blocking=True)
-        me = me.to(dev, non_blocking=True)
-        # date_pad stays on CPU - not needed for evaluation metrics
-        with torch.cuda.amp.autocast():
-            P = model(num, boo, cat)
-        m = mh * me.unsqueeze(-1)
-        err = P - Y
-        tot_mse += (err.pow(2) * m).sum().item()
-        tot_mae += (err.abs() * m).sum().item()
-        tot_n   += m.sum().item()
-
-print(f"[RESULT] test MSE {tot_mse / tot_n:.4f} | MAE {tot_mae / tot_n:.4f}")
-
-# Save training history and model checkpoint
-print("\n" + "=" * 50)
-print("💾 SAVING RESULTS")
-print("=" * 50)
-
-# CRITICAL FIX: Ensure directories exist before saving
-from pathlib import Path
-Path("ml_pipeline/results/predictions").mkdir(parents=True, exist_ok=True)
-print("✓ Results directories created/verified")
-
-# Save training history to CSV
-import pandas as pd
-history_df = pd.DataFrame(history)
-history_path = "ml_pipeline/results/loss_history.csv"
-history_df.to_csv(history_path, index=False)
-print(f"✓ Training history saved: {history_path}")
-
-# Save model checkpoint
-checkpoint = {
-    "cfg": CONFIG,
-    "state_dict": model.state_dict(),
-    "final_test_mse": tot_mse / tot_n,
-    "final_test_mae": tot_mae / tot_n
-}
-checkpoint_path = "ml_pipeline/results/checkpoint.pt"
-torch.save(checkpoint, checkpoint_path)
-print(f"✓ Model checkpoint saved: {checkpoint_path}")
-print(f"✓ Checkpoint includes: config, weights, final test metrics")
-
-# Save detailed predictions to NetCDF for analysis
-print("\n" + "=" * 50)
-print("📊 SAVING DETAILED PREDICTIONS")
-print("=" * 50)
-
-# Create single-batch test loader for prediction collection (deterministic order)
-# Reset CVE list to avoid duplication from previous iterations
-te_ds.collected_cve_ids.clear()
-
-test_pred_loader = DataLoader(
-    te_ds, batch_size=1, shuffle=False,
-    collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
-    num_workers=0,  # Single worker for deterministic CVE order
-    # prefetch_factor omitted when num_workers=0 (single-threaded mode)
-)
-
-# Collect predictions, ground truth, masks, and metadata
-pred_list, true_list, mh_list, me_list, date_list = [], [], [], [], []
-
-print("  → Collecting predictions from test set...")
-model.eval()
-with torch.no_grad():
-    for num, boo, cat, Y, mt, mh, me, date_pad, lengths in tqdm(test_pred_loader, desc="collect preds"):
-        # Forward pass with mixed precision
-        with torch.cuda.amp.autocast():
-            P = model(num.to(dev), boo.to(dev), cat.to(dev)).cpu()
+        model.eval(); va_loss = 0.0; va_batches = 0
+        # Spike recall tracking
+        total_spikes = 0; correct_spike_preds = 0
         
-        # Store results (remove batch dimension since batch_size=1)
-        pred_list.append(P[0])          # [L, H]
-        true_list.append(Y[0])          # [L, H] 
-        mh_list.append(mh[0])           # [L, H]
-        me_list.append(me[0])           # [L]
-        date_list.append(date_pad[0])   # [L]
+        with torch.no_grad():
+            for num, boo, cat, Y, mt, mh, me, date_pad, lengths in va_ld:
+                # Move tensors to device - cat synchronously to avoid embedding race conditions
+                num = num.to(dev, non_blocking=True)
+                boo = boo.to(dev, non_blocking=True)
+                cat = cat.to(dev, non_blocking=False)  # Synchronous for index tensor
+                Y = Y.to(dev, non_blocking=True)
+                mt = mt.to(dev, non_blocking=True)
+                mh = mh.to(dev, non_blocking=True)
+                me = me.to(dev, non_blocking=True)
+                # date_pad stays on CPU - not needed for validation
+                with torch.cuda.amp.autocast():
+                    P = model(num, boo, cat)
+                    va_loss += masked_mse(P, Y, mt, mh, me).item()
+                
+                # Compute spike recall (only on valid evaluation points)
+                mask = mh.bool() & me.unsqueeze(-1).bool()  # [B,L,H] valid points
+                is_spike = (Y > 0.7) & mask
+                pred_spike = (P > 0.7) & mask
+                total_spikes += is_spike.sum().item()
+                correct_spike_preds += (pred_spike & is_spike).sum().item()
+                
+                va_batches += 1
+        
+        va_loss /= va_batches
+        recall = correct_spike_preds / max(1, total_spikes)
+        
+        print(f"epoch {ep:02d}  rmse_all={va_loss:.4f}  spike_recall={recall:.3f}")
+        
+        # Track training history
+        history["epoch"].append(ep)
+        history["tr_loss"].append(tr_loss)
+        history["va_loss"].append(va_loss)
 
-print(f"  → Collected {len(pred_list)} CVE sequences")
+    # CSV logging for grid search
+    if EPOCHS == 2 and SUS_CONFIG["quick_grid"]:
+        # Determine Z mode from config path
+        z_mode = "max" if "q1.000" in str(SUS_CONFIG_PATH) else "quant"
+        tag = f"B{SUS_CONFIG['beta']}_D{SUS_CONFIG['look_ahead']}_{z_mode}"
+        
+        # Ensure results directory exists
+        Path("results").mkdir(exist_ok=True)
+        
+        # Append metrics to CSV (final epoch values)
+        with open(f"results/grid_{tag}.csv", "a") as fh:
+            fh.write(f"{SUS_CONFIG['beta']},{SUS_CONFIG['look_ahead']},{z_mode},{va_loss:.4f},{recall:.3f}\n")
+        print(f"[GRID] Metrics saved to results/grid_{tag}.csv")
 
-# Pad all sequences to same length for rectangular array
-L_max = max(t.shape[0] for t in pred_list)
-print(f"  → Maximum sequence length: {L_max}")
+    print("\n" + "=" * 50)
+    print("🎯 FINAL EVALUATION")
+    print("=" * 50)
+    model.eval(); tot_mse = tot_mae = tot_n = 0.0
+    with torch.no_grad():
+        for num, boo, cat, Y, mt, mh, me, date_pad, lengths in te_ld:
+            # Move tensors to device - cat synchronously to avoid embedding race conditions
+            num = num.to(dev, non_blocking=True)
+            boo = boo.to(dev, non_blocking=True)
+            cat = cat.to(dev, non_blocking=False)  # Synchronous for index tensor
+            Y = Y.to(dev, non_blocking=True)
+            mt = mt.to(dev, non_blocking=True)
+            mh = mh.to(dev, non_blocking=True)
+            me = me.to(dev, non_blocking=True)
+            # date_pad stays on CPU - not needed for evaluation metrics
+            with torch.cuda.amp.autocast():
+                P = model(num, boo, cat)
+            m = mh * me.unsqueeze(-1)
+            err = P - Y
+            tot_mse += (err.pow(2) * m).sum().item()
+            tot_mae += (err.abs() * m).sum().item()
+            tot_n   += m.sum().item()
 
-def right_pad_tensor(tensor, target_length, pad_value):
-    """Pad tensor to target length on the first dimension."""
-    if tensor.ndim == 1:
-        # 1D tensor (eval_mask, dates)
-        pad_width = (0, target_length - tensor.shape[0])
-    else:
-        # 2D tensor (pred, true, mask_h)
-        pad_width = (0, 0, 0, target_length - tensor.shape[0])
-    return torch.nn.functional.pad(tensor, pad_width, value=pad_value)
+    print(f"[RESULT] test MSE {tot_mse / tot_n:.4f} | MAE {tot_mae / tot_n:.4f}")
 
-# Pad and stack all tensors
-P_padded = torch.stack([right_pad_tensor(t, L_max, 0.0) for t in pred_list])    # [N, L_max, H]
-T_padded = torch.stack([right_pad_tensor(t, L_max, 0.0) for t in true_list])    # [N, L_max, H]
-MH_padded = torch.stack([right_pad_tensor(t, L_max, 0) for t in mh_list])       # [N, L_max, H]
-ME_padded = torch.stack([right_pad_tensor(t, L_max, 0) for t in me_list])       # [N, L_max]
-DT_padded = torch.stack([right_pad_tensor(t, L_max, 0) for t in date_list])     # [N, L_max]
+    # Save training history and model checkpoint
+    print("\n" + "=" * 50)
+    print("💾 SAVING RESULTS")
+    print("=" * 50)
 
-# Convert date tensors to numpy datetime64
-DT_numpy = DT_padded.numpy()
-DT_numpy[DT_numpy == 0] = np.datetime64("NaT").view("int64")  # Replace padding with NaT
-dates_2d = DT_numpy.view("datetime64[ns]")  # [N, L_max]
+    # CRITICAL FIX: Ensure directories exist before saving
+    from pathlib import Path
+    Path("ml_pipeline/results/predictions").mkdir(parents=True, exist_ok=True)
+    print("✓ Results directories created/verified")
 
-P_padded = P_padded.float()   # float16 → float32 (NetCDF can’t store f16)
-T_padded = T_padded.float()   # keep pred & true the same dtype
-# quick guard (optional)
-assert P_padded.dtype == torch.float32
-### END CAST ──────────────────────────────
+    # Save training history to CSV
+    import pandas as pd
+    history_df = pd.DataFrame(history)
+    history_path = "ml_pipeline/results/loss_history.csv"
+    history_df.to_csv(history_path, index=False)
+    print(f"✓ Training history saved: {history_path}")
 
-# Get CVE IDs (collected during iteration)
-cve_ids = te_ds.collected_cve_ids
-print(f"  → CVE IDs collected: {len(cve_ids)}")
-
-# Create xarray Dataset
-import xarray as xr
-import numpy as np
-
-
-
-
-
-ds = xr.Dataset(
-    data_vars={
-        "pred": (["cve", "time", "horizon"], P_padded.numpy()),
-        "true": (["cve", "time", "horizon"], T_padded.numpy()),
-        "mask_h": (["cve", "time", "horizon"], MH_padded.numpy().astype("uint8")),
-        "eval_mask": (["cve", "time"], ME_padded.numpy().astype("uint8")),
-    },
-    coords={
-        "cve": ("cve", np.array(cve_ids, dtype=object)),
-        "time": (["cve", "time"], dates_2d),
-        "horizon": ("horizon", np.arange(HORIZON))
+    # Save model checkpoint
+    checkpoint = {
+        "cfg": CONFIG,
+        "state_dict": model.state_dict(),
+        "final_test_mse": tot_mse / tot_n,
+        "final_test_mae": tot_mae / tot_n
     }
-)
+    checkpoint_path = "ml_pipeline/results/checkpoint.pt"
+    torch.save(checkpoint, checkpoint_path)
+    print(f"✓ Model checkpoint saved: {checkpoint_path}")
+    print(f"✓ Checkpoint includes: config, weights, final test metrics")
 
-# Save to NetCDF with backend-appropriate settings
-netcdf_path = "ml_pipeline/results/predictions/predictions_stream.nc"
+    # Save detailed predictions to NetCDF for analysis
+    print("\n" + "=" * 50)
+    print("📊 SAVING DETAILED PREDICTIONS")
+    print("=" * 50)
 
-# Check which backend is available and set encoding accordingly
-try:
-    import netCDF4
-    # netCDF4 backend supports compression
-    encoding = {var: {"zlib": True, "complevel": 3} for var in ds.data_vars}
-    print("→ Using netCDF4 backend with compression")
-    ds.to_netcdf(netcdf_path, encoding=encoding, engine='netcdf4')
-except ImportError:
-    # scipy backend - no compression support
-    print("  → Using scipy backend (no compression)")
-    ds.to_netcdf(netcdf_path, engine='scipy')
+    # Create single-batch test loader for prediction collection (deterministic order)
+    # Reset CVE list to avoid duplication from previous iterations
+    te_ds.collected_cve_ids.clear()
 
-print(f"✓ Detailed predictions saved: {netcdf_path}")
-print(f"✓ Dataset shape: {len(cve_ids)} CVEs × {L_max} timesteps × {HORIZON} horizons")
-print(f"✓ Variables: predictions, ground truth, horizon mask, eval mask")
-print(f"✓ Coordinates: CVE IDs, calendar dates, forecast horizons")
+    test_pred_loader = DataLoader(
+        te_ds, batch_size=1, shuffle=False,
+        collate_fn=partial(pad_and_mask_fixed, flag_kind="test", horizon=HORIZON),
+        num_workers=0,  # Single worker for deterministic CVE order
+        # prefetch_factor omitted when num_workers=0 (single-threaded mode)
+    )
+
+    # Collect predictions, ground truth, masks, and metadata
+    pred_list, true_list, mh_list, me_list, date_list = [], [], [], [], []
+
+    print("  → Collecting predictions from test set...")
+    model.eval()
+    with torch.no_grad():
+        for num, boo, cat, Y, mt, mh, me, date_pad, lengths in tqdm(test_pred_loader, desc="collect preds"):
+            # Forward pass with mixed precision
+            with torch.cuda.amp.autocast():
+                P = model(num.to(dev), boo.to(dev), cat.to(dev)).cpu()
+            
+            # Store results (remove batch dimension since batch_size=1)
+            pred_list.append(P[0])          # [L, H]
+            true_list.append(Y[0])          # [L, H] 
+            mh_list.append(mh[0])           # [L, H]
+            me_list.append(me[0])           # [L]
+            date_list.append(date_pad[0])   # [L]
+
+    print(f"  → Collected {len(pred_list)} CVE sequences")
+
+    # Pad all sequences to same length for rectangular array
+    L_max = max(t.shape[0] for t in pred_list)
+    print(f"  → Maximum sequence length: {L_max}")
+
+    def right_pad_tensor(tensor, target_length, pad_value):
+        """Pad tensor to target length on the first dimension."""
+        if tensor.ndim == 1:
+            # 1D tensor (eval_mask, dates)
+            pad_width = (0, target_length - tensor.shape[0])
+        else:
+            # 2D tensor (pred, true, mask_h)
+            pad_width = (0, 0, 0, target_length - tensor.shape[0])
+        return torch.nn.functional.pad(tensor, pad_width, value=pad_value)
+
+    # Pad and stack all tensors
+    P_padded = torch.stack([right_pad_tensor(t, L_max, 0.0) for t in pred_list])    # [N, L_max, H]
+    T_padded = torch.stack([right_pad_tensor(t, L_max, 0.0) for t in true_list])    # [N, L_max, H]
+    MH_padded = torch.stack([right_pad_tensor(t, L_max, 0) for t in mh_list])       # [N, L_max, H]
+    ME_padded = torch.stack([right_pad_tensor(t, L_max, 0) for t in me_list])       # [N, L_max]
+    DT_padded = torch.stack([right_pad_tensor(t, L_max, 0) for t in date_list])     # [N, L_max]
+
+    # Convert date tensors to numpy datetime64
+    DT_numpy = DT_padded.numpy()
+    DT_numpy[DT_numpy == 0] = np.datetime64("NaT").view("int64")  # Replace padding with NaT
+    dates_2d = DT_numpy.view("datetime64[ns]")  # [N, L_max]
+
+    P_padded = P_padded.float()   # float16 → float32 (NetCDF can't store f16)
+    T_padded = T_padded.float()   # keep pred & true the same dtype
+    # quick guard (optional)
+    assert P_padded.dtype == torch.float32
+    ### END CAST ──────────────────────────────
+
+    # Get CVE IDs (collected during iteration)
+    cve_ids = te_ds.collected_cve_ids
+    print(f"  → CVE IDs collected: {len(cve_ids)}")
+
+    # Create xarray Dataset
+    import xarray as xr
+    import numpy as np
+
+    ds = xr.Dataset(
+        data_vars={
+            "pred": (["cve", "time", "horizon"], P_padded.numpy()),
+            "true": (["cve", "time", "horizon"], T_padded.numpy()),
+            "mask_h": (["cve", "time", "horizon"], MH_padded.numpy().astype("uint8")),
+            "eval_mask": (["cve", "time"], ME_padded.numpy().astype("uint8")),
+        },
+        coords={
+            "cve": ("cve", np.array(cve_ids, dtype=object)),
+            "time": (["cve", "time"], dates_2d),
+            "horizon": ("horizon", np.arange(HORIZON))
+        }
+    )
+
+    # Save to NetCDF with backend-appropriate settings
+    netcdf_path = "ml_pipeline/results/predictions/predictions_stream.nc"
+
+    # Check which backend is available and set encoding accordingly
+    try:
+        import netCDF4
+        # netCDF4 backend supports compression
+        encoding = {var: {"zlib": True, "complevel": 3} for var in ds.data_vars}
+        print("→ Using netCDF4 backend with compression")
+        ds.to_netcdf(netcdf_path, encoding=encoding, engine='netcdf4')
+    except ImportError:
+        # scipy backend - no compression support
+        print("  → Using scipy backend (no compression)")
+        ds.to_netcdf(netcdf_path, engine='scipy')
+
+    print(f"✓ Detailed predictions saved: {netcdf_path}")
+    print(f"✓ Dataset shape: {len(cve_ids)} CVEs × {L_max} timesteps × {HORIZON} horizons")
+    print(f"✓ Variables: predictions, ground truth, horizon mask, eval mask")
+    print(f"✓ Coordinates: CVE IDs, calendar dates, forecast horizons")
+
+
+if __name__ == '__main__':
+    main()

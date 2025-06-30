@@ -116,7 +116,7 @@ print(f"[INFO] Memory-efficient streaming approach - no DataFrame loading!")
 # ─────────────────────────── SUS Configuration ─────────────────────────────
 # SUS (Stochastic Under-Sampling) parameters for addressing within-CVE imbalance
 SUS_CONFIG = {
-    'enabled': True,           # Enable SUS for training
+    'enabled': False,          # Disable SUS (baseline training)
     'look_ahead': 5,          # Days ahead to compute future change (Δ in paper)
     'beta': 3.0,              # Exponent for probability function (higher = more selective)
     'z_norm': None,           # Will be loaded from pre-computed config
@@ -345,6 +345,22 @@ def main():
                 nb_filters= CONFIG['tcn_filters'],
                 levels    = CONFIG['tcn_levels'],
                 kernel_size= CONFIG['tcn_kernel']).to(dev)
+
+    # 🔭 BIG RECEPTIVE FIELD ANNOUNCEMENT 🔭
+    print("\n" + "="*80)
+    print("🔭" * 20)
+    print("██╗    ██╗ ██████╗ ██╗   ██╗██╗   ██╗██╗   ██╗██╗   ██╗██╗   ██╗")
+    print("██║    ██║██╔═══██╗██║   ██║██║   ██║██║   ██║██║   ██║██║   ██║")
+    print("██║ █╗ ██║██║   ██║██║   ██║██║   ██║██║   ██║██║   ██║██║   ██║")
+    print("██║███╗██║██║   ██║██║   ██║██║   ██║██║   ██║██║   ██║██║   ██║")
+    print("╚███╔███╔╝╚██████╔╝╚██████╔╝╚██████╔╝╚██████╔╝╚██████╔╝╚██████╔╝")
+    print(" ╚══╝╚══╝  ╚═════╝  ╚═════╝  ╚═════╝  ╚═════╝  ╚═════╝  ╚═════╝ ")
+    print()
+    print("🎯 I CAN SEEEEEE YOUUUUU FOORRRR:")
+    print(f"🔥🔥🔥 {model.tcn.receptive_field} DAYS INTO THE PAST! 🔥🔥🔥")
+    print("🎯 THAT'S LIKE SEEING INTO THE MATRIX OF TIME! 🕰️")
+    print("🔭" * 20)
+    print("="*80 + "\n")
 
     # ──────────────────────── STEP 5: Batch Size Tuning ──────────────────
     print(f"\n[STEP 5/6] Setting up optimized batch size and mixed precision...")
