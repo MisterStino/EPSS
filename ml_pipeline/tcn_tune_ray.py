@@ -277,11 +277,14 @@ def train_tcn_with_tune(config):
     # Setup device and paths
     device = get_device()
     
-    # Setup CUDA optimizations locally (inline to avoid serialization issues)
-    if torch.cuda.is_available():
-        torch.backends.cudnn.benchmark = True
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
+    # Setup CUDA optimizations with local imports (avoids cloudpickle serialization issues)
+    if device.type == "cuda":
+        # Local imports - not visible as globals to cloudpickle
+        import torch.backends.cudnn as _cudnn
+        import torch.backends.cuda.matmul as _matmul
+        _cudnn.benchmark = True
+        _cudnn.allow_tf32 = True
+        _matmul.allow_tf32 = True
         torch.set_float32_matmul_precision("high")
     
     vocab, arrow_path = load_vocab_and_paths()
