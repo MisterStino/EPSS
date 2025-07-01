@@ -671,7 +671,6 @@ def main():
 
     # Create xarray Dataset
     import xarray as xr
-    import numpy as np
 
     ds = xr.Dataset(
         data_vars={
