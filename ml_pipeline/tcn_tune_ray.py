@@ -54,13 +54,7 @@ def get_device():
         print("WARNING: CUDA not available, falling back to CPU")
         return torch.device("cpu")
 
-def setup_cuda_optimizations():
-    """Setup CUDA optimizations locally within training function."""
-    if torch.cuda.is_available():
-        torch.backends.cudnn.benchmark = True
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
-        torch.set_float32_matmul_precision("high")
+
 
 def find_project_root():
     """Find project root directory containing ml_pipeline."""
@@ -282,7 +276,14 @@ def train_tcn_with_tune(config):
     
     # Setup device and paths
     device = get_device()
-    setup_cuda_optimizations()  # Setup CUDA optimizations locally
+    
+    # Setup CUDA optimizations locally (inline to avoid serialization issues)
+    if torch.cuda.is_available():
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        torch.set_float32_matmul_precision("high")
+    
     vocab, arrow_path = load_vocab_and_paths()
     
     # Load SUS configuration if enabled
