@@ -59,16 +59,21 @@ print(f"[INFO] Batch: {CONFIG['batch_size']}, Hidden: {CONFIG['hidden_size']}")
 # ──────────────────────────── helpers ───────────────────────────────────────
 def get_device() -> torch.device:
     if torch.cuda.is_available():
-        torch.backends.cudnn.benchmark = True
-        
-        # Tensor-Core optimization for better performance on modern NVIDIA GPUs
-        torch.set_float32_matmul_precision("high")
-        
         print("[INFO] GPU:", torch.cuda.get_device_name(0))
-        print("[INFO] Tensor-Core optimization enabled")
         return torch.device("cuda")
     print("[WARN] CUDA unavailable → CPU")
     return torch.device("cpu")
+
+def setup_cuda_optimizations():
+    """Setup CUDA optimizations - call after get_device() when training starts."""
+    if torch.cuda.is_available():
+        # Local imports to avoid global CudnnModule creation
+        import torch.backends.cudnn as _cudnn
+        _cudnn.benchmark = True
+        
+        # Tensor-Core optimization for better performance on modern NVIDIA GPUs
+        torch.set_float32_matmul_precision("high")
+        print("[INFO] CUDA optimizations enabled")
 
 
 
@@ -177,6 +182,7 @@ print("=" * 50)
 
 torch.manual_seed(0)
 dev = get_device()
+setup_cuda_optimizations()  # Setup CUDA after device detection
 
 HORIZON, BATCH, EPOCHS, LR = 30, CONFIG['batch_size'], 12, 1e-3
 
