@@ -240,7 +240,7 @@ pytz==2022.1
 PyWavelets==1.5.0
 PyYAML==5.4.1
 pyzmq==24.0.1
-ray==2.47.1
+
 referencing==0.32.1
 regex==2023.12.25
 requests==2.31.0

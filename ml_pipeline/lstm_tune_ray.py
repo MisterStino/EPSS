@@ -42,17 +42,21 @@ SUS_LOOK_AHEAD = 10  # Default SUS look-ahead window
 # ───────────────────────────── HELPER FUNCTIONS ──────────────────────
 
 def get_device():
-    """Get the best available device and enable optimizations."""
+    """Get the best available device without setting global state."""
     if torch.cuda.is_available():
         device = torch.device("cuda")
-        torch.backends.cudnn.benchmark = True
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
         print(f"Using GPU: {torch.cuda.get_device_name()}")
         return device
     else:
         print("WARNING: CUDA not available, falling back to CPU")
         return torch.device("cpu")
+
+def setup_cuda_optimizations():
+    """Setup CUDA optimizations locally within training function."""
+    if torch.cuda.is_available():
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
 
 def find_project_root():
     """Find the project root directory containing ml_pipeline."""
@@ -216,21 +220,44 @@ class Seq2SeqLSTM(nn.Module):
 
 # ───────────────────────────── LOSS FUNCTION ──────────────────────
 
-def masked_mse(pred, target, m_t, m_eval, m_h):
+def focal_epss(pred, target, horizon, alpha0=2.0, gamma=2.5, lam=0.15):
     """
-    Compute MSE loss only where all masks permit.
+    Focal EPSS loss function for horizon-sensitive forecasting.
+    
+    Args:
+        pred: predictions tensor of shape (B,) or (B, H)
+        target: target tensor of shape (B,) or (B, H)
+        horizon: days ahead forecast horizon (int or float per sample)
+        alpha0: base multiplier
+        gamma: focusing exponent
+        lam: horizon-sensitivity factor
+    """
+    e = (pred - target).abs()
+    alpha_h = alpha0 * (1 + lam * horizon)   # emphasise early jumps at longer lead time
+    mod = (1 + alpha_h * e) ** gamma
+    return (mod * e**2).mean()               # Focal-MSE core 
+
+def focal_epss_masked(pred, target, m_t, m_eval, m_h, horizon):
+    """
+    Compute focal EPSS loss only where all masks permit.
+    Combines the focal EPSS loss with masking functionality.
     """
     # Combine all masks
     combined_mask = m_t.unsqueeze(-1) * m_eval.unsqueeze(-1) * m_h.unsqueeze(0).unsqueeze(0)
     
-    # Apply mask and compute MSE
+    # Apply mask
     masked_pred = pred * combined_mask
     masked_target = target * combined_mask
     
-    # Compute MSE only on valid positions
+    # Only compute loss on valid positions
     valid_positions = combined_mask.sum()
     if valid_positions > 0:
-        loss = ((masked_pred - masked_target) ** 2).sum() / valid_positions
+        # Flatten for focal_epss computation
+        masked_pred_flat = masked_pred[combined_mask > 0]
+        masked_target_flat = masked_target[combined_mask > 0]
+        
+        # Apply focal EPSS loss
+        loss = focal_epss(masked_pred_flat, masked_target_flat, horizon)
     else:
         loss = torch.tensor(0.0, device=pred.device)
     
@@ -264,6 +291,7 @@ def train_lstm_with_tune(config):
     
     # Setup device and paths
     device = get_device()
+    setup_cuda_optimizations()  # Setup CUDA optimizations locally
     vocab, arrow_path = load_vocab_and_paths()
     
     # Load SUS configuration if enabled
@@ -475,7 +503,7 @@ def train_lstm_with_tune(config):
                     continue
                 
                 try:
-                    loss = masked_mse(pred, target_tensor, m_t, m_eval, m_h)
+                    loss = focal_epss_masked(pred, target_tensor, m_t, m_eval, m_h, HORIZON)
                 except torch.cuda.OutOfMemoryError as e:
                     print(f"[OOM] Loss computation failed: {e}")
                     torch.cuda.empty_cache()
@@ -561,7 +589,7 @@ def train_lstm_with_tune(config):
                     if torch.isnan(pred).any() or torch.isinf(pred).any():
                         continue
                     
-                    loss = masked_mse(pred, target_tensor, m_t, m_eval, m_h)
+                    loss = focal_epss_masked(pred, target_tensor, m_t, m_eval, m_h, HORIZON)
                     
                     # Check loss
                     if torch.isnan(loss) or torch.isinf(loss):
