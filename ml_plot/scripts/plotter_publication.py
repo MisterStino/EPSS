@@ -212,5 +212,5 @@ if __name__ == "__main__":
     # plotter._plot_cve("HERE WE CAN MAKE AN INTERESTING SELECTION OF CVES")
     # plotter.plot_all()
     # plotter._plot_cve("CVE-2005-2594")
-    plotter._plot_cve("CVE-2025-3336")
+    plotter._plot_cve("CVE-2024-3094")
     print("✅ Plot for CVE-2005-2594 complete!")
