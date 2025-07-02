@@ -1,0 +1,28 @@
+MODEL SEMANTICS ANALYSIS REPORT
+========================================
+
+Dataset: C:\Users\stijn\Desktop\EPSS_FRESH\ml_plot\eval_plots\models\stupid_predictions.nc
+Dimensions: C=30713, T=763, H=30
+Sample CVE: CVE-1999-0003
+Valid evaluation times: 140/763
+Target consistency check: 0/25 inconsistencies
+
+TRUE POSITIVE DEFINITION:
+For an event at calendar date D_event:
+  TP if EXISTS anchor time t, horizon h such that:
+    1. t + h + 1 corresponds to D_event
+    2. pred[c, t, h] >= threshold
+    3. eval_mask[c, t] = 1
+    4. mask_h[c, t, h] = 1
+    5. t < t_event (prediction before event)
+
+LEAD TIME CALCULATION:
+  Lead time = h + 1 days
+  (horizon h=0 means 1-day lead time)
+
+KEY INSIGHT:
+The current evaluation script incorrectly aggregates at CVE level.
+Correct evaluation should be event-specific:
+  - Detect events at specific dates
+  - Check if any prediction horizon covered that exact date
+  - Count TP only when prediction horizon matches event date

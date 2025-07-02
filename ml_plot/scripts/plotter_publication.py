@@ -150,7 +150,7 @@ class PublicationPlotter:
             if np.isnat(anchor_date):
                 continue
                 
-            out_path = cve_out / f"{pd.to_datetime(anchor_date).date()}__t{idx:04d}.png"
+            out_path = cve_out / f"{cve}-frame-{plot_count}.png"
             
             self._make_plot(cve, cve_epss, anchor_date, 
                           pred_prob[idx], true_prob[idx], mask_h[idx], out_path)
@@ -207,5 +207,10 @@ class PublicationPlotter:
 
 if __name__ == "__main__":
     plotter = PublicationPlotter()
-    plotter.plot_all()
-    print("✅ Publication plots complete!") 
+    # Plot just the specific CVE
+    # plotter._plot_cve("CVE-2005-2594")
+    # plotter._plot_cve("HERE WE CAN MAKE AN INTERESTING SELECTION OF CVES")
+    # plotter.plot_all()
+    # plotter._plot_cve("CVE-2005-2594")
+    plotter._plot_cve("CVE-2025-3336")
+    print("✅ Plot for CVE-2005-2594 complete!")
